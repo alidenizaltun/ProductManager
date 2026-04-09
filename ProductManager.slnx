@@ -1,0 +1,20 @@
+<Solution>
+  <Folder Name="/Application/">
+    <Project Path="ProductManager.Repository/ProductManager.Repository.csproj" />
+    <Project Path="ProductManager.Service/ProductManager.Service.csproj" />
+  </Folder>
+  <Folder Name="/Core/">
+    <Project Path="ProductManager.Domain/ProductManager.Domain.csproj" />
+    <Project Path="ProductManager.EFCore/ProductManager.EFCore.csproj" />
+  </Folder>
+  <Folder Name="/Presentation/" />
+  <Folder Name="/Presentation/API/">
+    <Project Path="ProductManager.API.Presentation/ProductManager.API.Presentation.csproj" Id="ce1669f3-4a69-4b40-a0a9-570aea4fd96e" />
+    <Project Path="ProductManager.API/ProductManager.API.csproj" />
+  </Folder>
+  <Folder Name="/Shared/">
+    <Project Path="ProductManager.Repository.Shared/ProductManager.Repository.Shared.csproj" />
+    <Project Path="ProductManager.Service.Shared/ProductManager.Service.Shared.csproj" />
+    <Project Path="ProductManager.Shared/ProductManager.Shared.csproj" />
+  </Folder>
+</Solution>
