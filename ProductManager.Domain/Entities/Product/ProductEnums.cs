@@ -49,6 +49,28 @@ namespace ProductManager.Domain.Entities.Product
         DoNotTrack = 3
     }
 
+    public enum InventoryTransactionType
+    {
+        PurchaseReceipt = 1,
+        SaleIssue = 2,
+        ReturnIn = 3,
+        ReturnOut = 4,
+        TransferIn = 5,
+        TransferOut = 6,
+        Reservation = 7,
+        ReservationRelease = 8,
+        Adjustment = 9
+    }
+
+    public enum InventoryReservationStatus
+    {
+        Active = 1,
+        Released = 2,
+        Converted = 3,
+        Expired = 4,
+        Cancelled = 5
+    }
+
     public enum MediaType
     {
         Image = 1,

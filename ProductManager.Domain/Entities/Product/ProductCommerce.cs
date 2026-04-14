@@ -18,6 +18,10 @@ namespace ProductManager.Domain.Entities.Product
         public decimal? AdditionalCost { get; set; }
 
         public bool IsActive { get; set; } = true;
+
+        public ICollection<InventoryTransaction> InventoryTransactions { get; set; } = new List<InventoryTransaction>();
+        public ICollection<InventoryReservation> InventoryReservations { get; set; } = new List<InventoryReservation>();
+        public ICollection<ProductPriceListItem> PriceListItems { get; set; } = new List<ProductPriceListItem>();
     }
 
     [Table("ProductPrices", Schema = "Product")]
@@ -52,6 +56,9 @@ namespace ProductManager.Domain.Entities.Product
 
         public Guid? ProductVariantId { get; set; }
         public ProductVariant? ProductVariant { get; set; }
+
+        public Guid? WarehouseId { get; set; }
+        public Warehouse? Warehouse { get; set; }
 
         public string WarehouseCode { get; set; } = string.Empty;
         public decimal QuantityOnHand { get; set; }

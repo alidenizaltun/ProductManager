@@ -1,8 +1,173 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Ana Sayfa";
 }
 
-<div class="text-center mt-4">
-    <h1 class="display-4">Ürün Yönetimi</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="nk-content">
+    <div class="container-fluid">
+        <div class="nk-content-inner">
+            <div class="nk-content-body">
+                <div class="nk-block-head nk-block-head-sm">
+                    <div class="nk-block-between g-3">
+                        <div class="nk-block-head-content">
+                            <h3 class="nk-block-title page-title">ProductManager</h3>
+                            <div class="nk-block-des text-soft">
+                                <p>Urun katalogu, stok hareketleri ve fiyatlandirmayi tek panelde yonetin.</p>
+                            </div>
+                        </div>
+                        <div class="nk-block-head-content">
+                            <div class="btn-group">
+                                <a asp-controller="Products" asp-action="Index" asp-route-openCreateModal="true" class="btn btn-primary">Yeni Urun Ekle</a>
+                                <a asp-controller="Inventory" asp-action="Transactions" asp-route-openCreateModal="true" class="btn btn-outline-primary">Stok Islemi</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-gs">
+                    <div class="col-lg-5">
+                        <div class="card card-bordered h-100">
+                            <div class="card-inner">
+                                <div class="card-title-group mb-2">
+                                    <div class="card-title">
+                                        <h5 class="title">Operasyon Ozeti</h5>
+                                    </div>
+                                    <div class="card-tools">
+                                        <span class="badge badge-dim bg-primary">Canli</span>
+                                    </div>
+                                </div>
+
+                                <p class="sub-text mb-3">Gunun en cok kullanilan ekranlarina tek tikla gecin.</p>
+
+                                <div class="row g-3">
+                                    <div class="col-sm-6">
+                                        <div class="border rounded p-3 h-100">
+                                            <span class="badge badge-dim bg-info mb-2">Katalog</span>
+                                            <div class="fw-bold mb-1">Urun Yonetimi</div>
+                                            <div class="sub-text mb-2">Urun, kategori ve ozellik yonetimi</div>
+                                            <a asp-controller="Products" asp-action="Index" class="btn btn-sm btn-outline-primary">Urunlere Git</a>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="border rounded p-3 h-100">
+                                            <span class="badge badge-dim bg-success mb-2">Stok</span>
+                                            <div class="fw-bold mb-1">Hareket Takibi</div>
+                                            <div class="sub-text mb-2">Giris-cikis islemleri ve rezervasyonlar</div>
+                                            <a asp-controller="Inventory" asp-action="Transactions" class="btn btn-sm btn-outline-success">Hareketler</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-7">
+                        <div class="card card-bordered h-100">
+                            <div class="card-inner">
+                                <div class="card-title-group mb-3">
+                                    <div class="card-title">
+                                        <h5 class="title">Modul Bazli Hizli Erisim</h5>
+                                    </div>
+                                </div>
+
+                                <p class="text-soft mb-3">
+                                    DarkMoney tasarim diline uygun kart hiyerarsisi ile tum operasyon modullerine hizli gecis.
+                                </p>
+
+                                <div class="row g-3">
+                                    <div class="col-sm-4">
+                                        <div class="border rounded p-3 h-100">
+                                            <span class="badge badge-dim bg-primary mb-1">Urun</span>
+                                            <div class="fw-bold">Katalog</div>
+                                            <div class="sub-text mb-2">Urun, kategori, ozellik</div>
+                                            <a asp-controller="Categories" asp-action="Index" class="btn btn-sm btn-outline-primary">Detay</a>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <div class="border rounded p-3 h-100">
+                                            <span class="badge badge-dim bg-warning mb-1">Tedarik</span>
+                                            <div class="fw-bold">Depo ve Tedarikci</div>
+                                            <div class="sub-text mb-2">Kaynak ve depo operasyonu</div>
+                                            <a asp-controller="Suppliers" asp-action="Index" class="btn btn-sm btn-outline-warning">Detay</a>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <div class="border rounded p-3 h-100">
+                                            <span class="badge badge-dim bg-success mb-1">Fiyat</span>
+                                            <div class="fw-bold">Fiyatlandirma</div>
+                                            <div class="sub-text mb-2">Liste bazli fiyat kontrolu</div>
+                                            <a asp-controller="PriceLists" asp-action="Index" class="btn btn-sm btn-outline-success">Detay</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card-inner">
+                                <div class="row g-gs mt-1">
+                                    <div class="col-md-4">
+                                        <div class="card card-bordered h-100">
+                                            <div class="card-inner">
+                                                <div class="card-title-group mb-2">
+                                                    <div class="card-title">
+                                                        <h6 class="title">Katalog Isleri</h6>
+                                                    </div>
+                                                    <div class="card-tools">
+                                                        <span class="badge badge-dim bg-primary">Urun</span>
+                                                    </div>
+                                                </div>
+                                                <ul class="list-group list-group-flush">
+                                                    <li class="list-group-item px-0">Urun kayitlari</li>
+                                                    <li class="list-group-item px-0">Kategori yapisi</li>
+                                                    <li class="list-group-item px-0">Ozellik tanimlari</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <div class="card card-bordered h-100">
+                                            <div class="card-inner">
+                                                <div class="card-title-group mb-2">
+                                                    <div class="card-title">
+                                                        <h6 class="title">Stok Isleri</h6>
+                                                    </div>
+                                                    <div class="card-tools">
+                                                        <span class="badge badge-dim bg-success">Operasyon</span>
+                                                    </div>
+                                                </div>
+                                                <ul class="list-group list-group-flush">
+                                                    <li class="list-group-item px-0">Hareket kayitlari</li>
+                                                    <li class="list-group-item px-0">Rezervasyon takibi</li>
+                                                    <li class="list-group-item px-0">Depo dengesi</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <div class="card card-bordered h-100">
+                                            <div class="card-inner">
+                                                <div class="card-title-group mb-2">
+                                                    <div class="card-title">
+                                                        <h6 class="title">Fiyat Isleri</h6>
+                                                    </div>
+                                                    <div class="card-tools">
+                                                        <span class="badge badge-dim bg-warning">Finans</span>
+                                                    </div>
+                                                </div>
+                                                <ul class="list-group list-group-flush">
+                                                    <li class="list-group-item px-0">Liste yonetimi</li>
+                                                    <li class="list-group-item px-0">Kalem bazli fiyat</li>
+                                                    <li class="list-group-item px-0">Guncel fiyat akisi</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

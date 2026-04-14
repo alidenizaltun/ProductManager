@@ -1,0 +1,90 @@
+@model ProductManager.WebUI.Models.ProductOperations.SupplierFormViewModel
+
+@{
+    var isEdit = Model.Id.HasValue;
+    ViewData["Title"] = isEdit ? "Tedarikçi Düzenle" : "Yeni Tedarikçi";
+}
+
+<div class="nk-content nk-content-fluid pm-form-page">
+    <div class="container-fluid">
+        <div class="nk-content-inner">
+            <div class="nk-content-body">
+                <partial name="_StatusMessage" />
+
+                <div class="nk-block-head nk-block-head-sm">
+                    <div class="nk-block-between">
+                        <div class="nk-block-head-content">
+                            <h3 class="nk-block-title page-title">@(isEdit ? "Tedarikçi Düzenle" : "Yeni Tedarikçi")</h3>
+                            <div class="nk-block-des text-soft">
+                                <p>Tedarikçi kimlik, iletişim ve durum bilgisini yönetin.</p>
+                            </div>
+                        </div>
+                        <div class="nk-block-head-content">
+                            <a asp-action="Index" class="btn btn-outline-light bg-white"><em class="icon ni ni-arrow-left"></em><span>Listeye Dön</span></a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nk-block">
+                <form method="post" asp-action="@(isEdit ? "Edit" : "Create")">
+                    @Html.AntiForgeryToken()
+                    <input asp-for="Id" type="hidden" />
+
+                    <div class="card card-bordered pm-form-card">
+                        <div class="card-inner border-bottom py-2">
+                            <h6 class="title mb-0">Tedarikçi Bilgileri</h6>
+                        </div>
+                        <div class="card-inner">
+                            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                            <div class="row g-gs">
+                                <div class="col-md-4">
+                                    <label asp-for="SupplierCode" class="form-label"></label>
+                                    <input asp-for="SupplierCode" class="form-control" />
+                                    <span asp-validation-for="SupplierCode" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-8">
+                                    <label asp-for="Name" class="form-label"></label>
+                                    <input asp-for="Name" class="form-control" />
+                                    <span asp-validation-for="Name" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-4">
+                                    <label asp-for="TaxNumber" class="form-label"></label>
+                                    <input asp-for="TaxNumber" class="form-control" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label asp-for="Email" class="form-label"></label>
+                                    <input asp-for="Email" class="form-control" />
+                                    <span asp-validation-for="Email" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-4">
+                                    <label asp-for="Phone" class="form-label"></label>
+                                    <input asp-for="Phone" class="form-control" />
+                                </div>
+                                <div class="col-12">
+                                    <label asp-for="Address" class="form-label"></label>
+                                    <textarea asp-for="Address" rows="3" class="form-control"></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check form-switch">
+                                        <input asp-for="IsActive" class="form-check-input" />
+                                        <label asp-for="IsActive" class="form-check-label"></label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 pt-3 border-top d-flex flex-wrap justify-content-end gap-2">
+                                <button type="submit" class="btn btn-primary">Kaydet</button>
+                                <a asp-action="Index" class="btn btn-outline-light">Listeye Dön</a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

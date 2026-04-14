@@ -1,0 +1,17 @@
+@if (TempData["Success"] is string success && !string.IsNullOrWhiteSpace(success))
+{
+    <div class="alert alert-success alert-icon alert-dismissible mt-2">
+        <em class="icon ni ni-check-circle"></em>
+        @success
+        <button class="close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["Error"] is string error && !string.IsNullOrWhiteSpace(error))
+{
+    <div class="alert alert-danger alert-icon alert-dismissible mt-2">
+        <em class="icon ni ni-alert-circle"></em>
+        @error
+        <button class="close" data-bs-dismiss="alert"></button>
+    </div>
+}

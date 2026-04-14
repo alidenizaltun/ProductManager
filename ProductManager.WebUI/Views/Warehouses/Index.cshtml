@@ -1,0 +1,325 @@
+@model ProductManager.WebUI.Models.ProductOperations.WarehouseListPageViewModel
+
+@{
+    ViewData["Title"] = "Depolar";
+}
+
+<div class="nk-content nk-content-fluid pm-list-page">
+    <div class="container-fluid">
+        <div class="nk-content-inner">
+            <div class="nk-content-body">
+                <partial name="_StatusMessage" />
+
+                <div class="nk-block-head nk-block-head-sm">
+                    <div class="nk-block-between">
+                        <div class="nk-block-head-content">
+                            <h3 class="nk-block-title page-title">Depolar</h3>
+                            <div class="nk-block-des text-soft">
+                                <p>Depo lokasyonlarını ve aktiflik durumlarını izleyin.</p>
+                            </div>
+                        </div>
+                        <div class="nk-block-head-content">
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createWarehouseModal">
+                                <em class="icon ni ni-plus"></em><span>Yeni Depo</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nk-block">
+                    <div class="card card-bordered mb-3 pm-filter-card">
+                        <div class="card-inner">
+                            <form method="get" class="row g-gs align-items-end pm-filter-form">
+                                <div class="col-md-4 col-lg-3">
+                                    <label class="form-label" for="includeInactive">Listeleme</label>
+                                    <select id="includeInactive" name="includeInactive" class="form-select">
+                                        <option value="false" selected="@(!Model.IncludeInactive)">Sadece aktif</option>
+                                        <option value="true" selected="@(Model.IncludeInactive)">Tüm kayıtlar</option>
+                                    </select>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="submit" class="btn btn-primary">Uygula</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="card card-bordered card-stretch pm-table-card">
+                    <div class="card-inner border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="title mb-0">Depo Listesi</h6>
+                        <span class="text-soft small">Toplam: @Model.Warehouses.Count</span>
+                    </div>
+                    <div class="card-inner p-0">
+                        <div class="table-responsive">
+                            <table class="table table-tranx mb-0 pm-table">
+                                <thead>
+                                    <tr class="tb-tnx-head">
+                                        <th>Kod</th>
+                                        <th>Ad</th>
+                                        <th>Şehir</th>
+                                        <th>Ülke</th>
+                                        <th>Aktif</th>
+                                        <th class="text-end">İşlem</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                @if (Model.Warehouses.Count == 0)
+                                {
+                                    <tr><td colspan="6" class="text-center py-4">Kayıt bulunamadı.</td></tr>
+                                }
+                                else
+                                {
+                                    @foreach (var row in Model.Warehouses)
+                                    {
+                                        <tr>
+                                            <td><span class="tb-sub">@row.Code</span></td>
+                                            <td><span class="tb-lead">@row.Name</span></td>
+                                            <td>@(row.City ?? "-")</td>
+                                            <td>@(row.Country ?? "-")</td>
+                                            <td>
+                                                @if (row.IsActive)
+                                                {
+                                                    <span class="badge bg-success">Aktif</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">Pasif</span>
+                                                }
+                                            </td>
+                                            <td class="text-end">
+                                                <div class="d-inline-flex gap-2">
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-outline-primary"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#editWarehouseModal"
+                                                            data-edit-warehouse
+                                                            data-id="@row.Id"
+                                                            data-code="@row.Code"
+                                                            data-name="@row.Name"
+                                                            data-description="@row.Description"
+                                                            data-address="@row.Address"
+                                                            data-city="@row.City"
+                                                            data-country="@row.Country"
+                                                            data-is-active="@(row.IsActive ? "true" : "false")">
+                                                        Düzenle
+                                                    </button>
+                                                    <form asp-action="Delete" asp-route-id="@row.Id" method="post" onsubmit="return confirm('Depo silinsin mi?');">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger">Sil</button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                </div>
+
+                <div class="modal fade" id="createWarehouseModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content pm-modal">
+                            <form method="post" asp-action="CreateFromModal">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="includeInactive" value="@Model.IncludeInactive.ToString().ToLowerInvariant()" />
+
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Yeni Depo</h5>
+                                    <a href="#" class="close" data-bs-dismiss="modal" aria-label="Close">
+                                        <em class="icon ni ni-cross"></em>
+                                    </a>
+                                </div>
+
+                                <div class="modal-body">
+                                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                                    <div class="row g-gs">
+                                        <div class="col-md-4">
+                                            <label asp-for="CreateModal.Code" class="form-label"></label>
+                                            <input asp-for="CreateModal.Code" class="form-control" />
+                                            <span asp-validation-for="CreateModal.Code" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <label asp-for="CreateModal.Name" class="form-label"></label>
+                                            <input asp-for="CreateModal.Name" class="form-control" />
+                                            <span asp-validation-for="CreateModal.Name" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label asp-for="CreateModal.City" class="form-label"></label>
+                                            <input asp-for="CreateModal.City" class="form-control" />
+                                            <span asp-validation-for="CreateModal.City" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label asp-for="CreateModal.Country" class="form-label"></label>
+                                            <input asp-for="CreateModal.Country" class="form-control" />
+                                            <span asp-validation-for="CreateModal.Country" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label asp-for="CreateModal.Description" class="form-label"></label>
+                                            <textarea asp-for="CreateModal.Description" rows="2" class="form-control"></textarea>
+                                            <span asp-validation-for="CreateModal.Description" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label asp-for="CreateModal.Address" class="form-label"></label>
+                                            <textarea asp-for="CreateModal.Address" rows="2" class="form-control"></textarea>
+                                            <span asp-validation-for="CreateModal.Address" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="form-check form-switch">
+                                                <input asp-for="CreateModal.IsActive" class="form-check-input" />
+                                                <label asp-for="CreateModal.IsActive" class="form-check-label"></label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="modal-footer bg-light">
+                                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Vazgeç</button>
+                                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal fade" id="editWarehouseModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content pm-modal">
+                            <form method="post" asp-action="EditFromModal">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="includeInactive" value="@Model.IncludeInactive.ToString().ToLowerInvariant()" />
+                                <input asp-for="EditModal.Id" type="hidden" id="editWarehouseId" />
+
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Depo Düzenle</h5>
+                                    <a href="#" class="close" data-bs-dismiss="modal" aria-label="Close">
+                                        <em class="icon ni ni-cross"></em>
+                                    </a>
+                                </div>
+
+                                <div class="modal-body">
+                                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                                    <div class="row g-gs">
+                                        <div class="col-md-4">
+                                            <label asp-for="EditModal.Code" class="form-label"></label>
+                                            <input asp-for="EditModal.Code" class="form-control" id="editWarehouseCode" />
+                                            <span asp-validation-for="EditModal.Code" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <label asp-for="EditModal.Name" class="form-label"></label>
+                                            <input asp-for="EditModal.Name" class="form-control" id="editWarehouseName" />
+                                            <span asp-validation-for="EditModal.Name" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label asp-for="EditModal.City" class="form-label"></label>
+                                            <input asp-for="EditModal.City" class="form-control" id="editWarehouseCity" />
+                                            <span asp-validation-for="EditModal.City" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label asp-for="EditModal.Country" class="form-label"></label>
+                                            <input asp-for="EditModal.Country" class="form-control" id="editWarehouseCountry" />
+                                            <span asp-validation-for="EditModal.Country" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label asp-for="EditModal.Description" class="form-label"></label>
+                                            <textarea asp-for="EditModal.Description" rows="2" class="form-control" id="editWarehouseDescription"></textarea>
+                                            <span asp-validation-for="EditModal.Description" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label asp-for="EditModal.Address" class="form-label"></label>
+                                            <textarea asp-for="EditModal.Address" rows="2" class="form-control" id="editWarehouseAddress"></textarea>
+                                            <span asp-validation-for="EditModal.Address" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="form-check form-switch">
+                                                <input asp-for="EditModal.IsActive" class="form-check-input" id="editWarehouseIsActive" />
+                                                <label asp-for="EditModal.IsActive" class="form-check-label"></label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="modal-footer bg-light">
+                                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Vazgeç</button>
+                                    <button type="submit" class="btn btn-primary">Güncelle</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var editWarehouseIdInput = document.getElementById('editWarehouseId');
+            var editWarehouseCodeInput = document.getElementById('editWarehouseCode');
+            var editWarehouseNameInput = document.getElementById('editWarehouseName');
+            var editWarehouseCityInput = document.getElementById('editWarehouseCity');
+            var editWarehouseCountryInput = document.getElementById('editWarehouseCountry');
+            var editWarehouseDescriptionInput = document.getElementById('editWarehouseDescription');
+            var editWarehouseAddressInput = document.getElementById('editWarehouseAddress');
+            var editWarehouseIsActiveInput = document.getElementById('editWarehouseIsActive');
+
+            var editButtons = document.querySelectorAll('[data-edit-warehouse]');
+            editButtons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    if (editWarehouseIdInput) {
+                        editWarehouseIdInput.value = button.getAttribute('data-id') || '';
+                    }
+
+                    if (editWarehouseCodeInput) {
+                        editWarehouseCodeInput.value = button.getAttribute('data-code') || '';
+                    }
+
+                    if (editWarehouseNameInput) {
+                        editWarehouseNameInput.value = button.getAttribute('data-name') || '';
+                    }
+
+                    if (editWarehouseCityInput) {
+                        editWarehouseCityInput.value = button.getAttribute('data-city') || '';
+                    }
+
+                    if (editWarehouseCountryInput) {
+                        editWarehouseCountryInput.value = button.getAttribute('data-country') || '';
+                    }
+
+                    if (editWarehouseDescriptionInput) {
+                        editWarehouseDescriptionInput.value = button.getAttribute('data-description') || '';
+                    }
+
+                    if (editWarehouseAddressInput) {
+                        editWarehouseAddressInput.value = button.getAttribute('data-address') || '';
+                    }
+
+                    if (editWarehouseIsActiveInput) {
+                        editWarehouseIsActiveInput.checked = (button.getAttribute('data-is-active') || '') === 'true';
+                    }
+                });
+            });
+
+            var shouldOpenCreateModal = @Model.OpenCreateModal.ToString().ToLowerInvariant();
+            var shouldOpenEditModal = @Model.OpenEditModal.ToString().ToLowerInvariant();
+
+            var createModalElement = document.getElementById('createWarehouseModal');
+            var editModalElement = document.getElementById('editWarehouseModal');
+
+            if (createModalElement && shouldOpenCreateModal && window.bootstrap) {
+                window.bootstrap.Modal.getOrCreateInstance(createModalElement).show();
+            }
+
+            if (editModalElement && shouldOpenEditModal && window.bootstrap) {
+                window.bootstrap.Modal.getOrCreateInstance(editModalElement).show();
+            }
+        });
+    </script>
+}

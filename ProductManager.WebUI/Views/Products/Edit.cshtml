@@ -1,0 +1,41 @@
+@model ProductManager.WebUI.Models.ProductOperations.ProductFormViewModel
+
+@{
+    var isEdit = Model.Id.HasValue;
+    ViewData["Title"] = isEdit ? "Ürün Düzenle" : "Yeni Ürün";
+}
+
+<div class="nk-content nk-content-fluid pm-form-page">
+    <div class="container-fluid">
+        <div class="nk-content-inner">
+            <div class="nk-content-body">
+                <partial name="_StatusMessage" />
+
+                <div class="nk-block-head nk-block-head-sm">
+                    <div class="nk-block-between">
+                        <div class="nk-block-head-content">
+                            <h3 class="nk-block-title page-title">@(isEdit ? "Ürün Düzenle" : "Yeni Ürün")</h3>
+                            <div class="nk-block-des text-soft">
+                                <p>Temel ürün, fiyatlama ve stok takip alanlarını doldürün.</p>
+                            </div>
+                        </div>
+                        <div class="nk-block-head-content">
+                            <a asp-action="Index" class="btn btn-outline-light bg-white"><em class="icon ni ni-arrow-left"></em><span>Listeye Dön</span></a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nk-block">
+                <form method="post" asp-action="@(isEdit ? "Edit" : "Create")">
+                    @Html.AntiForgeryToken()
+                    <partial name="_Form" model="Model" />
+                </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

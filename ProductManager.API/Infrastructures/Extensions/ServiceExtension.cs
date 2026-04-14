@@ -5,6 +5,7 @@ using ProductManager.Domain.Abstract;
 using ProductManager.Domain.Entities;
 using ProductManager.EfCore.Context;
 using ProductManager.Repository.Concrete;
+using ProductManager.Repository.Shared.Abstract;
 using ProductManager.Service.Abstract;
 using ProductManager.Service.Concrete;
 using ProductManager.Service.Shared.Abstract;
@@ -292,6 +293,7 @@ namespace ProductManager.API.Infrastructures.Extensions
             service.AddScoped(typeof(Lazy<>), typeof(Lazier<>));
 
             service.AddScoped<IRepositoryManager, RepositoryManager>();
+            service.AddScoped<IProductOperationsRepository, ProductOperationsRepository>();
             service.AddScoped<IServiceManager, ServiceManager>();
 
             service.Scan(selector => selector

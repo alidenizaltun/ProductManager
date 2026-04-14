@@ -1,0 +1,234 @@
+@model ProductManager.WebUI.Models.ProductOperations.ProductListPageViewModel
+
+@{
+    ViewData["Title"] = "Ürünler";
+}
+
+<div class="nk-content nk-content-fluid pm-list-page">
+    <div class="container-fluid">
+        <div class="nk-content-inner">
+            <div class="nk-content-body">
+                <partial name="_StatusMessage" />
+
+                <div class="nk-block-head nk-block-head-sm">
+                    <div class="nk-block-between">
+                        <div class="nk-block-head-content">
+                            <h3 class="nk-block-title page-title">Ürünler</h3>
+                            <div class="nk-block-des text-soft">
+                                <p>Ürün kartları, yayın durumu ve stok takibi ayarlarını yönetin.</p>
+                            </div>
+                        </div>
+                        <div class="nk-block-head-content">
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createProductModal">
+                                <em class="icon ni ni-plus"></em><span>Yeni Ürün</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nk-block">
+                    <div class="card card-bordered mb-3 pm-filter-card">
+                        <div class="card-inner">
+                            <form method="get" class="row g-gs align-items-end pm-filter-form">
+                                <div class="col-lg-4">
+                                    <label class="form-label" for="search">Arama</label>
+                                    <div class="form-control-wrap">
+                                        <div class="form-icon form-icon-right">
+                                            <em class="icon ni ni-search"></em>
+                                        </div>
+                                        <input id="search" name="Search" value="@Model.Filter.Search" class="form-control" placeholder="Kod veya ürün adı" />
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-lg-2">
+                                    <label class="form-label" for="kind">Tür</label>
+                                    <input id="kind" name="Kind" value="@Model.Filter.Kind" class="form-control" type="number" min="1" />
+                                </div>
+                                <div class="col-md-3 col-lg-2">
+                                    <label class="form-label" for="status">Durum</label>
+                                    <input id="status" name="Status" value="@Model.Filter.Status" class="form-control" type="number" min="1" />
+                                </div>
+                                <div class="col-md-3 col-lg-2">
+                                    <label class="form-label" for="isActive">Aktiflik</label>
+                                    <select id="isActive" name="IsActive" class="form-select">
+                                        <option value="">Tüm</option>
+                                        <option value="true" selected="@(Model.Filter.IsActive == true)">Aktif</option>
+                                        <option value="false" selected="@(Model.Filter.IsActive == false)">Pasif</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 col-lg-2">
+                                    <label class="form-label" for="take">Kayıt</label>
+                                    <input id="take" name="Take" value="@Model.Filter.Take" class="form-control" type="number" min="1" max="500" />
+                                </div>
+                                <div class="col-12 d-flex flex-wrap gap-2">
+                                    <button type="submit" class="btn btn-primary">Filtrele</button>
+                                    <a asp-action="Index" class="btn btn-outline-light">Temizle</a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="card card-bordered card-stretch pm-table-card">
+                        <div class="card-inner p-0">
+                            <div class="card-inner border-bottom d-flex justify-content-between align-items-center">
+                                <h6 class="title mb-0">Ürün Listesi</h6>
+                                <span class="text-soft small">Toplam: @Model.Products.Count</span>
+                            </div>
+                        </div>
+                        <div class="card-inner p-0">
+                        <div class="table-responsive">
+                            <table class="table table-tranx mb-0 pm-table">
+                                <thead>
+                                    <tr class="tb-tnx-head">
+                                        <th>Kod</th>
+                                        <th>Ad</th>
+                                        <th>Tür</th>
+                                        <th>Durum</th>
+                                        <th>Aktif</th>
+                                        <th>Güncelleme</th>
+                                        <th class="text-end">İşlem</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                @if (Model.Products.Count == 0)
+                                {
+                                    <tr>
+                                        <td colspan="7" class="text-center py-4">Kayıt bulunamadı.</td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    @foreach (var product in Model.Products)
+                                    {
+                                        <tr>
+                                            <td><span class="tb-sub">@product.ProductCode</span></td>
+                                            <td><span class="tb-lead">@product.Name</span></td>
+                                            <td>@product.Kind</td>
+                                            <td>@product.Status</td>
+                                            <td>
+                                                @if (product.IsActive)
+                                                {
+                                                    <span class="badge bg-success">Aktif</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">Pasif</span>
+                                                }
+                                            </td>
+                                            <td><span class="tb-sub">@(product.UpdatedAt?.ToString("yyyy-MM-dd HH:mm") ?? "-")</span></td>
+                                            <td class="text-end">
+                                                <div class="d-inline-flex gap-2">
+                                                    <a asp-action="Details" asp-route-id="@product.Id" class="btn btn-sm btn-outline-info">Detay</a>
+                                                    <a asp-action="Index"
+                                                       asp-route-editId="@product.Id"
+                                                       asp-route-Search="@Model.Filter.Search"
+                                                       asp-route-Kind="@Model.Filter.Kind"
+                                                       asp-route-Status="@Model.Filter.Status"
+                                                       asp-route-IsActive="@Model.Filter.IsActive"
+                                                       asp-route-Take="@Model.Filter.Take"
+                                                       class="btn btn-sm btn-outline-primary">Düzenle</a>
+                                                    <form asp-action="Delete" asp-route-id="@product.Id" method="post" onsubmit="return confirm('Ürün silinsin mi?');">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger">Sil</button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                </div>
+
+                <div class="modal fade" id="createProductModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-xl" role="document">
+                        <div class="modal-content pm-modal">
+                            <form method="post" asp-action="CreateFromModal">
+                                @Html.AntiForgeryToken()
+                                <input asp-for="Filter.Search" type="hidden" />
+                                <input asp-for="Filter.Kind" type="hidden" />
+                                <input asp-for="Filter.Status" type="hidden" />
+                                <input asp-for="Filter.IsActive" type="hidden" />
+                                <input asp-for="Filter.Take" type="hidden" />
+
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Yeni Ürün</h5>
+                                    <a href="#" class="close" data-bs-dismiss="modal" aria-label="Close">
+                                        <em class="icon ni ni-cross"></em>
+                                    </a>
+                                </div>
+
+                                <div class="modal-body">
+                                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                                    <partial name="_FormFields" for="CreateModal" />
+                                </div>
+
+                                <div class="modal-footer bg-light">
+                                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Vazgeç</button>
+                                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal fade" id="editProductModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-xl" role="document">
+                        <div class="modal-content pm-modal">
+                            <form method="post" asp-action="EditFromModal">
+                                @Html.AntiForgeryToken()
+                                <input asp-for="Filter.Search" type="hidden" />
+                                <input asp-for="Filter.Kind" type="hidden" />
+                                <input asp-for="Filter.Status" type="hidden" />
+                                <input asp-for="Filter.IsActive" type="hidden" />
+                                <input asp-for="Filter.Take" type="hidden" />
+                                <input asp-for="EditModal.Id" type="hidden" />
+
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Ürün Düzenle</h5>
+                                    <a href="#" class="close" data-bs-dismiss="modal" aria-label="Close">
+                                        <em class="icon ni ni-cross"></em>
+                                    </a>
+                                </div>
+
+                                <div class="modal-body">
+                                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                                    <partial name="_FormFields" for="EditModal" />
+                                </div>
+
+                                <div class="modal-footer bg-light">
+                                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Vazgeç</button>
+                                    <button type="submit" class="btn btn-primary">Güncelle</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var shouldOpenCreateModal = @Model.OpenCreateModal.ToString().ToLowerInvariant();
+            var shouldOpenEditModal = @Model.OpenEditModal.ToString().ToLowerInvariant();
+
+            var createModalElement = document.getElementById('createProductModal');
+            var editModalElement = document.getElementById('editProductModal');
+
+            if (createModalElement && shouldOpenCreateModal && window.bootstrap) {
+                window.bootstrap.Modal.getOrCreateInstance(createModalElement).show();
+            }
+
+            if (editModalElement && shouldOpenEditModal && window.bootstrap) {
+                window.bootstrap.Modal.getOrCreateInstance(editModalElement).show();
+            }
+        });
+    </script>
+}

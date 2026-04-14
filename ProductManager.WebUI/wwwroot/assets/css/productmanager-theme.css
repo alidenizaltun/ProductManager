@@ -1,0 +1,111 @@
+:root {
+    --pm-input-border: #d8dfe9;
+    --pm-input-border-focus: #6576ff;
+    --pm-input-bg: #ffffff;
+    --pm-muted-bg: #f6f8fb;
+    --pm-head-text: #526484;
+    --pm-soft-text: #8094ae;
+}
+
+.pm-list-page .pm-filter-card,
+.pm-list-page .pm-table-card,
+.pm-form-page .pm-form-card {
+    box-shadow: 0 1px 3px rgba(20, 38, 63, 0.05);
+}
+
+.pm-list-page .pm-filter-card .card-inner {
+    background: linear-gradient(180deg, #fbfcfe 0%, #f7f9fc 100%);
+}
+
+.pm-list-page .pm-filter-form .form-label,
+.pm-form-page .form-label,
+.pm-modal .form-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--pm-head-text);
+    margin-bottom: 0.35rem;
+}
+
+.pm-list-page .pm-filter-form .form-control,
+.pm-list-page .pm-filter-form .form-select,
+.pm-form-page .form-control,
+.pm-form-page .form-select,
+.pm-modal .form-control,
+.pm-modal .form-select {
+    min-height: 42px;
+    border-radius: 8px;
+    border: 1px solid var(--pm-input-border);
+    background-color: var(--pm-input-bg);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pm-form-page textarea.form-control,
+.pm-modal textarea.form-control {
+    min-height: 86px;
+}
+
+.pm-list-page .pm-filter-form .form-control:focus,
+.pm-list-page .pm-filter-form .form-select:focus,
+.pm-form-page .form-control:focus,
+.pm-form-page .form-select:focus,
+.pm-modal .form-control:focus,
+.pm-modal .form-select:focus {
+    border-color: var(--pm-input-border-focus);
+    box-shadow: 0 0 0 3px rgba(101, 118, 255, 0.14);
+}
+
+.pm-list-page .pm-table thead th {
+    background: var(--pm-muted-bg);
+    color: var(--pm-soft-text);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-bottom: 1px solid #e5e9f2;
+}
+
+.pm-list-page .pm-table tbody td {
+    vertical-align: middle;
+}
+
+.pm-list-page .pm-table .btn,
+.pm-form-page .btn,
+.pm-modal .btn {
+    border-radius: 7px;
+}
+
+.pm-form-page .form-check.form-switch,
+.pm-modal .form-check.form-switch {
+    padding-top: 0.25rem;
+}
+
+.pm-form-page .form-check-input,
+.pm-modal .form-check-input {
+    width: 2.35rem;
+    height: 1.25rem;
+    margin-top: 0.15rem;
+}
+
+.pm-form-page .text-danger,
+.pm-modal .text-danger {
+    font-size: 0.78rem;
+}
+
+.pm-modal .modal-header,
+.pm-modal .modal-footer {
+    border-color: #e5e9f2;
+}
+
+.pm-modal .modal-footer.bg-light {
+    background: #f7f9fc !important;
+}
+
+@media (max-width: 768px) {
+    .pm-list-page .pm-filter-form .form-control,
+    .pm-list-page .pm-filter-form .form-select,
+    .pm-form-page .form-control,
+    .pm-form-page .form-select,
+    .pm-modal .form-control,
+    .pm-modal .form-select {
+        min-height: 40px;
+    }
+}

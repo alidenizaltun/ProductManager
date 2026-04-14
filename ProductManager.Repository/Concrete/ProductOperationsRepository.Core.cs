@@ -1,0 +1,2249 @@
+using Dapper;
+using ProductManager.Shared.Dtos.ProductOperations;
+
+namespace ProductManager.Repository.Concrete
+{
+    public sealed partial class ProductOperationsRepository
+    {
+        public async Task<IReadOnlyList<ProductDto>> GetProductsAsync(ProductFilterDto filter, CancellationToken cancellationToken = default)
+        {
+            var take = NormalizeTake(filter.Take);
+
+            const string sql = @"
+SELECT TOP (@Take)
+    Id,
+    ProductCode,
+    Name,
+    ShortDescription,
+    Description,
+    Kind,
+    Status,
+    Brand,
+    Manufacturer,
+    Barcode,
+    IsActive,
+    IsSellable,
+    IsPurchasable,
+    TrackInventory,
+    DefaultCurrencyCode,
+    UnitOfMeasure,
+    TaxRate,
+    TaxCode,
+    Tags,
+    MetadataJson,
+    CreatedAt,
+    UpdatedAt
+FROM [Product].[Products]
+WHERE IsDeleted = 0
+  AND (
+        @Search IS NULL
+        OR ProductCode LIKE '%' + @Search + '%'
+        OR Name LIKE '%' + @Search + '%'
+      )
+  AND (@Kind IS NULL OR Kind = @Kind)
+  AND (@Status IS NULL OR Status = @Status)
+  AND (@IsActive IS NULL OR IsActive = @IsActive)
+ORDER BY CreatedAt DESC;";
+
+            using var connection = CreateConnection();
+            var products = await connection.QueryAsync<ProductDto>(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        Take = take,
+                        Search = string.IsNullOrWhiteSpace(filter.Search) ? null : filter.Search.Trim(),
+                        filter.Kind,
+                        filter.Status,
+                        filter.IsActive
+                    },
+                    cancellationToken: cancellationToken));
+
+            return products.AsList();
+        }
+
+        public async Task<ProductDto?> GetProductByIdAsync(Guid productId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    ProductCode,
+    Name,
+    ShortDescription,
+    Description,
+    Kind,
+    Status,
+    Brand,
+    Manufacturer,
+    Barcode,
+    IsActive,
+    IsSellable,
+    IsPurchasable,
+    TrackInventory,
+    DefaultCurrencyCode,
+    UnitOfMeasure,
+    TaxRate,
+    TaxCode,
+    Tags,
+    MetadataJson,
+    CreatedAt,
+    UpdatedAt
+FROM [Product].[Products]
+WHERE Id = @ProductId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            return await connection.QuerySingleOrDefaultAsync<ProductDto>(
+                new CommandDefinition(sql, new { ProductId = productId }, cancellationToken: cancellationToken));
+        }
+
+        public async Task<ProductDto> CreateProductAsync(CreateProductRequestDto request, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+INSERT INTO [Product].[Products]
+(
+    Id,
+    ProductCode,
+    Name,
+    ShortDescription,
+    Description,
+    Kind,
+    Status,
+    Brand,
+    Manufacturer,
+    Barcode,
+    IsActive,
+    IsSellable,
+    IsPurchasable,
+    TrackInventory,
+    DefaultCurrencyCode,
+    UnitOfMeasure,
+    TaxRate,
+    TaxCode,
+    Tags,
+    MetadataJson,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @ProductCode,
+    @Name,
+    @ShortDescription,
+    @Description,
+    @Kind,
+    @Status,
+    @Brand,
+    @Manufacturer,
+    @Barcode,
+    @IsActive,
+    @IsSellable,
+    @IsPurchasable,
+    @TrackInventory,
+    @DefaultCurrencyCode,
+    @UnitOfMeasure,
+    @TaxRate,
+    @TaxCode,
+    @Tags,
+    @MetadataJson,
+    @Now,
+    0
+);";
+
+            var productId = Guid.NewGuid();
+
+            using var connection = CreateConnection();
+            await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        Id = productId,
+                        request.ProductCode,
+                        request.Name,
+                        request.ShortDescription,
+                        request.Description,
+                        request.Kind,
+                        request.Status,
+                        request.Brand,
+                        request.Manufacturer,
+                        request.Barcode,
+                        request.IsActive,
+                        request.IsSellable,
+                        request.IsPurchasable,
+                        request.TrackInventory,
+                        request.DefaultCurrencyCode,
+                        request.UnitOfMeasure,
+                        request.TaxRate,
+                        request.TaxCode,
+                        request.Tags,
+                        request.MetadataJson,
+                        Now = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken));
+
+            return await GetProductByIdAsync(productId, cancellationToken)
+                ?? throw new InvalidOperationException("Product could not be loaded after insert.");
+        }
+
+        public async Task<bool> UpdateProductAsync(Guid productId, UpdateProductRequestDto request, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+UPDATE [Product].[Products]
+SET
+    ProductCode = @ProductCode,
+    Name = @Name,
+    ShortDescription = @ShortDescription,
+    Description = @Description,
+    Kind = @Kind,
+    Status = @Status,
+    Brand = @Brand,
+    Manufacturer = @Manufacturer,
+    Barcode = @Barcode,
+    IsActive = @IsActive,
+    IsSellable = @IsSellable,
+    IsPurchasable = @IsPurchasable,
+    TrackInventory = @TrackInventory,
+    DefaultCurrencyCode = @DefaultCurrencyCode,
+    UnitOfMeasure = @UnitOfMeasure,
+    TaxRate = @TaxRate,
+    TaxCode = @TaxCode,
+    Tags = @Tags,
+    MetadataJson = @MetadataJson,
+    UpdatedAt = @Now
+WHERE Id = @ProductId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        ProductId = productId,
+                        request.ProductCode,
+                        request.Name,
+                        request.ShortDescription,
+                        request.Description,
+                        request.Kind,
+                        request.Status,
+                        request.Brand,
+                        request.Manufacturer,
+                        request.Barcode,
+                        request.IsActive,
+                        request.IsSellable,
+                        request.IsPurchasable,
+                        request.TrackInventory,
+                        request.DefaultCurrencyCode,
+                        request.UnitOfMeasure,
+                        request.TaxRate,
+                        request.TaxCode,
+                        request.Tags,
+                        request.MetadataJson,
+                        Now = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken));
+
+            return affectedRows > 0;
+        }
+
+        public async Task<bool> DeleteProductAsync(Guid productId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+UPDATE [Product].[Products]
+SET
+    IsDeleted = 1,
+    DeletedAt = @Now,
+    UpdatedAt = @Now
+WHERE Id = @ProductId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(sql, new { ProductId = productId, Now = DateTime.UtcNow }, cancellationToken: cancellationToken));
+
+            return affectedRows > 0;
+        }
+
+        public async Task<IReadOnlyList<ProductAttributeDefinitionDto>> GetAttributeDefinitionsAsync(CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    [Key],
+    DisplayName,
+    DataType,
+    IsRequired,
+    IsFilterable,
+    IsVariantAxis,
+    AllowedValuesJson,
+    ValidationRuleJson,
+    CreatedAt,
+    UpdatedAt
+FROM [Product].[ProductAttributeDefinitions]
+WHERE IsDeleted = 0
+ORDER BY DisplayName;";
+
+            using var connection = CreateConnection();
+            var definitions = await connection.QueryAsync<ProductAttributeDefinitionDto>(
+                new CommandDefinition(sql, cancellationToken: cancellationToken));
+
+            return definitions.AsList();
+        }
+
+        public async Task<ProductAttributeDefinitionDto?> GetAttributeDefinitionByIdAsync(Guid attributeDefinitionId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    [Key],
+    DisplayName,
+    DataType,
+    IsRequired,
+    IsFilterable,
+    IsVariantAxis,
+    AllowedValuesJson,
+    ValidationRuleJson,
+    CreatedAt,
+    UpdatedAt
+FROM [Product].[ProductAttributeDefinitions]
+WHERE Id = @AttributeDefinitionId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            return await connection.QuerySingleOrDefaultAsync<ProductAttributeDefinitionDto>(
+                new CommandDefinition(sql, new { AttributeDefinitionId = attributeDefinitionId }, cancellationToken: cancellationToken));
+        }
+
+        public async Task<ProductAttributeDefinitionDto> CreateAttributeDefinitionAsync(CreateProductAttributeDefinitionRequestDto request, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+INSERT INTO [Product].[ProductAttributeDefinitions]
+(
+    Id,
+    [Key],
+    DisplayName,
+    DataType,
+    IsRequired,
+    IsFilterable,
+    IsVariantAxis,
+    AllowedValuesJson,
+    ValidationRuleJson,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @Key,
+    @DisplayName,
+    @DataType,
+    @IsRequired,
+    @IsFilterable,
+    @IsVariantAxis,
+    @AllowedValuesJson,
+    @ValidationRuleJson,
+    @Now,
+    0
+);";
+
+            var definitionId = Guid.NewGuid();
+
+            using var connection = CreateConnection();
+            await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        Id = definitionId,
+                        request.Key,
+                        request.DisplayName,
+                        request.DataType,
+                        request.IsRequired,
+                        request.IsFilterable,
+                        request.IsVariantAxis,
+                        request.AllowedValuesJson,
+                        request.ValidationRuleJson,
+                        Now = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken));
+
+            return await GetAttributeDefinitionByIdAsync(definitionId, cancellationToken)
+                ?? throw new InvalidOperationException("Attribute definition could not be loaded after insert.");
+        }
+
+        public async Task<bool> UpdateAttributeDefinitionAsync(Guid attributeDefinitionId, UpdateProductAttributeDefinitionRequestDto request, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+UPDATE [Product].[ProductAttributeDefinitions]
+SET
+    [Key] = @Key,
+    DisplayName = @DisplayName,
+    DataType = @DataType,
+    IsRequired = @IsRequired,
+    IsFilterable = @IsFilterable,
+    IsVariantAxis = @IsVariantAxis,
+    AllowedValuesJson = @AllowedValuesJson,
+    ValidationRuleJson = @ValidationRuleJson,
+    UpdatedAt = @Now
+WHERE Id = @AttributeDefinitionId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        AttributeDefinitionId = attributeDefinitionId,
+                        request.Key,
+                        request.DisplayName,
+                        request.DataType,
+                        request.IsRequired,
+                        request.IsFilterable,
+                        request.IsVariantAxis,
+                        request.AllowedValuesJson,
+                        request.ValidationRuleJson,
+                        Now = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken));
+
+            return affectedRows > 0;
+        }
+
+        public async Task<bool> DeleteAttributeDefinitionAsync(Guid attributeDefinitionId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+UPDATE [Product].[ProductAttributeDefinitions]
+SET
+    IsDeleted = 1,
+    DeletedAt = @Now,
+    UpdatedAt = @Now
+WHERE Id = @AttributeDefinitionId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(sql, new { AttributeDefinitionId = attributeDefinitionId, Now = DateTime.UtcNow }, cancellationToken: cancellationToken));
+
+            return affectedRows > 0;
+        }
+
+        public async Task<IReadOnlyList<ProductAttributeValueDto>> GetProductAttributeValuesAsync(Guid productId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    ProductId,
+    AttributeDefinitionId,
+    ValueText,
+    ValueNumber,
+    ValueBool,
+    ValueDate,
+    ValueJson,
+    CreatedAt,
+    UpdatedAt
+FROM [Product].[ProductAttributeValues]
+WHERE ProductId = @ProductId
+  AND IsDeleted = 0
+ORDER BY CreatedAt DESC;";
+
+            using var connection = CreateConnection();
+            var values = await connection.QueryAsync<ProductAttributeValueDto>(
+                new CommandDefinition(sql, new { ProductId = productId }, cancellationToken: cancellationToken));
+
+            return values.AsList();
+        }
+
+        public async Task<ProductAttributeValueDto?> GetAttributeValueByIdAsync(Guid attributeValueId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    ProductId,
+    AttributeDefinitionId,
+    ValueText,
+    ValueNumber,
+    ValueBool,
+    ValueDate,
+    ValueJson,
+    CreatedAt,
+    UpdatedAt
+FROM [Product].[ProductAttributeValues]
+WHERE Id = @AttributeValueId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            return await connection.QuerySingleOrDefaultAsync<ProductAttributeValueDto>(
+                new CommandDefinition(sql, new { AttributeValueId = attributeValueId }, cancellationToken: cancellationToken));
+        }
+
+        public async Task<ProductAttributeValueDto> CreateAttributeValueAsync(CreateProductAttributeValueRequestDto request, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+INSERT INTO [Product].[ProductAttributeValues]
+(
+    Id,
+    ProductId,
+    AttributeDefinitionId,
+    ValueText,
+    ValueNumber,
+    ValueBool,
+    ValueDate,
+    ValueJson,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @ProductId,
+    @AttributeDefinitionId,
+    @ValueText,
+    @ValueNumber,
+    @ValueBool,
+    @ValueDate,
+    @ValueJson,
+    @Now,
+    0
+);";
+
+            var attributeValueId = Guid.NewGuid();
+
+            using var connection = CreateConnection();
+            await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        Id = attributeValueId,
+                        request.ProductId,
+                        request.AttributeDefinitionId,
+                        request.ValueText,
+                        request.ValueNumber,
+                        request.ValueBool,
+                        request.ValueDate,
+                        request.ValueJson,
+                        Now = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken));
+
+            return await GetAttributeValueByIdAsync(attributeValueId, cancellationToken)
+                ?? throw new InvalidOperationException("Attribute value could not be loaded after insert.");
+        }
+
+        public async Task<bool> UpdateAttributeValueAsync(Guid attributeValueId, UpdateProductAttributeValueRequestDto request, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+UPDATE [Product].[ProductAttributeValues]
+SET
+    ValueText = @ValueText,
+    ValueNumber = @ValueNumber,
+    ValueBool = @ValueBool,
+    ValueDate = @ValueDate,
+    ValueJson = @ValueJson,
+    UpdatedAt = @Now
+WHERE Id = @AttributeValueId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        AttributeValueId = attributeValueId,
+                        request.ValueText,
+                        request.ValueNumber,
+                        request.ValueBool,
+                        request.ValueDate,
+                        request.ValueJson,
+                        Now = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken));
+
+            return affectedRows > 0;
+        }
+
+        public async Task<bool> DeleteAttributeValueAsync(Guid attributeValueId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+UPDATE [Product].[ProductAttributeValues]
+SET
+    IsDeleted = 1,
+    DeletedAt = @Now,
+    UpdatedAt = @Now
+WHERE Id = @AttributeValueId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(sql, new { AttributeValueId = attributeValueId, Now = DateTime.UtcNow }, cancellationToken: cancellationToken));
+
+            return affectedRows > 0;
+        }
+
+        public async Task<IReadOnlyList<ProductCategoryDto>> GetCategoriesAsync(CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    Code,
+    Name,
+    Description,
+    ParentCategoryId,
+    CreatedAt,
+    UpdatedAt
+FROM [Product].[ProductCategories]
+WHERE IsDeleted = 0
+ORDER BY Name;";
+
+            using var connection = CreateConnection();
+            var categories = await connection.QueryAsync<ProductCategoryDto>(
+                new CommandDefinition(sql, cancellationToken: cancellationToken));
+
+            return categories.AsList();
+        }
+
+        public async Task<ProductCategoryDto?> GetCategoryByIdAsync(Guid categoryId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    Code,
+    Name,
+    Description,
+    ParentCategoryId,
+    CreatedAt,
+    UpdatedAt
+FROM [Product].[ProductCategories]
+WHERE Id = @CategoryId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            return await connection.QuerySingleOrDefaultAsync<ProductCategoryDto>(
+                new CommandDefinition(sql, new { CategoryId = categoryId }, cancellationToken: cancellationToken));
+        }
+
+        public async Task<ProductCategoryDto> CreateCategoryAsync(CreateProductCategoryRequestDto request, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+INSERT INTO [Product].[ProductCategories]
+(
+    Id,
+    Code,
+    Name,
+    Description,
+    ParentCategoryId,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @Code,
+    @Name,
+    @Description,
+    @ParentCategoryId,
+    @Now,
+    0
+);";
+
+            var categoryId = Guid.NewGuid();
+
+            using var connection = CreateConnection();
+            await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        Id = categoryId,
+                        request.Code,
+                        request.Name,
+                        request.Description,
+                        request.ParentCategoryId,
+                        Now = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken));
+
+            return await GetCategoryByIdAsync(categoryId, cancellationToken)
+                ?? throw new InvalidOperationException("Category could not be loaded after insert.");
+        }
+
+        public async Task<bool> UpdateCategoryAsync(Guid categoryId, UpdateProductCategoryRequestDto request, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+UPDATE [Product].[ProductCategories]
+SET
+    Code = @Code,
+    Name = @Name,
+    Description = @Description,
+    ParentCategoryId = @ParentCategoryId,
+    UpdatedAt = @Now
+WHERE Id = @CategoryId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        CategoryId = categoryId,
+                        request.Code,
+                        request.Name,
+                        request.Description,
+                        request.ParentCategoryId,
+                        Now = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken));
+
+            return affectedRows > 0;
+        }
+
+        public async Task<bool> DeleteCategoryAsync(Guid categoryId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+UPDATE [Product].[ProductCategories]
+SET
+    IsDeleted = 1,
+    DeletedAt = @Now,
+    UpdatedAt = @Now
+WHERE Id = @CategoryId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(sql, new { CategoryId = categoryId, Now = DateTime.UtcNow }, cancellationToken: cancellationToken));
+
+            return affectedRows > 0;
+        }
+
+        public async Task<IReadOnlyList<ProductCategoryMapDto>> GetProductCategoryMapsAsync(Guid productId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    ProductId,
+    ProductCategoryId,
+    IsPrimary,
+    SortOrder,
+    CreatedAt,
+    UpdatedAt
+FROM [Product].[ProductCategoryMaps]
+WHERE ProductId = @ProductId
+  AND IsDeleted = 0
+ORDER BY IsPrimary DESC, SortOrder, CreatedAt DESC;";
+
+            using var connection = CreateConnection();
+            var maps = await connection.QueryAsync<ProductCategoryMapDto>(
+                new CommandDefinition(sql, new { ProductId = productId }, cancellationToken: cancellationToken));
+
+            return maps.AsList();
+        }
+
+        public async Task<ProductCategoryMapDto?> GetCategoryMapByIdAsync(Guid categoryMapId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    ProductId,
+    ProductCategoryId,
+    IsPrimary,
+    SortOrder,
+    CreatedAt,
+    UpdatedAt
+FROM [Product].[ProductCategoryMaps]
+WHERE Id = @CategoryMapId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            return await connection.QuerySingleOrDefaultAsync<ProductCategoryMapDto>(
+                new CommandDefinition(sql, new { CategoryMapId = categoryMapId }, cancellationToken: cancellationToken));
+        }
+
+        public async Task<ProductCategoryMapDto> CreateCategoryMapAsync(CreateProductCategoryMapRequestDto request, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+INSERT INTO [Product].[ProductCategoryMaps]
+(
+    Id,
+    ProductId,
+    ProductCategoryId,
+    IsPrimary,
+    SortOrder,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @ProductId,
+    @ProductCategoryId,
+    @IsPrimary,
+    @SortOrder,
+    @Now,
+    0
+);";
+
+            var mapId = Guid.NewGuid();
+
+            using var connection = CreateConnection();
+            await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        Id = mapId,
+                        request.ProductId,
+                        request.ProductCategoryId,
+                        request.IsPrimary,
+                        request.SortOrder,
+                        Now = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken));
+
+            return await GetCategoryMapByIdAsync(mapId, cancellationToken)
+                ?? throw new InvalidOperationException("Category map could not be loaded after insert.");
+        }
+
+        public async Task<bool> UpdateCategoryMapAsync(Guid categoryMapId, UpdateProductCategoryMapRequestDto request, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+UPDATE [Product].[ProductCategoryMaps]
+SET
+    IsPrimary = @IsPrimary,
+    SortOrder = @SortOrder,
+    UpdatedAt = @Now
+WHERE Id = @CategoryMapId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        CategoryMapId = categoryMapId,
+                        request.IsPrimary,
+                        request.SortOrder,
+                        Now = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken));
+
+            return affectedRows > 0;
+        }
+
+        public async Task<bool> DeleteCategoryMapAsync(Guid categoryMapId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+UPDATE [Product].[ProductCategoryMaps]
+SET
+    IsDeleted = 1,
+    DeletedAt = @Now,
+    UpdatedAt = @Now
+WHERE Id = @CategoryMapId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(sql, new { CategoryMapId = categoryMapId, Now = DateTime.UtcNow }, cancellationToken: cancellationToken));
+
+            return affectedRows > 0;
+        }
+
+        public async Task<IReadOnlyList<ProductMediaDto>> GetProductMediaAsync(Guid productId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    ProductId,
+    MediaType,
+    Url,
+    ThumbnailUrl,
+    MimeType,
+    AltText,
+    IsPrimary,
+    SortOrder,
+    CreatedAt,
+    UpdatedAt
+FROM [Product].[ProductMediaItems]
+WHERE ProductId = @ProductId
+  AND IsDeleted = 0
+ORDER BY IsPrimary DESC, SortOrder, CreatedAt DESC;";
+
+            using var connection = CreateConnection();
+            var mediaItems = await connection.QueryAsync<ProductMediaDto>(
+                new CommandDefinition(sql, new { ProductId = productId }, cancellationToken: cancellationToken));
+
+            return mediaItems.AsList();
+        }
+
+        public async Task<ProductMediaDto?> GetMediaByIdAsync(Guid mediaId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    ProductId,
+    MediaType,
+    Url,
+    ThumbnailUrl,
+    MimeType,
+    AltText,
+    IsPrimary,
+    SortOrder,
+    CreatedAt,
+    UpdatedAt
+FROM [Product].[ProductMediaItems]
+WHERE Id = @MediaId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            return await connection.QuerySingleOrDefaultAsync<ProductMediaDto>(
+                new CommandDefinition(sql, new { MediaId = mediaId }, cancellationToken: cancellationToken));
+        }
+
+        public async Task<ProductMediaDto> CreateMediaAsync(CreateProductMediaRequestDto request, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+INSERT INTO [Product].[ProductMediaItems]
+(
+    Id,
+    ProductId,
+    MediaType,
+    Url,
+    ThumbnailUrl,
+    MimeType,
+    AltText,
+    IsPrimary,
+    SortOrder,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @ProductId,
+    @MediaType,
+    @Url,
+    @ThumbnailUrl,
+    @MimeType,
+    @AltText,
+    @IsPrimary,
+    @SortOrder,
+    @Now,
+    0
+);";
+
+            var mediaId = Guid.NewGuid();
+
+            using var connection = CreateConnection();
+            await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        Id = mediaId,
+                        request.ProductId,
+                        request.MediaType,
+                        request.Url,
+                        request.ThumbnailUrl,
+                        request.MimeType,
+                        request.AltText,
+                        request.IsPrimary,
+                        request.SortOrder,
+                        Now = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken));
+
+            return await GetMediaByIdAsync(mediaId, cancellationToken)
+                ?? throw new InvalidOperationException("Media item could not be loaded after insert.");
+        }
+
+        public async Task<bool> UpdateMediaAsync(Guid mediaId, UpdateProductMediaRequestDto request, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+UPDATE [Product].[ProductMediaItems]
+SET
+    MediaType = @MediaType,
+    Url = @Url,
+    ThumbnailUrl = @ThumbnailUrl,
+    MimeType = @MimeType,
+    AltText = @AltText,
+    IsPrimary = @IsPrimary,
+    SortOrder = @SortOrder,
+    UpdatedAt = @Now
+WHERE Id = @MediaId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        MediaId = mediaId,
+                        request.MediaType,
+                        request.Url,
+                        request.ThumbnailUrl,
+                        request.MimeType,
+                        request.AltText,
+                        request.IsPrimary,
+                        request.SortOrder,
+                        Now = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken));
+
+            return affectedRows > 0;
+        }
+
+        public async Task<bool> DeleteMediaAsync(Guid mediaId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+UPDATE [Product].[ProductMediaItems]
+SET
+    IsDeleted = 1,
+    DeletedAt = @Now,
+    UpdatedAt = @Now
+WHERE Id = @MediaId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(sql, new { MediaId = mediaId, Now = DateTime.UtcNow }, cancellationToken: cancellationToken));
+
+            return affectedRows > 0;
+        }
+
+        public async Task<IReadOnlyList<ProductBundleItemDto>> GetBundleItemsAsync(Guid bundleProductId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    BundleProductId,
+    ChildProductId,
+    ChildVariantId,
+    Quantity,
+    IsOptional,
+    RuleJson,
+    CreatedAt,
+    UpdatedAt
+FROM [Product].[ProductBundleItems]
+WHERE BundleProductId = @BundleProductId
+  AND IsDeleted = 0
+ORDER BY CreatedAt DESC;";
+
+            using var connection = CreateConnection();
+            var items = await connection.QueryAsync<ProductBundleItemDto>(
+                new CommandDefinition(sql, new { BundleProductId = bundleProductId }, cancellationToken: cancellationToken));
+
+            return items.AsList();
+        }
+
+        public async Task<ProductBundleItemDto?> GetBundleItemByIdAsync(Guid bundleItemId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    BundleProductId,
+    ChildProductId,
+    ChildVariantId,
+    Quantity,
+    IsOptional,
+    RuleJson,
+    CreatedAt,
+    UpdatedAt
+FROM [Product].[ProductBundleItems]
+WHERE Id = @BundleItemId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            return await connection.QuerySingleOrDefaultAsync<ProductBundleItemDto>(
+                new CommandDefinition(sql, new { BundleItemId = bundleItemId }, cancellationToken: cancellationToken));
+        }
+
+        public async Task<ProductBundleItemDto> CreateBundleItemAsync(CreateProductBundleItemRequestDto request, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+INSERT INTO [Product].[ProductBundleItems]
+(
+    Id,
+    BundleProductId,
+    ChildProductId,
+    ChildVariantId,
+    Quantity,
+    IsOptional,
+    RuleJson,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @BundleProductId,
+    @ChildProductId,
+    @ChildVariantId,
+    @Quantity,
+    @IsOptional,
+    @RuleJson,
+    @Now,
+    0
+);";
+
+            var bundleItemId = Guid.NewGuid();
+
+            using var connection = CreateConnection();
+            await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        Id = bundleItemId,
+                        request.BundleProductId,
+                        request.ChildProductId,
+                        request.ChildVariantId,
+                        request.Quantity,
+                        request.IsOptional,
+                        request.RuleJson,
+                        Now = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken));
+
+            return await GetBundleItemByIdAsync(bundleItemId, cancellationToken)
+                ?? throw new InvalidOperationException("Bundle item could not be loaded after insert.");
+        }
+
+        public async Task<bool> UpdateBundleItemAsync(Guid bundleItemId, UpdateProductBundleItemRequestDto request, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+UPDATE [Product].[ProductBundleItems]
+SET
+    ChildProductId = @ChildProductId,
+    ChildVariantId = @ChildVariantId,
+    Quantity = @Quantity,
+    IsOptional = @IsOptional,
+    RuleJson = @RuleJson,
+    UpdatedAt = @Now
+WHERE Id = @BundleItemId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        BundleItemId = bundleItemId,
+                        request.ChildProductId,
+                        request.ChildVariantId,
+                        request.Quantity,
+                        request.IsOptional,
+                        request.RuleJson,
+                        Now = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken));
+
+            return affectedRows > 0;
+        }
+
+        public async Task<bool> DeleteBundleItemAsync(Guid bundleItemId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+UPDATE [Product].[ProductBundleItems]
+SET
+    IsDeleted = 1,
+    DeletedAt = @Now,
+    UpdatedAt = @Now
+WHERE Id = @BundleItemId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(sql, new { BundleItemId = bundleItemId, Now = DateTime.UtcNow }, cancellationToken: cancellationToken));
+
+            return affectedRows > 0;
+        }
+
+        public async Task<IReadOnlyList<ProductVariantDto>> GetProductVariantsAsync(Guid productId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    ProductId,
+    Sku,
+    Barcode,
+    Name,
+    OptionValuesJson,
+    AdditionalPrice,
+    AdditionalCost,
+    IsActive,
+    CreatedAt,
+    UpdatedAt
+FROM [Product].[ProductVariants]
+WHERE ProductId = @ProductId
+  AND IsDeleted = 0
+ORDER BY CreatedAt DESC;";
+
+            using var connection = CreateConnection();
+            var variants = await connection.QueryAsync<ProductVariantDto>(
+                new CommandDefinition(sql, new { ProductId = productId }, cancellationToken: cancellationToken));
+
+            return variants.AsList();
+        }
+
+        public async Task<ProductVariantDto?> GetVariantByIdAsync(Guid variantId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    ProductId,
+    Sku,
+    Barcode,
+    Name,
+    OptionValuesJson,
+    AdditionalPrice,
+    AdditionalCost,
+    IsActive,
+    CreatedAt,
+    UpdatedAt
+FROM [Product].[ProductVariants]
+WHERE Id = @VariantId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            return await connection.QuerySingleOrDefaultAsync<ProductVariantDto>(
+                new CommandDefinition(sql, new { VariantId = variantId }, cancellationToken: cancellationToken));
+        }
+
+        public async Task<ProductVariantDto> CreateVariantAsync(CreateProductVariantRequestDto request, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+INSERT INTO [Product].[ProductVariants]
+(
+    Id,
+    ProductId,
+    Sku,
+    Barcode,
+    Name,
+    OptionValuesJson,
+    AdditionalPrice,
+    AdditionalCost,
+    IsActive,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @ProductId,
+    @Sku,
+    @Barcode,
+    @Name,
+    @OptionValuesJson,
+    @AdditionalPrice,
+    @AdditionalCost,
+    @IsActive,
+    @Now,
+    0
+);";
+
+            var variantId = Guid.NewGuid();
+
+            using var connection = CreateConnection();
+            await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        Id = variantId,
+                        request.ProductId,
+                        request.Sku,
+                        request.Barcode,
+                        request.Name,
+                        request.OptionValuesJson,
+                        request.AdditionalPrice,
+                        request.AdditionalCost,
+                        request.IsActive,
+                        Now = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken));
+
+            return await GetVariantByIdAsync(variantId, cancellationToken)
+                ?? throw new InvalidOperationException("Product variant could not be loaded after insert.");
+        }
+
+        public async Task<bool> UpdateVariantAsync(Guid variantId, UpdateProductVariantRequestDto request, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+UPDATE [Product].[ProductVariants]
+SET
+    Sku = @Sku,
+    Barcode = @Barcode,
+    Name = @Name,
+    OptionValuesJson = @OptionValuesJson,
+    AdditionalPrice = @AdditionalPrice,
+    AdditionalCost = @AdditionalCost,
+    IsActive = @IsActive,
+    UpdatedAt = @Now
+WHERE Id = @VariantId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        VariantId = variantId,
+                        request.Sku,
+                        request.Barcode,
+                        request.Name,
+                        request.OptionValuesJson,
+                        request.AdditionalPrice,
+                        request.AdditionalCost,
+                        request.IsActive,
+                        Now = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken));
+
+            return affectedRows > 0;
+        }
+
+        public async Task<bool> DeleteVariantAsync(Guid variantId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+UPDATE [Product].[ProductVariants]
+SET
+    IsDeleted = 1,
+    DeletedAt = @Now,
+    UpdatedAt = @Now
+WHERE Id = @VariantId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(sql, new { VariantId = variantId, Now = DateTime.UtcNow }, cancellationToken: cancellationToken));
+
+            return affectedRows > 0;
+        }
+
+        public async Task<IReadOnlyList<ProductPriceDto>> GetProductPricesAsync(Guid productId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    ProductId,
+    ProductVariantId,
+    PriceType,
+    Amount,
+    CompareAtAmount,
+    CurrencyCode,
+    MinQuantity,
+    MaxQuantity,
+    ValidFrom,
+    ValidTo,
+    SalesChannel,
+    CustomerGroupCode,
+    CreatedAt,
+    UpdatedAt
+FROM [Product].[ProductPrices]
+WHERE ProductId = @ProductId
+  AND IsDeleted = 0
+ORDER BY CreatedAt DESC;";
+
+            using var connection = CreateConnection();
+            var prices = await connection.QueryAsync<ProductPriceDto>(
+                new CommandDefinition(sql, new { ProductId = productId }, cancellationToken: cancellationToken));
+
+            return prices.AsList();
+        }
+
+        public async Task<ProductPriceDto?> GetPriceByIdAsync(Guid priceId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    ProductId,
+    ProductVariantId,
+    PriceType,
+    Amount,
+    CompareAtAmount,
+    CurrencyCode,
+    MinQuantity,
+    MaxQuantity,
+    ValidFrom,
+    ValidTo,
+    SalesChannel,
+    CustomerGroupCode,
+    CreatedAt,
+    UpdatedAt
+FROM [Product].[ProductPrices]
+WHERE Id = @PriceId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            return await connection.QuerySingleOrDefaultAsync<ProductPriceDto>(
+                new CommandDefinition(sql, new { PriceId = priceId }, cancellationToken: cancellationToken));
+        }
+
+        public async Task<ProductPriceDto> CreatePriceAsync(CreateProductPriceRequestDto request, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+INSERT INTO [Product].[ProductPrices]
+(
+    Id,
+    ProductId,
+    ProductVariantId,
+    PriceType,
+    Amount,
+    CompareAtAmount,
+    CurrencyCode,
+    MinQuantity,
+    MaxQuantity,
+    ValidFrom,
+    ValidTo,
+    SalesChannel,
+    CustomerGroupCode,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @ProductId,
+    @ProductVariantId,
+    @PriceType,
+    @Amount,
+    @CompareAtAmount,
+    @CurrencyCode,
+    @MinQuantity,
+    @MaxQuantity,
+    @ValidFrom,
+    @ValidTo,
+    @SalesChannel,
+    @CustomerGroupCode,
+    @Now,
+    0
+);";
+
+            var priceId = Guid.NewGuid();
+
+            using var connection = CreateConnection();
+            await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        Id = priceId,
+                        request.ProductId,
+                        request.ProductVariantId,
+                        request.PriceType,
+                        request.Amount,
+                        request.CompareAtAmount,
+                        request.CurrencyCode,
+                        request.MinQuantity,
+                        request.MaxQuantity,
+                        request.ValidFrom,
+                        request.ValidTo,
+                        request.SalesChannel,
+                        request.CustomerGroupCode,
+                        Now = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken));
+
+            return await GetPriceByIdAsync(priceId, cancellationToken)
+                ?? throw new InvalidOperationException("Product price could not be loaded after insert.");
+        }
+
+        public async Task<bool> UpdatePriceAsync(Guid priceId, UpdateProductPriceRequestDto request, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+UPDATE [Product].[ProductPrices]
+SET
+    ProductVariantId = @ProductVariantId,
+    PriceType = @PriceType,
+    Amount = @Amount,
+    CompareAtAmount = @CompareAtAmount,
+    CurrencyCode = @CurrencyCode,
+    MinQuantity = @MinQuantity,
+    MaxQuantity = @MaxQuantity,
+    ValidFrom = @ValidFrom,
+    ValidTo = @ValidTo,
+    SalesChannel = @SalesChannel,
+    CustomerGroupCode = @CustomerGroupCode,
+    UpdatedAt = @Now
+WHERE Id = @PriceId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        PriceId = priceId,
+                        request.ProductVariantId,
+                        request.PriceType,
+                        request.Amount,
+                        request.CompareAtAmount,
+                        request.CurrencyCode,
+                        request.MinQuantity,
+                        request.MaxQuantity,
+                        request.ValidFrom,
+                        request.ValidTo,
+                        request.SalesChannel,
+                        request.CustomerGroupCode,
+                        Now = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken));
+
+            return affectedRows > 0;
+        }
+
+        public async Task<bool> DeletePriceAsync(Guid priceId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+UPDATE [Product].[ProductPrices]
+SET
+    IsDeleted = 1,
+    DeletedAt = @Now,
+    UpdatedAt = @Now
+WHERE Id = @PriceId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(sql, new { PriceId = priceId, Now = DateTime.UtcNow }, cancellationToken: cancellationToken));
+
+            return affectedRows > 0;
+        }
+
+        public async Task<IReadOnlyList<ProductInventoryDto>> GetProductInventoriesAsync(ProductInventoryFilterDto filter, CancellationToken cancellationToken = default)
+        {
+            var take = NormalizeTake(filter.Take);
+
+            const string sql = @"
+SELECT TOP (@Take)
+    Id,
+    ProductId,
+    ProductVariantId,
+    WarehouseId,
+    WarehouseCode,
+    QuantityOnHand,
+    QuantityReserved,
+    QuantityOnHand - QuantityReserved AS QuantityAvailable,
+    ReorderPoint,
+    ReorderQuantity,
+    InventoryPolicy,
+    CreatedAt,
+    UpdatedAt
+FROM [Product].[ProductInventories]
+WHERE IsDeleted = 0
+  AND (@ProductId IS NULL OR ProductId = @ProductId)
+  AND (@ProductVariantId IS NULL OR ProductVariantId = @ProductVariantId)
+  AND (@WarehouseId IS NULL OR WarehouseId = @WarehouseId)
+ORDER BY UpdatedAt DESC, CreatedAt DESC;";
+
+            using var connection = CreateConnection();
+            var inventories = await connection.QueryAsync<ProductInventoryDto>(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        Take = take,
+                        filter.ProductId,
+                        filter.ProductVariantId,
+                        filter.WarehouseId
+                    },
+                    cancellationToken: cancellationToken));
+
+            return inventories.AsList();
+        }
+
+        public async Task<ProductInventoryDto?> GetInventoryByIdAsync(Guid inventoryId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    ProductId,
+    ProductVariantId,
+    WarehouseId,
+    WarehouseCode,
+    QuantityOnHand,
+    QuantityReserved,
+    QuantityOnHand - QuantityReserved AS QuantityAvailable,
+    ReorderPoint,
+    ReorderQuantity,
+    InventoryPolicy,
+    CreatedAt,
+    UpdatedAt
+FROM [Product].[ProductInventories]
+WHERE Id = @InventoryId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            return await connection.QuerySingleOrDefaultAsync<ProductInventoryDto>(
+                new CommandDefinition(sql, new { InventoryId = inventoryId }, cancellationToken: cancellationToken));
+        }
+
+        public async Task<ProductInventoryDto> CreateInventoryAsync(CreateProductInventoryRequestDto request, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+INSERT INTO [Product].[ProductInventories]
+(
+    Id,
+    ProductId,
+    ProductVariantId,
+    WarehouseId,
+    WarehouseCode,
+    QuantityOnHand,
+    QuantityReserved,
+    ReorderPoint,
+    ReorderQuantity,
+    InventoryPolicy,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @ProductId,
+    @ProductVariantId,
+    @WarehouseId,
+    @WarehouseCode,
+    @QuantityOnHand,
+    @QuantityReserved,
+    @ReorderPoint,
+    @ReorderQuantity,
+    @InventoryPolicy,
+    @Now,
+    0
+);";
+
+            var inventoryId = Guid.NewGuid();
+
+            using var connection = CreateConnection();
+            await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        Id = inventoryId,
+                        request.ProductId,
+                        request.ProductVariantId,
+                        request.WarehouseId,
+                        request.WarehouseCode,
+                        request.QuantityOnHand,
+                        request.QuantityReserved,
+                        request.ReorderPoint,
+                        request.ReorderQuantity,
+                        request.InventoryPolicy,
+                        Now = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken));
+
+            return await GetInventoryByIdAsync(inventoryId, cancellationToken)
+                ?? throw new InvalidOperationException("Product inventory could not be loaded after insert.");
+        }
+
+        public async Task<bool> UpdateInventoryAsync(Guid inventoryId, UpdateProductInventoryRequestDto request, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+UPDATE [Product].[ProductInventories]
+SET
+    ProductVariantId = @ProductVariantId,
+    WarehouseId = @WarehouseId,
+    WarehouseCode = @WarehouseCode,
+    QuantityOnHand = @QuantityOnHand,
+    QuantityReserved = @QuantityReserved,
+    ReorderPoint = @ReorderPoint,
+    ReorderQuantity = @ReorderQuantity,
+    InventoryPolicy = @InventoryPolicy,
+    UpdatedAt = @Now
+WHERE Id = @InventoryId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        InventoryId = inventoryId,
+                        request.ProductVariantId,
+                        request.WarehouseId,
+                        request.WarehouseCode,
+                        request.QuantityOnHand,
+                        request.QuantityReserved,
+                        request.ReorderPoint,
+                        request.ReorderQuantity,
+                        request.InventoryPolicy,
+                        Now = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken));
+
+            return affectedRows > 0;
+        }
+
+        public async Task<bool> DeleteInventoryAsync(Guid inventoryId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+UPDATE [Product].[ProductInventories]
+SET
+    IsDeleted = 1,
+    DeletedAt = @Now,
+    UpdatedAt = @Now
+WHERE Id = @InventoryId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(sql, new { InventoryId = inventoryId, Now = DateTime.UtcNow }, cancellationToken: cancellationToken));
+
+            return affectedRows > 0;
+        }
+
+        public async Task<ProductPhysicalProfileDto?> GetPhysicalProfileAsync(Guid productId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    ProductId,
+    Weight,
+    Width,
+    Height,
+    Length,
+    RequiresShipping,
+    IsFragile,
+    IsHazardous,
+    RequiresSerialNumber,
+    WarrantyInMonths,
+    CreatedAt,
+    UpdatedAt
+FROM [Product].[ProductPhysicalProfiles]
+WHERE ProductId = @ProductId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            return await connection.QuerySingleOrDefaultAsync<ProductPhysicalProfileDto>(
+                new CommandDefinition(sql, new { ProductId = productId }, cancellationToken: cancellationToken));
+        }
+
+        public async Task<ProductPhysicalProfileDto> UpsertPhysicalProfileAsync(Guid productId, UpsertProductPhysicalProfileRequestDto request, CancellationToken cancellationToken = default)
+        {
+            const string updateSql = @"
+UPDATE [Product].[ProductPhysicalProfiles]
+SET
+    Weight = @Weight,
+    Width = @Width,
+    Height = @Height,
+    Length = @Length,
+    RequiresShipping = @RequiresShipping,
+    IsFragile = @IsFragile,
+    IsHazardous = @IsHazardous,
+    RequiresSerialNumber = @RequiresSerialNumber,
+    WarrantyInMonths = @WarrantyInMonths,
+    IsDeleted = 0,
+    DeletedAt = NULL,
+    UpdatedAt = @Now
+WHERE ProductId = @ProductId;";
+
+            using var connection = CreateConnection();
+            var now = DateTime.UtcNow;
+
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(
+                    updateSql,
+                    new
+                    {
+                        ProductId = productId,
+                        request.Weight,
+                        request.Width,
+                        request.Height,
+                        request.Length,
+                        request.RequiresShipping,
+                        request.IsFragile,
+                        request.IsHazardous,
+                        request.RequiresSerialNumber,
+                        request.WarrantyInMonths,
+                        Now = now
+                    },
+                    cancellationToken: cancellationToken));
+
+            if (affectedRows == 0)
+            {
+                const string insertSql = @"
+INSERT INTO [Product].[ProductPhysicalProfiles]
+(
+    Id,
+    ProductId,
+    Weight,
+    Width,
+    Height,
+    Length,
+    RequiresShipping,
+    IsFragile,
+    IsHazardous,
+    RequiresSerialNumber,
+    WarrantyInMonths,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @ProductId,
+    @Weight,
+    @Width,
+    @Height,
+    @Length,
+    @RequiresShipping,
+    @IsFragile,
+    @IsHazardous,
+    @RequiresSerialNumber,
+    @WarrantyInMonths,
+    @Now,
+    0
+);";
+
+                await connection.ExecuteAsync(
+                    new CommandDefinition(
+                        insertSql,
+                        new
+                        {
+                            Id = Guid.NewGuid(),
+                            ProductId = productId,
+                            request.Weight,
+                            request.Width,
+                            request.Height,
+                            request.Length,
+                            request.RequiresShipping,
+                            request.IsFragile,
+                            request.IsHazardous,
+                            request.RequiresSerialNumber,
+                            request.WarrantyInMonths,
+                            Now = now
+                        },
+                        cancellationToken: cancellationToken));
+            }
+
+            return await GetPhysicalProfileAsync(productId, cancellationToken)
+                ?? throw new InvalidOperationException("Physical profile could not be loaded after upsert.");
+        }
+
+        public async Task<bool> DeletePhysicalProfileAsync(Guid productId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+UPDATE [Product].[ProductPhysicalProfiles]
+SET
+    IsDeleted = 1,
+    DeletedAt = @Now,
+    UpdatedAt = @Now
+WHERE ProductId = @ProductId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(sql, new { ProductId = productId, Now = DateTime.UtcNow }, cancellationToken: cancellationToken));
+
+            return affectedRows > 0;
+        }
+
+        public async Task<ProductSoftwareProfileDto?> GetSoftwareProfileAsync(Guid productId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    ProductId,
+    Version,
+    LicenseModel,
+    SeatCount,
+    DownloadUrl,
+    SupportedPlatformsJson,
+    SystemRequirementsJson,
+    ReleaseNotes,
+    CreatedAt,
+    UpdatedAt
+FROM [Product].[ProductSoftwareProfiles]
+WHERE ProductId = @ProductId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            return await connection.QuerySingleOrDefaultAsync<ProductSoftwareProfileDto>(
+                new CommandDefinition(sql, new { ProductId = productId }, cancellationToken: cancellationToken));
+        }
+
+        public async Task<ProductSoftwareProfileDto> UpsertSoftwareProfileAsync(Guid productId, UpsertProductSoftwareProfileRequestDto request, CancellationToken cancellationToken = default)
+        {
+            const string updateSql = @"
+UPDATE [Product].[ProductSoftwareProfiles]
+SET
+    Version = @Version,
+    LicenseModel = @LicenseModel,
+    SeatCount = @SeatCount,
+    DownloadUrl = @DownloadUrl,
+    SupportedPlatformsJson = @SupportedPlatformsJson,
+    SystemRequirementsJson = @SystemRequirementsJson,
+    ReleaseNotes = @ReleaseNotes,
+    IsDeleted = 0,
+    DeletedAt = NULL,
+    UpdatedAt = @Now
+WHERE ProductId = @ProductId;";
+
+            using var connection = CreateConnection();
+            var now = DateTime.UtcNow;
+
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(
+                    updateSql,
+                    new
+                    {
+                        ProductId = productId,
+                        request.Version,
+                        request.LicenseModel,
+                        request.SeatCount,
+                        request.DownloadUrl,
+                        request.SupportedPlatformsJson,
+                        request.SystemRequirementsJson,
+                        request.ReleaseNotes,
+                        Now = now
+                    },
+                    cancellationToken: cancellationToken));
+
+            if (affectedRows == 0)
+            {
+                const string insertSql = @"
+INSERT INTO [Product].[ProductSoftwareProfiles]
+(
+    Id,
+    ProductId,
+    Version,
+    LicenseModel,
+    SeatCount,
+    DownloadUrl,
+    SupportedPlatformsJson,
+    SystemRequirementsJson,
+    ReleaseNotes,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @ProductId,
+    @Version,
+    @LicenseModel,
+    @SeatCount,
+    @DownloadUrl,
+    @SupportedPlatformsJson,
+    @SystemRequirementsJson,
+    @ReleaseNotes,
+    @Now,
+    0
+);";
+
+                await connection.ExecuteAsync(
+                    new CommandDefinition(
+                        insertSql,
+                        new
+                        {
+                            Id = Guid.NewGuid(),
+                            ProductId = productId,
+                            request.Version,
+                            request.LicenseModel,
+                            request.SeatCount,
+                            request.DownloadUrl,
+                            request.SupportedPlatformsJson,
+                            request.SystemRequirementsJson,
+                            request.ReleaseNotes,
+                            Now = now
+                        },
+                        cancellationToken: cancellationToken));
+            }
+
+            return await GetSoftwareProfileAsync(productId, cancellationToken)
+                ?? throw new InvalidOperationException("Software profile could not be loaded after upsert.");
+        }
+
+        public async Task<bool> DeleteSoftwareProfileAsync(Guid productId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+UPDATE [Product].[ProductSoftwareProfiles]
+SET
+    IsDeleted = 1,
+    DeletedAt = @Now,
+    UpdatedAt = @Now
+WHERE ProductId = @ProductId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(sql, new { ProductId = productId, Now = DateTime.UtcNow }, cancellationToken: cancellationToken));
+
+            return affectedRows > 0;
+        }
+
+        public async Task<ProductServiceProfileDto?> GetServiceProfileAsync(Guid productId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    ProductId,
+    DeliveryMode,
+    DurationInMinutes,
+    MaxConcurrentBooking,
+    ServiceAreaJson,
+    ServiceLevelAgreementJson,
+    CapacityRuleJson,
+    CreatedAt,
+    UpdatedAt
+FROM [Product].[ProductServiceProfiles]
+WHERE ProductId = @ProductId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            return await connection.QuerySingleOrDefaultAsync<ProductServiceProfileDto>(
+                new CommandDefinition(sql, new { ProductId = productId }, cancellationToken: cancellationToken));
+        }
+
+        public async Task<ProductServiceProfileDto> UpsertServiceProfileAsync(Guid productId, UpsertProductServiceProfileRequestDto request, CancellationToken cancellationToken = default)
+        {
+            const string updateSql = @"
+UPDATE [Product].[ProductServiceProfiles]
+SET
+    DeliveryMode = @DeliveryMode,
+    DurationInMinutes = @DurationInMinutes,
+    MaxConcurrentBooking = @MaxConcurrentBooking,
+    ServiceAreaJson = @ServiceAreaJson,
+    ServiceLevelAgreementJson = @ServiceLevelAgreementJson,
+    CapacityRuleJson = @CapacityRuleJson,
+    IsDeleted = 0,
+    DeletedAt = NULL,
+    UpdatedAt = @Now
+WHERE ProductId = @ProductId;";
+
+            using var connection = CreateConnection();
+            var now = DateTime.UtcNow;
+
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(
+                    updateSql,
+                    new
+                    {
+                        ProductId = productId,
+                        request.DeliveryMode,
+                        request.DurationInMinutes,
+                        request.MaxConcurrentBooking,
+                        request.ServiceAreaJson,
+                        request.ServiceLevelAgreementJson,
+                        request.CapacityRuleJson,
+                        Now = now
+                    },
+                    cancellationToken: cancellationToken));
+
+            if (affectedRows == 0)
+            {
+                const string insertSql = @"
+INSERT INTO [Product].[ProductServiceProfiles]
+(
+    Id,
+    ProductId,
+    DeliveryMode,
+    DurationInMinutes,
+    MaxConcurrentBooking,
+    ServiceAreaJson,
+    ServiceLevelAgreementJson,
+    CapacityRuleJson,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @ProductId,
+    @DeliveryMode,
+    @DurationInMinutes,
+    @MaxConcurrentBooking,
+    @ServiceAreaJson,
+    @ServiceLevelAgreementJson,
+    @CapacityRuleJson,
+    @Now,
+    0
+);";
+
+                await connection.ExecuteAsync(
+                    new CommandDefinition(
+                        insertSql,
+                        new
+                        {
+                            Id = Guid.NewGuid(),
+                            ProductId = productId,
+                            request.DeliveryMode,
+                            request.DurationInMinutes,
+                            request.MaxConcurrentBooking,
+                            request.ServiceAreaJson,
+                            request.ServiceLevelAgreementJson,
+                            request.CapacityRuleJson,
+                            Now = now
+                        },
+                        cancellationToken: cancellationToken));
+            }
+
+            return await GetServiceProfileAsync(productId, cancellationToken)
+                ?? throw new InvalidOperationException("Service profile could not be loaded after upsert.");
+        }
+
+        public async Task<bool> DeleteServiceProfileAsync(Guid productId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+UPDATE [Product].[ProductServiceProfiles]
+SET
+    IsDeleted = 1,
+    DeletedAt = @Now,
+    UpdatedAt = @Now
+WHERE ProductId = @ProductId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(sql, new { ProductId = productId, Now = DateTime.UtcNow }, cancellationToken: cancellationToken));
+
+            return affectedRows > 0;
+        }
+
+        public async Task<ProductSubscriptionProfileDto?> GetSubscriptionProfileAsync(Guid productId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    ProductId,
+    BillingPeriodUnit,
+    BillingPeriodValue,
+    TrialDays,
+    AutoRenew,
+    GracePeriodDays,
+    CancellationPolicy,
+    SubscriptionRulesJson,
+    CreatedAt,
+    UpdatedAt
+FROM [Product].[ProductSubscriptionProfiles]
+WHERE ProductId = @ProductId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            return await connection.QuerySingleOrDefaultAsync<ProductSubscriptionProfileDto>(
+                new CommandDefinition(sql, new { ProductId = productId }, cancellationToken: cancellationToken));
+        }
+
+        public async Task<ProductSubscriptionProfileDto> UpsertSubscriptionProfileAsync(Guid productId, UpsertProductSubscriptionProfileRequestDto request, CancellationToken cancellationToken = default)
+        {
+            const string updateSql = @"
+UPDATE [Product].[ProductSubscriptionProfiles]
+SET
+    BillingPeriodUnit = @BillingPeriodUnit,
+    BillingPeriodValue = @BillingPeriodValue,
+    TrialDays = @TrialDays,
+    AutoRenew = @AutoRenew,
+    GracePeriodDays = @GracePeriodDays,
+    CancellationPolicy = @CancellationPolicy,
+    SubscriptionRulesJson = @SubscriptionRulesJson,
+    IsDeleted = 0,
+    DeletedAt = NULL,
+    UpdatedAt = @Now
+WHERE ProductId = @ProductId;";
+
+            using var connection = CreateConnection();
+            var now = DateTime.UtcNow;
+
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(
+                    updateSql,
+                    new
+                    {
+                        ProductId = productId,
+                        request.BillingPeriodUnit,
+                        request.BillingPeriodValue,
+                        request.TrialDays,
+                        request.AutoRenew,
+                        request.GracePeriodDays,
+                        request.CancellationPolicy,
+                        request.SubscriptionRulesJson,
+                        Now = now
+                    },
+                    cancellationToken: cancellationToken));
+
+            if (affectedRows == 0)
+            {
+                const string insertSql = @"
+INSERT INTO [Product].[ProductSubscriptionProfiles]
+(
+    Id,
+    ProductId,
+    BillingPeriodUnit,
+    BillingPeriodValue,
+    TrialDays,
+    AutoRenew,
+    GracePeriodDays,
+    CancellationPolicy,
+    SubscriptionRulesJson,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @ProductId,
+    @BillingPeriodUnit,
+    @BillingPeriodValue,
+    @TrialDays,
+    @AutoRenew,
+    @GracePeriodDays,
+    @CancellationPolicy,
+    @SubscriptionRulesJson,
+    @Now,
+    0
+);";
+
+                await connection.ExecuteAsync(
+                    new CommandDefinition(
+                        insertSql,
+                        new
+                        {
+                            Id = Guid.NewGuid(),
+                            ProductId = productId,
+                            request.BillingPeriodUnit,
+                            request.BillingPeriodValue,
+                            request.TrialDays,
+                            request.AutoRenew,
+                            request.GracePeriodDays,
+                            request.CancellationPolicy,
+                            request.SubscriptionRulesJson,
+                            Now = now
+                        },
+                        cancellationToken: cancellationToken));
+            }
+
+            return await GetSubscriptionProfileAsync(productId, cancellationToken)
+                ?? throw new InvalidOperationException("Subscription profile could not be loaded after upsert.");
+        }
+
+        public async Task<bool> DeleteSubscriptionProfileAsync(Guid productId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+UPDATE [Product].[ProductSubscriptionProfiles]
+SET
+    IsDeleted = 1,
+    DeletedAt = @Now,
+    UpdatedAt = @Now
+WHERE ProductId = @ProductId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(sql, new { ProductId = productId, Now = DateTime.UtcNow }, cancellationToken: cancellationToken));
+
+            return affectedRows > 0;
+        }
+    }
+}

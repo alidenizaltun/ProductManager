@@ -1,0 +1,335 @@
+@model ProductManager.WebUI.Models.ProductOperations.AttributeDefinitionListPageViewModel
+
+@{
+    ViewData["Title"] = "Özellik Tanımları";
+}
+
+<div class="nk-content nk-content-fluid pm-list-page">
+    <div class="container-fluid">
+        <div class="nk-content-inner">
+            <div class="nk-content-body">
+                <partial name="_StatusMessage" />
+
+                <div class="nk-block-head nk-block-head-sm">
+                    <div class="nk-block-between">
+                        <div class="nk-block-head-content">
+                            <h3 class="nk-block-title page-title">Özellik Tanımları</h3>
+                            <div class="nk-block-des text-soft">
+                                <p>Filtre, zorunluluk ve varyant ekseni kurallarını merkezi yönetin.</p>
+                            </div>
+                        </div>
+                        <div class="nk-block-head-content">
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createAttributeModal">
+                                <em class="icon ni ni-plus"></em><span>Yeni Özellik</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nk-block">
+                    <div class="card card-bordered card-stretch pm-table-card">
+                    <div class="card-inner border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="title mb-0">Özellik Listesi</h6>
+                        <span class="text-soft small">Toplam: @Model.Attributes.Count</span>
+                    </div>
+                    <div class="card-inner p-0">
+                        <div class="table-responsive">
+                            <table class="table table-tranx mb-0 pm-table">
+                                <thead>
+                                    <tr class="tb-tnx-head">
+                                        <th>Anahtar</th>
+                                        <th>Görünen Ad</th>
+                                        <th>Veri Tipi</th>
+                                        <th>Zorunlu</th>
+                                        <th>Varyant Eksen</th>
+                                        <th class="text-end">İşlem</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                @if (Model.Attributes.Count == 0)
+                                {
+                                    <tr><td colspan="6" class="text-center py-4">Kayıt bulunamadı.</td></tr>
+                                }
+                                else
+                                {
+                                    @foreach (var row in Model.Attributes)
+                                    {
+                                        <tr>
+                                            <td><span class="tb-sub">@row.Key</span></td>
+                                            <td><span class="tb-lead">@row.DisplayName</span></td>
+                                            <td>@row.DataType</td>
+                                            <td>
+                                                @if (row.IsRequired)
+                                                {
+                                                    <span class="badge bg-danger">Zorunlu</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-light text-dark">Opsiyonel</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (row.IsVariantAxis)
+                                                {
+                                                    <span class="badge bg-info">Evet</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-light text-dark">Hayır</span>
+                                                }
+                                            </td>
+                                            <td class="text-end">
+                                                <div class="d-inline-flex gap-2">
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-outline-primary"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#editAttributeModal"
+                                                            data-edit-attribute
+                                                            data-id="@row.Id"
+                                                            data-key="@row.Key"
+                                                            data-display-name="@row.DisplayName"
+                                                            data-data-type="@row.DataType"
+                                                            data-is-required="@(row.IsRequired ? "true" : "false")"
+                                                            data-is-filterable="@(row.IsFilterable ? "true" : "false")"
+                                                            data-is-variant-axis="@(row.IsVariantAxis ? "true" : "false")"
+                                                            data-allowed-values-json="@row.AllowedValuesJson"
+                                                            data-validation-rule-json="@row.ValidationRuleJson">
+                                                        Düzenle
+                                                    </button>
+                                                    <form asp-action="Delete" asp-route-id="@row.Id" method="post" onsubmit="return confirm('Özellik silinsin mi?');">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger">Sil</button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                </div>
+
+                <div class="modal fade" id="createAttributeModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content pm-modal">
+                            <form method="post" asp-action="CreateFromModal">
+                                @Html.AntiForgeryToken()
+
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Yeni Özellik</h5>
+                                    <a href="#" class="close" data-bs-dismiss="modal" aria-label="Close">
+                                        <em class="icon ni ni-cross"></em>
+                                    </a>
+                                </div>
+
+                                <div class="modal-body">
+                                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                                    <div class="row g-gs">
+                                        <div class="col-md-4">
+                                            <label asp-for="CreateModal.Key" class="form-label"></label>
+                                            <input asp-for="CreateModal.Key" class="form-control" />
+                                            <span asp-validation-for="CreateModal.Key" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <label asp-for="CreateModal.DisplayName" class="form-label"></label>
+                                            <input asp-for="CreateModal.DisplayName" class="form-control" />
+                                            <span asp-validation-for="CreateModal.DisplayName" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label asp-for="CreateModal.DataType" class="form-label"></label>
+                                            <input asp-for="CreateModal.DataType" class="form-control" type="number" min="1" />
+                                            <span asp-validation-for="CreateModal.DataType" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-3 d-flex align-items-center">
+                                            <div class="form-check mt-4">
+                                                <input asp-for="CreateModal.IsRequired" class="form-check-input" />
+                                                <label asp-for="CreateModal.IsRequired" class="form-check-label"></label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 d-flex align-items-center">
+                                            <div class="form-check mt-4">
+                                                <input asp-for="CreateModal.IsFilterable" class="form-check-input" />
+                                                <label asp-for="CreateModal.IsFilterable" class="form-check-label"></label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 d-flex align-items-center">
+                                            <div class="form-check mt-4">
+                                                <input asp-for="CreateModal.IsVariantAxis" class="form-check-input" />
+                                                <label asp-for="CreateModal.IsVariantAxis" class="form-check-label"></label>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label asp-for="CreateModal.AllowedValuesJson" class="form-label"></label>
+                                            <textarea asp-for="CreateModal.AllowedValuesJson" class="form-control" rows="2"></textarea>
+                                            <span asp-validation-for="CreateModal.AllowedValuesJson" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label asp-for="CreateModal.ValidationRuleJson" class="form-label"></label>
+                                            <textarea asp-for="CreateModal.ValidationRuleJson" class="form-control" rows="2"></textarea>
+                                            <span asp-validation-for="CreateModal.ValidationRuleJson" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="modal-footer bg-light">
+                                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Vazgeç</button>
+                                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal fade" id="editAttributeModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content pm-modal">
+                            <form method="post" asp-action="EditFromModal">
+                                @Html.AntiForgeryToken()
+                                <input asp-for="EditModal.Id" type="hidden" id="editAttributeId" />
+
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Özellik Düzenle</h5>
+                                    <a href="#" class="close" data-bs-dismiss="modal" aria-label="Close">
+                                        <em class="icon ni ni-cross"></em>
+                                    </a>
+                                </div>
+
+                                <div class="modal-body">
+                                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                                    <div class="row g-gs">
+                                        <div class="col-md-4">
+                                            <label asp-for="EditModal.Key" class="form-label"></label>
+                                            <input asp-for="EditModal.Key" class="form-control" id="editAttributeKey" />
+                                            <span asp-validation-for="EditModal.Key" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <label asp-for="EditModal.DisplayName" class="form-label"></label>
+                                            <input asp-for="EditModal.DisplayName" class="form-control" id="editAttributeDisplayName" />
+                                            <span asp-validation-for="EditModal.DisplayName" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label asp-for="EditModal.DataType" class="form-label"></label>
+                                            <input asp-for="EditModal.DataType" class="form-control" type="number" min="1" id="editAttributeDataType" />
+                                            <span asp-validation-for="EditModal.DataType" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-3 d-flex align-items-center">
+                                            <div class="form-check mt-4">
+                                                <input asp-for="EditModal.IsRequired" class="form-check-input" id="editAttributeIsRequired" />
+                                                <label asp-for="EditModal.IsRequired" class="form-check-label"></label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 d-flex align-items-center">
+                                            <div class="form-check mt-4">
+                                                <input asp-for="EditModal.IsFilterable" class="form-check-input" id="editAttributeIsFilterable" />
+                                                <label asp-for="EditModal.IsFilterable" class="form-check-label"></label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 d-flex align-items-center">
+                                            <div class="form-check mt-4">
+                                                <input asp-for="EditModal.IsVariantAxis" class="form-check-input" id="editAttributeIsVariantAxis" />
+                                                <label asp-for="EditModal.IsVariantAxis" class="form-check-label"></label>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label asp-for="EditModal.AllowedValuesJson" class="form-label"></label>
+                                            <textarea asp-for="EditModal.AllowedValuesJson" class="form-control" rows="2" id="editAttributeAllowedValuesJson"></textarea>
+                                            <span asp-validation-for="EditModal.AllowedValuesJson" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label asp-for="EditModal.ValidationRuleJson" class="form-label"></label>
+                                            <textarea asp-for="EditModal.ValidationRuleJson" class="form-control" rows="2" id="editAttributeValidationRuleJson"></textarea>
+                                            <span asp-validation-for="EditModal.ValidationRuleJson" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="modal-footer bg-light">
+                                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Vazgeç</button>
+                                    <button type="submit" class="btn btn-primary">Güncelle</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var editAttributeIdInput = document.getElementById('editAttributeId');
+            var editAttributeKeyInput = document.getElementById('editAttributeKey');
+            var editAttributeDisplayNameInput = document.getElementById('editAttributeDisplayName');
+            var editAttributeDataTypeInput = document.getElementById('editAttributeDataType');
+            var editAttributeIsRequiredInput = document.getElementById('editAttributeIsRequired');
+            var editAttributeIsFilterableInput = document.getElementById('editAttributeIsFilterable');
+            var editAttributeIsVariantAxisInput = document.getElementById('editAttributeIsVariantAxis');
+            var editAttributeAllowedValuesJsonInput = document.getElementById('editAttributeAllowedValuesJson');
+            var editAttributeValidationRuleJsonInput = document.getElementById('editAttributeValidationRuleJson');
+
+            var editButtons = document.querySelectorAll('[data-edit-attribute]');
+            editButtons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    if (editAttributeIdInput) {
+                        editAttributeIdInput.value = button.getAttribute('data-id') || '';
+                    }
+
+                    if (editAttributeKeyInput) {
+                        editAttributeKeyInput.value = button.getAttribute('data-key') || '';
+                    }
+
+                    if (editAttributeDisplayNameInput) {
+                        editAttributeDisplayNameInput.value = button.getAttribute('data-display-name') || '';
+                    }
+
+                    if (editAttributeDataTypeInput) {
+                        editAttributeDataTypeInput.value = button.getAttribute('data-data-type') || '';
+                    }
+
+                    if (editAttributeIsRequiredInput) {
+                        editAttributeIsRequiredInput.checked = (button.getAttribute('data-is-required') || '') === 'true';
+                    }
+
+                    if (editAttributeIsFilterableInput) {
+                        editAttributeIsFilterableInput.checked = (button.getAttribute('data-is-filterable') || '') === 'true';
+                    }
+
+                    if (editAttributeIsVariantAxisInput) {
+                        editAttributeIsVariantAxisInput.checked = (button.getAttribute('data-is-variant-axis') || '') === 'true';
+                    }
+
+                    if (editAttributeAllowedValuesJsonInput) {
+                        editAttributeAllowedValuesJsonInput.value = button.getAttribute('data-allowed-values-json') || '';
+                    }
+
+                    if (editAttributeValidationRuleJsonInput) {
+                        editAttributeValidationRuleJsonInput.value = button.getAttribute('data-validation-rule-json') || '';
+                    }
+                });
+            });
+
+            var shouldOpenCreateModal = @Model.OpenCreateModal.ToString().ToLowerInvariant();
+            var shouldOpenEditModal = @Model.OpenEditModal.ToString().ToLowerInvariant();
+
+            var createModalElement = document.getElementById('createAttributeModal');
+            var editModalElement = document.getElementById('editAttributeModal');
+
+            if (createModalElement && shouldOpenCreateModal && window.bootstrap) {
+                window.bootstrap.Modal.getOrCreateInstance(createModalElement).show();
+            }
+
+            if (editModalElement && shouldOpenEditModal && window.bootstrap) {
+                window.bootstrap.Modal.getOrCreateInstance(editModalElement).show();
+            }
+        });
+    </script>
+}

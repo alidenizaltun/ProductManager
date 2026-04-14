@@ -1,365 +1,84 @@
+@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+
+    bool IsController(string controller) =>
+        currentController.Equals(controller, StringComparison.OrdinalIgnoreCase);
+
+    bool IsAction(string controller, string action) =>
+        currentController.Equals(controller, StringComparison.OrdinalIgnoreCase) &&
+        currentAction.Equals(action, StringComparison.OrdinalIgnoreCase);
+
+    bool IsInGroup(params string[] controllers)
+    {
+        foreach (var controller in controllers)
+        {
+            if (currentController.Equals(controller, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    string MenuItemClass(bool isActive) => isActive ? "nk-menu-item active current-page" : "nk-menu-item";
+    string GroupClass(bool isOpen) => isOpen ? "nk-menu-item has-sub active current-page" : "nk-menu-item has-sub";
+    string GroupStyle(bool isOpen) => isOpen ? "display:block;" : string.Empty;
+
+    var isCatalogGroupOpen = IsInGroup("Products", "Categories", "Attributes");
+    var isSupplyGroupOpen = IsInGroup("Suppliers", "Warehouses");
+    var isOpsGroupOpen = IsInGroup("PriceLists", "Inventory");
+}
+
 <div class="nk-header nk-header-fixed is-light">
     <div class="container-fluid">
         <div class="nk-header-wrap">
             <div class="nk-menu-trigger d-xl-none ms-n1">
-                <a href="#" class="nk-nav-toggle nk-quick-nav-icon" data-target="sidebarMenu"><em class="icon ni ni-menu"></em></a>
+                <a href="#" class="nk-nav-toggle nk-quick-nav-icon" data-target="sidebarMenu">
+                    <em class="icon ni ni-menu"></em>
+                </a>
             </div>
+
             <div class="nk-header-app-name">
                 <div class="nk-header-app-logo">
-                    <em class="icon ni ni-dashlite bg-purple-dim"></em>
+                    <em class="icon ni ni-package-fill bg-success-dim"></em>
                 </div>
                 <div class="nk-header-app-info">
                     <span class="sub-text">ProductManager</span>
-                    <span class="lead-text">Urun Yonetim Paneli</span>
+                    <span class="lead-text">Urun Yonetim Sistemi</span>
                 </div>
             </div>
+
             <div class="nk-header-menu is-light">
                 <div class="nk-header-menu-inner">
                     <ul class="nk-menu nk-menu-main">
                         <li class="nk-menu-item">
-                            <a href="html/index.html" class="nk-menu-link">
-                                <span class="nk-menu-text">Gosterge Paneli</span>
+                            <a asp-controller="Home" asp-action="Index" class="nk-menu-link">
+                                <span class="nk-menu-text">Genel Bakis</span>
                             </a>
                         </li>
-                        <li class="nk-menu-item has-sub">
-                            <a href="#" class="nk-menu-link nk-menu-toggle">
-                                <span class="nk-menu-text">Urun Yonetimi</span>
+                        <li class="nk-menu-item">
+                            <a asp-controller="Products" asp-action="Index" class="nk-menu-link">
+                                <span class="nk-menu-text">Urunler</span>
                             </a>
-                            <ul class="nk-menu-sub">
-                                <li class="nk-menu-item">
-                                    <a href="html/product-list.html" class="nk-menu-link"><span class="nk-menu-text">Urun Listesi</span></a>
-                                </li>
-                                <li class="nk-menu-item">
-                                    <a href="html/product-details.html" class="nk-menu-link"><span class="nk-menu-text">Urun Detayi</span></a>
-                                </li>
-                                <li class="nk-menu-item">
-                                    <a href="html/product-card.html" class="nk-menu-link"><span class="nk-menu-text">Urun Kartlari</span></a>
-                                </li>
-                            </ul>
                         </li>
-                        <li class="nk-menu-item has-sub">
-                            <a href="#" class="nk-menu-link nk-menu-toggle">
-                                <span class="nk-menu-text">Operasyon</span>
+                        <li class="nk-menu-item">
+                            <a asp-controller="Inventory" asp-action="Transactions" class="nk-menu-link">
+                                <span class="nk-menu-text">Stok Hareketleri</span>
                             </a>
-                            <ul class="nk-menu-sub">
-                                <li class="nk-menu-item">
-                                    <a href="html/transaction-basic.html" class="nk-menu-link"><span class="nk-menu-text">Stok Hareketleri</span></a>
-                                </li>
-                                <li class="nk-menu-item">
-                                    <a href="html/invoice-list.html" class="nk-menu-link"><span class="nk-menu-text">Siparis ve Fatura</span></a>
-                                </li>
-                                <li class="nk-menu-item">
-                                    <a href="html/pricing-table.html" class="nk-menu-link"><span class="nk-menu-text">Fiyatlandirma</span></a>
-                                </li>
-                                <li class="nk-menu-item">
-                                    <a href="html/index-sales.html" class="nk-menu-link"><span class="nk-menu-text">Raporlar</span></a>
-                                </li>
-                            </ul>
+                        </li>
+                        <li class="nk-menu-item">
+                            <a asp-controller="PriceLists" asp-action="Index" class="nk-menu-link">
+                                <span class="nk-menu-text">Fiyat Listeleri</span>
+                            </a>
                         </li>
                     </ul>
                 </div>
             </div>
+
             <div class="nk-header-tools">
                 <ul class="nk-quick-nav">
-                    <li class="dropdown hide-mb-sm">
-                        <a data-bs-toggle="modal" href="#region" class="nk-quick-nav-icon"><em class="icon ni ni-globe"></em></a>
-                    </li>
-                    <li class="dropdown chats-dropdown hide-mb-sm">
-                        <a href="#" class="dropdown-toggle nk-quick-nav-icon" data-bs-toggle="dropdown">
-                            <div class="icon-status icon-status-na"><em class="icon ni ni-comments"></em></div>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-xl dropdown-menu-end">
-                            <div class="dropdown-head">
-                                <span class="sub-title nk-dropdown-title">Son Sohbetler</span>
-                                <a href="#">Ayarlar</a>
-                            </div>
-                            <div class="dropdown-body">
-                                <ul class="chat-list">
-                                    <li class="chat-item">
-                                        <a class="chat-link" href="html/apps/chats.html">
-                                            <div class="chat-media user-avatar">
-                                                <span>IH</span>
-                                                <span class="status dot dot-lg dot-gray"></span>
-                                            </div>
-                                            <div class="chat-info">
-                                                <div class="chat-from">
-                                                    <div class="name">Iliash Hossain</div>
-                                                    <span class="time">Şimdi</span>
-                                                </div>
-                                                <div class="chat-context">
-                                                    <div class="text">Sen: Son mesajlarımı alıp almadığını lütfen onayla.</div>
-                                                    <div class="status delivered">
-                                                        <em class="icon ni ni-check-circle-fill"></em>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </a>
-                                    </li>
-                                    <li class="chat-item is-unread">
-                                        <a class="chat-link" href="html/apps/chats.html">
-                                            <div class="chat-media user-avatar bg-pink">
-                                                <span>AB</span>
-                                                <span class="status dot dot-lg dot-success"></span>
-                                            </div>
-                                            <div class="chat-info">
-                                                <div class="chat-from">
-                                                    <div class="name">Abu Bin Ishtiyak</div>
-                                                    <span class="time">4:49 AM</span>
-                                                </div>
-                                                <div class="chat-context">
-                                                    <div class="text">Merhaba, ben Ishtiyak. Bu konuda bana yardımcı olabilir misin?</div>
-                                                    <div class="status unread">
-                                                        <em class="icon ni ni-bullet-fill"></em>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </a>
-                                    </li>
-                                    <li class="chat-item">
-                                        <a class="chat-link" href="html/apps/chats.html">
-                                            <div class="chat-media user-avatar">
-                                                <img src="./images/avatar/b-sm.jpg" alt="">
-                                            </div>
-                                            <div class="chat-info">
-                                                <div class="chat-from">
-                                                    <div class="name">George Philips</div>
-                                                    <span class="time">6 Apr</span>
-                                                </div>
-                                                <div class="chat-context">
-                                                    <div class="text">Rose'dan gelen talebi gördün mü?</div>
-                                                </div>
-                                            </div>
-                                        </a>
-                                    </li>
-                                    <li class="chat-item">
-                                        <a class="chat-link" href="html/apps/chats.html">
-                                            <div class="chat-media user-avatar user-avatar-multiple">
-                                                <div class="user-avatar">
-                                                    <img src="./images/avatar/c-sm.jpg" alt="">
-                                                </div>
-                                                <div class="user-avatar">
-                                                    <span>AB</span>
-                                                </div>
-                                            </div>
-                                            <div class="chat-info">
-                                                <div class="chat-from">
-                                                    <div class="name">Softnio Group</div>
-                                                    <span class="time">27 Mar</span>
-                                                </div>
-                                                <div class="chat-context">
-                                                    <div class="text">Sen: Yeni bir bilgisayar aldım ama bazı sorunlar yaşıyorum</div>
-                                                    <div class="status sent">
-                                                        <em class="icon ni ni-check-circle"></em>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </a>
-                                    </li>
-                                    <li class="chat-item">
-                                        <a class="chat-link" href="html/apps/chats.html">
-                                            <div class="chat-media user-avatar">
-                                                <img src="./images/avatar/a-sm.jpg" alt="">
-                                                <span class="status dot dot-lg dot-success"></span>
-                                            </div>
-                                            <div class="chat-info">
-                                                <div class="chat-from">
-                                                    <div class="name">Larry Hughes</div>
-                                                    <span class="time">3 Apr</span>
-                                                </div>
-                                                <div class="chat-context">
-                                                    <div class="text">Merhaba Frank! Nasılsın?</div>
-                                                </div>
-                                            </div>
-                                        </a>
-                                    </li>
-                                    <li class="chat-item">
-                                        <a class="chat-link" href="html/apps/chats.html">
-                                            <div class="chat-media user-avatar bg-purple">
-                                                <span>TW</span>
-                                            </div>
-                                            <div class="chat-info">
-                                                <div class="chat-from">
-                                                    <div class="name">Tammy Wilson</div>
-                                                    <span class="time">27 Mar</span>
-                                                </div>
-                                                <div class="chat-context">
-                                                    <div class="text">Sen: Yeni bir bilgisayar aldım ama bazı sorunlar yaşıyorum</div>
-                                                    <div class="status sent">
-                                                        <em class="icon ni ni-check-circle"></em>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                            <div class="dropdown-foot center">
-                                <a href="html/chats.html">Tümünü Gör</a>
-                            </div>
-                        </div>
-                    </li>
-                    <li class="dropdown notification-dropdown">
-                        <a href="#" class="dropdown-toggle nk-quick-nav-icon" data-bs-toggle="dropdown">
-                            <div class="icon-status icon-status-info"><em class="icon ni ni-bell"></em></div>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-xl dropdown-menu-end">
-                            <div class="dropdown-head">
-                                <span class="sub-title nk-dropdown-title">Bildirimler</span>
-                                <a href="#">Tümünü Okundu İşaretle</a>
-                            </div>
-                            <div class="dropdown-body">
-                                <div class="nk-notification">
-                                    <div class="nk-notification-item dropdown-inner">
-                                        <div class="nk-notification-icon">
-                                            <em class="icon icon-circle bg-primary-dim ni ni-share"></em>
-                                        </div>
-                                        <div class="nk-notification-content">
-                                            <div class="nk-notification-text">Iliash <span>Dashlite-v2</span> dosyasını seninle paylaştı.</div>
-                                            <div class="nk-notification-time">Az önce</div>
-                                        </div>
-                                    </div>
-                                    <div class="nk-notification-item dropdown-inner">
-                                        <div class="nk-notification-icon">
-                                            <em class="icon icon-circle bg-info-dim ni ni-edit"></em>
-                                        </div>
-                                        <div class="nk-notification-content">
-                                            <div class="nk-notification-text">Iliash, <span>DashLite</span> klasörünü düzenlemen için seni <span>davet etti</span></div>
-                                            <div class="nk-notification-time">2 saat önce</div>
-                                        </div>
-                                    </div>
-                                    <div class="nk-notification-item dropdown-inner">
-                                        <div class="nk-notification-icon">
-                                            <em class="icon icon-circle bg-primary-dim ni ni-share"></em>
-                                        </div>
-                                        <div class="nk-notification-content">
-                                            <div class="nk-notification-text"><span>project v2</span> dosyasını Parvez ile paylaştın.</div>
-                                            <div class="nk-notification-time">7 gün önce</div>
-                                        </div>
-                                    </div>
-                                    <div class="nk-notification-item dropdown-inner">
-                                        <div class="nk-notification-icon">
-                                            <em class="icon icon-circle bg-success-dim ni ni-spark"></em>
-                                        </div>
-                                        <div class="nk-notification-content">
-                                            <div class="nk-notification-text"><span>Aboneliğin</span> başarıyla yenilendi.</div>
-                                            <div class="nk-notification-time">2 ay önce</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="dropdown-foot center">
-                                <a href="#">Tümünü Gör</a>
-                            </div>
-                        </div>
-                    </li>
-                    <li class="dropdown list-apps-dropdown d-lg-none">
-                        <a href="#" class="dropdown-toggle nk-quick-nav-icon" data-bs-toggle="dropdown">
-                            <div class="icon-status icon-status-na"><em class="icon ni ni-menu-circled"></em></div>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
-                            <div class="dropdown-body">
-                                <ul class="list-apps">
-                                    <li>
-                                        <a href="html/index.html">
-                                            <span class="list-apps-media"><em class="icon ni ni-dashlite bg-primary text-white"></em></span>
-                                            <span class="list-apps-title">Gosterge Paneli</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="html/product-list.html">
-                                            <span class="list-apps-media"><em class="icon ni ni-card-view bg-info-dim"></em></span>
-                                            <span class="list-apps-title">Urun Listesi</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="html/components/forms/form-elements.html">
-                                            <span class="list-apps-media"><em class="icon ni ni-menu-circled bg-warning-dim"></em></span>
-                                            <span class="list-apps-title">Ozellikler</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="html/transaction-basic.html">
-                                            <span class="list-apps-media"><em class="icon ni ni-package bg-success-dim"></em></span>
-                                            <span class="list-apps-title">Stok Yonetimi</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="html/pricing-table.html">
-                                            <span class="list-apps-media"><em class="icon ni ni-coins bg-danger-dim"></em></span>
-                                            <span class="list-apps-title">Fiyatlandirma</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="html/gallery.html">
-                                            <span class="list-apps-media"><em class="icon ni ni-img bg-secondary-dim"></em></span>
-                                            <span class="list-apps-title">Medya Galerisi</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                                <ul class="list-apps">
-                                    <li>
-                                        <a href="html/customer-list.html">
-                                            <span class="list-apps-media"><em class="icon ni ni-users bg-danger-dim"></em></span>
-                                            <span class="list-apps-title">Musteriler</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="html/transaction-crypto.html">
-                                            <span class="list-apps-media"><em class="icon ni ni-tranx bg-primary-dim"></em></span>
-                                            <span class="list-apps-title">Siparisler</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="html/invoice-list.html">
-                                            <span class="list-apps-media"><em class="icon ni ni-file-docs bg-warning-dim"></em></span>
-                                            <span class="list-apps-title">Faturalar</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="html/index-sales.html">
-                                            <span class="list-apps-media"><em class="icon ni ni-growth bg-blue-dim"></em></span>
-                                            <span class="list-apps-title">Raporlar</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </li>
-                    <li class="dropdown language-dropdown d-none d-sm-block me-n1">
-                        <a href="#" class="dropdown-toggle nk-quick-nav-icon" data-bs-toggle="dropdown">
-                            <div class="quick-icon border border-light">
-                                <img class="icon" src="./images/flags/english-sq.png" alt="">
-                            </div>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-end dropdown-menu-s1">
-                            <ul class="language-list">
-                                <li>
-                                    <a href="#" class="language-item">
-                                        <img src="./images/flags/english.png" alt="" class="language-flag">
-                                        <span class="language-name">İngilizce</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#" class="language-item">
-                                        <img src="./images/flags/spanish.png" alt="" class="language-flag">
-                                        <span class="language-name">İspanyolca</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#" class="language-item">
-                                        <img src="./images/flags/french.png" alt="" class="language-flag">
-                                        <span class="language-name">Fransızca</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#" class="language-item">
-                                        <img src="./images/flags/turkey.png" alt="" class="language-flag">
-                                        <span class="language-name">Türkçe</span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                    </li>
                     <li class="dropdown user-dropdown">
                         <a href="#" class="dropdown-toggle me-n1" data-bs-toggle="dropdown">
                             <div class="user-toggle">
@@ -372,25 +91,28 @@
                             <div class="dropdown-inner user-card-wrap bg-lighter d-none d-md-block">
                                 <div class="user-card">
                                     <div class="user-avatar">
-                                        <span>AB</span>
+                                        <span>PM</span>
                                     </div>
                                     <div class="user-info">
-                                        <span class="lead-text">Abu Bin Ishtiyak</span>
-                                        <span class="sub-text">info@softnio.com</span>
+                                        <span class="lead-text">ProductManager</span>
+                                        <span class="sub-text">Operasyon paneli</span>
                                     </div>
                                 </div>
                             </div>
                             <div class="dropdown-inner">
                                 <ul class="link-list">
-                                    <li><a href="html/user-profile-regular.html"><em class="icon ni ni-user-alt"></em><span>Profili Görüntüle</span></a></li>
-                                    <li><a href="html/user-profile-setting.html"><em class="icon ni ni-setting-alt"></em><span>Hesap Ayarları</span></a></li>
-                                    <li><a href="html/user-profile-activity.html"><em class="icon ni ni-activity-alt"></em><span>Giriş Geçmişi</span></a></li>
-                                    <li><a class="dark-switch" href="#"><em class="icon ni ni-moon"></em><span>Koyu Mod</span></a></li>
-                                </ul>
-                            </div>
-                            <div class="dropdown-inner">
-                                <ul class="link-list">
-                                    <li><a href="#"><em class="icon ni ni-signout"></em><span>Çıkış Yap</span></a></li>
+                                    <li>
+                                        <a asp-controller="Home" asp-action="Index">
+                                            <em class="icon ni ni-dashboard"></em>
+                                            <span>Genel Bakis</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a asp-controller="Home" asp-action="Privacy">
+                                            <em class="icon ni ni-setting-alt"></em>
+                                            <span>Gizlilik</span>
+                                        </a>
+                                    </li>
                                 </ul>
                             </div>
                         </div>
@@ -400,174 +122,87 @@
         </div>
     </div>
 </div>
+
 <div class="nk-sidebar" data-content="sidebarMenu">
     <div class="nk-sidebar-inner" data-simplebar>
         <ul class="nk-menu nk-menu-md">
             <li class="nk-menu-heading">
                 <h6 class="overline-title text-primary-alt">Genel</h6>
             </li>
-            <li class="nk-menu-item">
-                <a href="html/index.html" class="nk-menu-link">
+            <li class="@MenuItemClass(IsAction("Home", "Index"))">
+                <a asp-controller="Home" asp-action="Index" class="nk-menu-link">
                     <span class="nk-menu-icon"><em class="icon ni ni-dashboard"></em></span>
-                    <span class="nk-menu-text">Gosterge Paneli</span>
+                    <span class="nk-menu-text">Genel Bakis</span>
                 </a>
             </li>
-            <li class="nk-menu-item has-sub">
+
+            <li class="nk-menu-heading">
+                <h6 class="overline-title text-primary-alt">Katalog</h6>
+            </li>
+            <li class="@GroupClass(isCatalogGroupOpen)">
                 <a href="#" class="nk-menu-link nk-menu-toggle">
                     <span class="nk-menu-icon"><em class="icon ni ni-card-view"></em></span>
-                    <span class="nk-menu-text">Urunler</span>
+                    <span class="nk-menu-text">Urun Yonetimi</span>
                 </a>
-                <ul class="nk-menu-sub">
-                    <li class="nk-menu-item">
-                        <a href="html/product-list.html" class="nk-menu-link"><span class="nk-menu-text">Urun Listesi</span></a>
+                <ul class="nk-menu-sub" style="@GroupStyle(isCatalogGroupOpen)">
+                    <li class="@MenuItemClass(IsController("Products"))">
+                        <a asp-controller="Products" asp-action="Index" class="nk-menu-link"><span class="nk-menu-text">Urunler</span></a>
                     </li>
-                    <li class="nk-menu-item">
-                        <a href="html/product-card.html" class="nk-menu-link"><span class="nk-menu-text">Urun Kart Gorunumu</span></a>
+                    <li class="@MenuItemClass(IsController("Categories"))">
+                        <a asp-controller="Categories" asp-action="Index" class="nk-menu-link"><span class="nk-menu-text">Kategoriler</span></a>
                     </li>
-                    <li class="nk-menu-item">
-                        <a href="html/product-details.html" class="nk-menu-link"><span class="nk-menu-text">Urun Detayi</span></a>
-                    </li>
-                    <li class="nk-menu-item">
-                        <a href="html/components/tables/table-datatable.html" class="nk-menu-link"><span class="nk-menu-text">Toplu Guncelleme</span></a>
+                    <li class="@MenuItemClass(IsController("Attributes"))">
+                        <a asp-controller="Attributes" asp-action="Index" class="nk-menu-link"><span class="nk-menu-text">Ozellikler</span></a>
                     </li>
                 </ul>
             </li>
-            <li class="nk-menu-item has-sub">
-                <a href="#" class="nk-menu-link nk-menu-toggle">
-                    <span class="nk-menu-icon"><em class="icon ni ni-menu-circled"></em></span>
-                    <span class="nk-menu-text">Katalog ve Siniflandirma</span>
-                </a>
-                <ul class="nk-menu-sub">
-                    <li class="nk-menu-item">
-                        <a href="html/project-list.html" class="nk-menu-link"><span class="nk-menu-text">Kategori Yapisi</span></a>
-                    </li>
-                    <li class="nk-menu-item">
-                        <a href="html/components/forms/form-elements.html" class="nk-menu-link"><span class="nk-menu-text">Ozellik Tanimlari</span></a>
-                    </li>
-                    <li class="nk-menu-item">
-                        <a href="html/components/forms/checkbox-radio.html" class="nk-menu-link"><span class="nk-menu-text">Varyant Eksenleri</span></a>
-                    </li>
-                    <li class="nk-menu-item">
-                        <a href="html/gallery.html" class="nk-menu-link"><span class="nk-menu-text">Medya Yonetimi</span></a>
-                    </li>
-                </ul>
-            </li>
-            <li class="nk-menu-item has-sub">
-                <a href="#" class="nk-menu-link nk-menu-toggle">
-                    <span class="nk-menu-icon"><em class="icon ni ni-coins"></em></span>
-                    <span class="nk-menu-text">Ticari Yapi</span>
-                </a>
-                <ul class="nk-menu-sub">
-                    <li class="nk-menu-item">
-                        <a href="html/pricing-table.html" class="nk-menu-link"><span class="nk-menu-text">Fiyat Listeleri</span></a>
-                    </li>
-                    <li class="nk-menu-item">
-                        <a href="html/transaction-crypto.html" class="nk-menu-link"><span class="nk-menu-text">Kampanya Fiyatlari</span></a>
-                    </li>
-                    <li class="nk-menu-item">
-                        <a href="html/components/forms/advanced-controls.html" class="nk-menu-link"><span class="nk-menu-text">Vergi ve Para Birimi</span></a>
-                    </li>
-                </ul>
-            </li>
-            <li class="nk-menu-item has-sub">
-                <a href="#" class="nk-menu-link nk-menu-toggle">
-                    <span class="nk-menu-icon"><em class="icon ni ni-package"></em></span>
-                    <span class="nk-menu-text">Stok ve Lojistik</span>
-                </a>
-                <ul class="nk-menu-sub">
-                    <li class="nk-menu-item">
-                        <a href="html/transaction-basic.html" class="nk-menu-link"><span class="nk-menu-text">Depo Bazli Stok</span></a>
-                    </li>
-                    <li class="nk-menu-item">
-                        <a href="html/transaction-crypto.html" class="nk-menu-link"><span class="nk-menu-text">Kritik Stoklar</span></a>
-                    </li>
-                    <li class="nk-menu-item">
-                        <a href="html/components/forms/form-validation.html" class="nk-menu-link"><span class="nk-menu-text">Envanter Politikalari</span></a>
-                    </li>
-                    <li class="nk-menu-item">
-                        <a href="html/product-card.html" class="nk-menu-link"><span class="nk-menu-text">Paket ve Bundle Yonetimi</span></a>
-                    </li>
-                </ul>
-            </li>
+
             <li class="nk-menu-heading">
-                <h6 class="overline-title text-primary-alt">Satis ve Finans</h6>
+                <h6 class="overline-title text-primary-alt">Tedarik Zinciri</h6>
             </li>
-            <li class="nk-menu-item has-sub">
+            <li class="@GroupClass(isSupplyGroupOpen)">
                 <a href="#" class="nk-menu-link nk-menu-toggle">
-                    <span class="nk-menu-icon"><em class="icon ni ni-user-list"></em></span>
-                    <span class="nk-menu-text">Musteri ve Siparis</span>
+                    <span class="nk-menu-icon"><em class="icon ni ni-truck"></em></span>
+                    <span class="nk-menu-text">Tedarik ve Depo</span>
                 </a>
-                <ul class="nk-menu-sub">
-                    <li class="nk-menu-item">
-                        <a href="html/customer-list.html" class="nk-menu-link"><span class="nk-menu-text">Musteri Listesi</span></a>
+                <ul class="nk-menu-sub" style="@GroupStyle(isSupplyGroupOpen)">
+                    <li class="@MenuItemClass(IsController("Suppliers"))">
+                        <a asp-controller="Suppliers" asp-action="Index" class="nk-menu-link"><span class="nk-menu-text">Tedarikciler</span></a>
                     </li>
-                    <li class="nk-menu-item">
-                        <a href="html/customer-details.html" class="nk-menu-link"><span class="nk-menu-text">Musteri Detayi</span></a>
-                    </li>
-                    <li class="nk-menu-item">
-                        <a href="html/transaction-basic.html" class="nk-menu-link"><span class="nk-menu-text">Siparis Hareketleri</span></a>
+                    <li class="@MenuItemClass(IsController("Warehouses"))">
+                        <a asp-controller="Warehouses" asp-action="Index" class="nk-menu-link"><span class="nk-menu-text">Depolar</span></a>
                     </li>
                 </ul>
             </li>
-            <li class="nk-menu-item has-sub">
-                <a href="#" class="nk-menu-link nk-menu-toggle">
-                    <span class="nk-menu-icon"><em class="icon ni ni-file-docs"></em></span>
-                    <span class="nk-menu-text">Faturalama</span>
-                </a>
-                <ul class="nk-menu-sub">
-                    <li class="nk-menu-item">
-                        <a href="html/invoice-list.html" class="nk-menu-link"><span class="nk-menu-text">Fatura Listesi</span></a>
-                    </li>
-                    <li class="nk-menu-item">
-                        <a href="html/invoice-details.html" class="nk-menu-link"><span class="nk-menu-text">Fatura Detayi</span></a>
-                    </li>
-                    <li class="nk-menu-item">
-                        <a href="html/invoice-print.html" class="nk-menu-link"><span class="nk-menu-text">Yazdirilabilir Fatura</span></a>
-                    </li>
-                </ul>
-            </li>
-            <li class="nk-menu-item has-sub">
-                <a href="#" class="nk-menu-link nk-menu-toggle">
-                    <span class="nk-menu-icon"><em class="icon ni ni-growth"></em></span>
-                    <span class="nk-menu-text">Raporlama</span>
-                </a>
-                <ul class="nk-menu-sub">
-                    <li class="nk-menu-item">
-                        <a href="html/index-sales.html" class="nk-menu-link"><span class="nk-menu-text">Satis Performansi</span></a>
-                    </li>
-                    <li class="nk-menu-item">
-                        <a href="html/index-invest.html" class="nk-menu-link"><span class="nk-menu-text">Karlilik Analizi</span></a>
-                    </li>
-                    <li class="nk-menu-item">
-                        <a href="html/components/charts/chartjs.html" class="nk-menu-link"><span class="nk-menu-text">Urun Bazli Grafikler</span></a>
-                    </li>
-                </ul>
-            </li>
+
             <li class="nk-menu-heading">
-                <h6 class="overline-title text-primary-alt">Yonetim</h6>
+                <h6 class="overline-title text-primary-alt">Operasyon</h6>
             </li>
-            <li class="nk-menu-item">
-                <a href="html/user-list-regular.html" class="nk-menu-link">
-                    <span class="nk-menu-icon"><em class="icon ni ni-users"></em></span>
-                    <span class="nk-menu-text">Kullanici ve Yetki</span>
+            <li class="@GroupClass(isOpsGroupOpen)">
+                <a href="#" class="nk-menu-link nk-menu-toggle">
+                    <span class="nk-menu-icon"><em class="icon ni ni-setting-alt-fill"></em></span>
+                    <span class="nk-menu-text">Stok ve Fiyat</span>
                 </a>
+                <ul class="nk-menu-sub" style="@GroupStyle(isOpsGroupOpen)">
+                    <li class="@MenuItemClass(IsController("PriceLists"))">
+                        <a asp-controller="PriceLists" asp-action="Index" class="nk-menu-link"><span class="nk-menu-text">Fiyat Listeleri</span></a>
+                    </li>
+                    <li class="@MenuItemClass(IsAction("Inventory", "Transactions"))">
+                        <a asp-controller="Inventory" asp-action="Transactions" class="nk-menu-link"><span class="nk-menu-text">Stok Hareketleri</span></a>
+                    </li>
+                    <li class="@MenuItemClass(IsAction("Inventory", "Reservations"))">
+                        <a asp-controller="Inventory" asp-action="Reservations" class="nk-menu-link"><span class="nk-menu-text">Rezervasyonlar</span></a>
+                    </li>
+                </ul>
             </li>
-            <li class="nk-menu-item">
-                <a href="html/user-profile-setting.html" class="nk-menu-link">
-                    <span class="nk-menu-icon"><em class="icon ni ni-setting-alt"></em></span>
-                    <span class="nk-menu-text">Sistem Ayarlari</span>
-                </a>
+
+            <li class="nk-menu-heading">
+                <h6 class="overline-title text-primary-alt">Sistem</h6>
             </li>
-            <li class="nk-menu-item">
-                <a href="html/pages/auths/auth-login.html" class="nk-menu-link" target="_blank">
-                    <span class="nk-menu-icon"><em class="icon ni ni-signin"></em></span>
-                    <span class="nk-menu-text">Kimlik ve Guvenlik</span>
-                </a>
-            </li>
-            <li class="nk-menu-item">
-                <a href="html/components.html" class="nk-menu-link">
-                    <span class="nk-menu-icon"><em class="icon ni ni-help"></em></span>
-                    <span class="nk-menu-text">Dokumantasyon</span>
+            <li class="@MenuItemClass(IsAction("Home", "Privacy"))">
+                <a asp-controller="Home" asp-action="Privacy" class="nk-menu-link">
+                    <span class="nk-menu-icon"><em class="icon ni ni-shield"></em></span>
+                    <span class="nk-menu-text">Gizlilik</span>
                 </a>
             </li>
         </ul>

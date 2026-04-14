@@ -39,6 +39,10 @@ namespace ProductManager.Domain.Entities.Product
         public ICollection<ProductMedia> MediaItems { get; set; } = new List<ProductMedia>();
         public ICollection<ProductCategoryMap> CategoryMaps { get; set; } = new List<ProductCategoryMap>();
         public ICollection<ProductBundleItem> BundleItems { get; set; } = new List<ProductBundleItem>();
+        public ICollection<ProductSupplierMap> SupplierMaps { get; set; } = new List<ProductSupplierMap>();
+        public ICollection<InventoryTransaction> InventoryTransactions { get; set; } = new List<InventoryTransaction>();
+        public ICollection<InventoryReservation> InventoryReservations { get; set; } = new List<InventoryReservation>();
+        public ICollection<ProductPriceListItem> PriceListItems { get; set; } = new List<ProductPriceListItem>();
 
         public ProductPhysicalProfile? PhysicalProfile { get; set; }
         public ProductSoftwareProfile? SoftwareProfile { get; set; }

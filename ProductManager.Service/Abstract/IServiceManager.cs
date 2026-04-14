@@ -6,6 +6,7 @@ namespace ProductManager.Service.Abstract
     {
         IAuthenticationService AuthenticationService { get; }
         ICurrentUserService CurrentUserService { get; }
+        IProductOperationsService ProductOperationsService { get; }
         ITokenService TokenService { get; }
     }
 }

@@ -1,0 +1,358 @@
+@model ProductManager.WebUI.Models.ProductOperations.PriceListListPageViewModel
+
+@{
+    ViewData["Title"] = "Fiyat Listeleri";
+}
+
+<div class="nk-content nk-content-fluid pm-list-page">
+    <div class="container-fluid">
+        <div class="nk-content-inner">
+            <div class="nk-content-body">
+                <partial name="_StatusMessage" />
+
+                <div class="nk-block-head nk-block-head-sm">
+                    <div class="nk-block-between">
+                        <div class="nk-block-head-content">
+                            <h3 class="nk-block-title page-title">Fiyat Listeleri</h3>
+                            <div class="nk-block-des text-soft">
+                                <p>Kampanya ve kanal bazlı fiyat setlerini merkezi yönetin.</p>
+                            </div>
+                        </div>
+                        <div class="nk-block-head-content">
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPriceListModal">
+                                <em class="icon ni ni-plus"></em><span>Yeni Fiyat Listesi</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nk-block">
+                    <div class="card card-bordered mb-3 pm-filter-card">
+                        <div class="card-inner">
+                            <form method="get" class="row g-gs align-items-end pm-filter-form">
+                                <div class="col-md-4 col-lg-3">
+                                    <label class="form-label" for="includeInactive">Listeleme</label>
+                                    <select id="includeInactive" name="includeInactive" class="form-select">
+                                        <option value="false" selected="@(!Model.IncludeInactive)">Sadece aktif</option>
+                                        <option value="true" selected="@(Model.IncludeInactive)">Tüm kayıtlar</option>
+                                    </select>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="submit" class="btn btn-primary">Uygula</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="card card-bordered card-stretch pm-table-card">
+                    <div class="card-inner border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="title mb-0">Fiyat Listesi Kayıtları</h6>
+                        <span class="text-soft small">Toplam: @Model.PriceLists.Count</span>
+                    </div>
+                    <div class="card-inner p-0">
+                        <div class="table-responsive">
+                            <table class="table table-tranx mb-0 pm-table">
+                                <thead>
+                                    <tr class="tb-tnx-head">
+                                        <th>Kod</th>
+                                        <th>Ad</th>
+                                        <th>Para Birimi</th>
+                                        <th>Aktif</th>
+                                        <th>Geçerlilik</th>
+                                        <th class="text-end">İşlem</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                @if (Model.PriceLists.Count == 0)
+                                {
+                                    <tr><td colspan="6" class="text-center py-4">Kayıt bulunamadı.</td></tr>
+                                }
+                                else
+                                {
+                                    @foreach (var row in Model.PriceLists)
+                                    {
+                                        <tr>
+                                            <td><span class="tb-sub">@row.Code</span></td>
+                                            <td><span class="tb-lead">@row.Name</span></td>
+                                            <td>@row.CurrencyCode</td>
+                                            <td>
+                                                @if (row.IsActive)
+                                                {
+                                                    <span class="badge bg-success">Aktif</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">Pasif</span>
+                                                }
+                                            </td>
+                                            <td><span class="tb-sub">@(row.ValidFrom?.ToString("yyyy-MM-dd") ?? "-") - @(row.ValidTo?.ToString("yyyy-MM-dd") ?? "-")</span></td>
+                                            <td class="text-end">
+                                                <div class="d-inline-flex gap-2">
+                                                    <a asp-action="Details" asp-route-id="@row.Id" class="btn btn-sm btn-outline-info">Detay</a>
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-outline-primary"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#editPriceListModal"
+                                                            data-edit-price-list
+                                                            data-id="@row.Id"
+                                                            data-code="@row.Code"
+                                                            data-name="@row.Name"
+                                                            data-description="@row.Description"
+                                                            data-currency-code="@row.CurrencyCode"
+                                                            data-is-active="@(row.IsActive ? "true" : "false")"
+                                                            data-valid-from="@(row.ValidFrom?.ToString("yyyy-MM-ddTHH:mm") ?? string.Empty)"
+                                                            data-valid-to="@(row.ValidTo?.ToString("yyyy-MM-ddTHH:mm") ?? string.Empty)"
+                                                            data-sales-channel="@row.SalesChannel"
+                                                            data-customer-group-code="@row.CustomerGroupCode">
+                                                        Düzenle
+                                                    </button>
+                                                    <form asp-action="Delete" asp-route-id="@row.Id" method="post" onsubmit="return confirm('Fiyat listesi silinsin mi?');">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger">Sil</button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                </div>
+
+                <div class="modal fade" id="createPriceListModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content pm-modal">
+                            <form method="post" asp-action="CreateFromModal">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="includeInactive" value="@Model.IncludeInactive.ToString().ToLowerInvariant()" />
+
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Yeni Fiyat Listesi</h5>
+                                    <a href="#" class="close" data-bs-dismiss="modal" aria-label="Close">
+                                        <em class="icon ni ni-cross"></em>
+                                    </a>
+                                </div>
+
+                                <div class="modal-body">
+                                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                                    <div class="row g-gs">
+                                        <div class="col-md-4">
+                                            <label asp-for="CreateModal.Code" class="form-label"></label>
+                                            <input asp-for="CreateModal.Code" class="form-control" />
+                                            <span asp-validation-for="CreateModal.Code" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <label asp-for="CreateModal.Name" class="form-label"></label>
+                                            <input asp-for="CreateModal.Name" class="form-control" />
+                                            <span asp-validation-for="CreateModal.Name" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label asp-for="CreateModal.CurrencyCode" class="form-label"></label>
+                                            <input asp-for="CreateModal.CurrencyCode" class="form-control" />
+                                            <span asp-validation-for="CreateModal.CurrencyCode" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label asp-for="CreateModal.SalesChannel" class="form-label"></label>
+                                            <input asp-for="CreateModal.SalesChannel" class="form-control" />
+                                            <span asp-validation-for="CreateModal.SalesChannel" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label asp-for="CreateModal.CustomerGroupCode" class="form-label"></label>
+                                            <input asp-for="CreateModal.CustomerGroupCode" class="form-control" />
+                                            <span asp-validation-for="CreateModal.CustomerGroupCode" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label asp-for="CreateModal.ValidFrom" class="form-label"></label>
+                                            <input asp-for="CreateModal.ValidFrom" class="form-control" type="datetime-local" />
+                                            <span asp-validation-for="CreateModal.ValidFrom" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label asp-for="CreateModal.ValidTo" class="form-label"></label>
+                                            <input asp-for="CreateModal.ValidTo" class="form-control" type="datetime-local" />
+                                            <span asp-validation-for="CreateModal.ValidTo" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label asp-for="CreateModal.Description" class="form-label"></label>
+                                            <textarea asp-for="CreateModal.Description" class="form-control" rows="3"></textarea>
+                                            <span asp-validation-for="CreateModal.Description" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="form-check form-switch">
+                                                <input asp-for="CreateModal.IsActive" class="form-check-input" />
+                                                <label asp-for="CreateModal.IsActive" class="form-check-label"></label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="modal-footer bg-light">
+                                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Vazgeç</button>
+                                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal fade" id="editPriceListModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content pm-modal">
+                            <form method="post" asp-action="EditFromModal">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="includeInactive" value="@Model.IncludeInactive.ToString().ToLowerInvariant()" />
+                                <input asp-for="EditModal.Id" type="hidden" id="editPriceListId" />
+
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Fiyat Listesi Düzenle</h5>
+                                    <a href="#" class="close" data-bs-dismiss="modal" aria-label="Close">
+                                        <em class="icon ni ni-cross"></em>
+                                    </a>
+                                </div>
+
+                                <div class="modal-body">
+                                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                                    <div class="row g-gs">
+                                        <div class="col-md-4">
+                                            <label asp-for="EditModal.Code" class="form-label"></label>
+                                            <input asp-for="EditModal.Code" class="form-control" id="editPriceListCode" />
+                                            <span asp-validation-for="EditModal.Code" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <label asp-for="EditModal.Name" class="form-label"></label>
+                                            <input asp-for="EditModal.Name" class="form-control" id="editPriceListName" />
+                                            <span asp-validation-for="EditModal.Name" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label asp-for="EditModal.CurrencyCode" class="form-label"></label>
+                                            <input asp-for="EditModal.CurrencyCode" class="form-control" id="editPriceListCurrencyCode" />
+                                            <span asp-validation-for="EditModal.CurrencyCode" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label asp-for="EditModal.SalesChannel" class="form-label"></label>
+                                            <input asp-for="EditModal.SalesChannel" class="form-control" id="editPriceListSalesChannel" />
+                                            <span asp-validation-for="EditModal.SalesChannel" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label asp-for="EditModal.CustomerGroupCode" class="form-label"></label>
+                                            <input asp-for="EditModal.CustomerGroupCode" class="form-control" id="editPriceListCustomerGroupCode" />
+                                            <span asp-validation-for="EditModal.CustomerGroupCode" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label asp-for="EditModal.ValidFrom" class="form-label"></label>
+                                            <input asp-for="EditModal.ValidFrom" class="form-control" type="datetime-local" id="editPriceListValidFrom" />
+                                            <span asp-validation-for="EditModal.ValidFrom" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label asp-for="EditModal.ValidTo" class="form-label"></label>
+                                            <input asp-for="EditModal.ValidTo" class="form-control" type="datetime-local" id="editPriceListValidTo" />
+                                            <span asp-validation-for="EditModal.ValidTo" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label asp-for="EditModal.Description" class="form-label"></label>
+                                            <textarea asp-for="EditModal.Description" class="form-control" rows="3" id="editPriceListDescription"></textarea>
+                                            <span asp-validation-for="EditModal.Description" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="form-check form-switch">
+                                                <input asp-for="EditModal.IsActive" class="form-check-input" id="editPriceListIsActive" />
+                                                <label asp-for="EditModal.IsActive" class="form-check-label"></label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="modal-footer bg-light">
+                                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Vazgeç</button>
+                                    <button type="submit" class="btn btn-primary">Güncelle</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var editPriceListIdInput = document.getElementById('editPriceListId');
+            var editPriceListCodeInput = document.getElementById('editPriceListCode');
+            var editPriceListNameInput = document.getElementById('editPriceListName');
+            var editPriceListDescriptionInput = document.getElementById('editPriceListDescription');
+            var editPriceListCurrencyCodeInput = document.getElementById('editPriceListCurrencyCode');
+            var editPriceListIsActiveInput = document.getElementById('editPriceListIsActive');
+            var editPriceListValidFromInput = document.getElementById('editPriceListValidFrom');
+            var editPriceListValidToInput = document.getElementById('editPriceListValidTo');
+            var editPriceListSalesChannelInput = document.getElementById('editPriceListSalesChannel');
+            var editPriceListCustomerGroupCodeInput = document.getElementById('editPriceListCustomerGroupCode');
+
+            var editButtons = document.querySelectorAll('[data-edit-price-list]');
+            editButtons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    if (editPriceListIdInput) {
+                        editPriceListIdInput.value = button.getAttribute('data-id') || '';
+                    }
+
+                    if (editPriceListCodeInput) {
+                        editPriceListCodeInput.value = button.getAttribute('data-code') || '';
+                    }
+
+                    if (editPriceListNameInput) {
+                        editPriceListNameInput.value = button.getAttribute('data-name') || '';
+                    }
+
+                    if (editPriceListDescriptionInput) {
+                        editPriceListDescriptionInput.value = button.getAttribute('data-description') || '';
+                    }
+
+                    if (editPriceListCurrencyCodeInput) {
+                        editPriceListCurrencyCodeInput.value = button.getAttribute('data-currency-code') || '';
+                    }
+
+                    if (editPriceListIsActiveInput) {
+                        editPriceListIsActiveInput.checked = (button.getAttribute('data-is-active') || '') === 'true';
+                    }
+
+                    if (editPriceListValidFromInput) {
+                        editPriceListValidFromInput.value = button.getAttribute('data-valid-from') || '';
+                    }
+
+                    if (editPriceListValidToInput) {
+                        editPriceListValidToInput.value = button.getAttribute('data-valid-to') || '';
+                    }
+
+                    if (editPriceListSalesChannelInput) {
+                        editPriceListSalesChannelInput.value = button.getAttribute('data-sales-channel') || '';
+                    }
+
+                    if (editPriceListCustomerGroupCodeInput) {
+                        editPriceListCustomerGroupCodeInput.value = button.getAttribute('data-customer-group-code') || '';
+                    }
+                });
+            });
+
+            var shouldOpenCreateModal = @Model.OpenCreateModal.ToString().ToLowerInvariant();
+            var shouldOpenEditModal = @Model.OpenEditModal.ToString().ToLowerInvariant();
+
+            var createModalElement = document.getElementById('createPriceListModal');
+            var editModalElement = document.getElementById('editPriceListModal');
+
+            if (createModalElement && shouldOpenCreateModal && window.bootstrap) {
+                window.bootstrap.Modal.getOrCreateInstance(createModalElement).show();
+            }
+
+            if (editModalElement && shouldOpenEditModal && window.bootstrap) {
+                window.bootstrap.Modal.getOrCreateInstance(editModalElement).show();
+            }
+        });
+    </script>
+}
