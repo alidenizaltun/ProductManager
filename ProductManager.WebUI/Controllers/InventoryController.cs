@@ -270,7 +270,7 @@ public sealed class InventoryController : Controller
 
     private async Task<InventoryTransactionFormViewModel> BuildTransactionFormAsync(InventoryTransactionFormViewModel model, CancellationToken cancellationToken)
     {
-        var productsTask = _service.GetProductsAsync(new ProductFilterDto { IsActive = true, Take = 200 }, cancellationToken);
+        var productsTask = _service.GetProductsAsync(new ProductFilterDto { IsActive = true, Take = 200, IncludeLargeFields = false }, cancellationToken);
         var warehousesTask = _service.GetWarehousesAsync(true, cancellationToken);
 
         await Task.WhenAll(productsTask, warehousesTask);
@@ -294,7 +294,7 @@ public sealed class InventoryController : Controller
 
     private async Task<InventoryReservationFormViewModel> BuildReservationFormAsync(InventoryReservationFormViewModel model, CancellationToken cancellationToken)
     {
-        var productsTask = _service.GetProductsAsync(new ProductFilterDto { IsActive = true, Take = 200 }, cancellationToken);
+        var productsTask = _service.GetProductsAsync(new ProductFilterDto { IsActive = true, Take = 200, IncludeLargeFields = false }, cancellationToken);
         var warehousesTask = _service.GetWarehousesAsync(true, cancellationToken);
 
         await Task.WhenAll(productsTask, warehousesTask);

@@ -238,7 +238,7 @@ public sealed class PriceListsController : Controller
     {
         var priceListTask = _service.GetPriceListByIdAsync(id, cancellationToken);
         var itemsTask = _service.GetPriceListItemsAsync(id, cancellationToken);
-        var productsTask = _service.GetProductsAsync(new ProductFilterDto { IsActive = true, Take = 200 }, cancellationToken);
+        var productsTask = _service.GetProductsAsync(new ProductFilterDto { IsActive = true, Take = 200, IncludeLargeFields = false }, cancellationToken);
 
         await Task.WhenAll(priceListTask, itemsTask, productsTask);
 

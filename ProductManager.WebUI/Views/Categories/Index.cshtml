@@ -4,187 +4,107 @@
     ViewData["Title"] = "Kategoriler";
 }
 
-<div class="nk-content nk-content-fluid pm-list-page">
+<div class="nk-content">
     <div class="container-fluid">
         <div class="nk-content-inner">
             <div class="nk-content-body">
-                <partial name="_StatusMessage" />
-
                 <div class="nk-block-head nk-block-head-sm">
                     <div class="nk-block-between">
                         <div class="nk-block-head-content">
                             <h3 class="nk-block-title page-title">Kategoriler</h3>
                             <div class="nk-block-des text-soft">
-                                <p>Ürün kategorilerini ve hiyerarşi yapısını yönetin.</p>
+                                <p>Ürün kategorilerini tek ekrandan yönetin.</p>
                             </div>
                         </div>
                         <div class="nk-block-head-content">
-                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCategoryModal">
-                                <em class="icon ni ni-plus"></em><span>Yeni Kategori</span>
-                            </button>
+                            <a asp-action="Create" class="btn btn-primary d-inline-flex">
+                                <em class="icon ni ni-plus"></em>
+                                <span>Yeni Kategori</span>
+                            </a>
                         </div>
                     </div>
                 </div>
 
+                @await Html.PartialAsync("_StatusMessage")
+
                 <div class="nk-block">
-                    <div class="card card-bordered card-stretch pm-table-card">
-                    <div class="card-inner border-bottom d-flex justify-content-between align-items-center">
-                        <h6 class="title mb-0">Kategori Listesi</h6>
-                        <span class="text-soft small">Toplam: @Model.Categories.Count</span>
-                    </div>
-                    <div class="card-inner p-0">
-                        <div class="table-responsive">
-                            <table class="table table-tranx mb-0 pm-table">
-                                <thead>
-                                    <tr class="tb-tnx-head">
-                                        <th>Kod</th>
-                                        <th>Ad</th>
-                                        <th>Üst Kategori</th>
-                                        <th>Güncelleme</th>
-                                        <th class="text-end">İşlem</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                    <div class="card card-bordered">
+                        <div class="card-inner p-0">
+                            <div class="nk-tb-list nk-tb-ulist">
+                                <div class="nk-tb-item nk-tb-head">
+                                    <div class="nk-tb-col tb-col-sm"><span>Kategori</span></div>
+                                    <div class="nk-tb-col"><span>Kod</span></div>
+                                    <div class="nk-tb-col tb-col-md"><span>Üst Kategori</span></div>
+                                    <div class="nk-tb-col tb-col-md"><span>Güncellenme</span></div>
+                                    <div class="nk-tb-col nk-tb-col-tools text-end"></div>
+                                </div>
+
                                 @if (Model.Categories.Count == 0)
                                 {
-                                    <tr><td colspan="5" class="text-center py-4">Kayıt bulunamadı.</td></tr>
+                                    <div class="nk-tb-item">
+                                        <div class="nk-tb-col">
+                                            <span class="tb-sub">Kayıt bulunamadı.</span>
+                                        </div>
+                                    </div>
                                 }
                                 else
                                 {
-                                    @foreach (var row in Model.Categories)
+                                    foreach (var row in Model.Categories)
                                     {
-                                        <tr>
-                                            <td><span class="tb-sub">@row.Code</span></td>
-                                            <td><span class="tb-lead">@row.Name</span></td>
-                                            <td>@(row.ParentCategoryId?.ToString() ?? "-")</td>
-                                            <td><span class="tb-sub">@(row.UpdatedAt?.ToString("yyyy-MM-dd HH:mm") ?? "-")</span></td>
-                                            <td class="text-end">
-                                                <div class="d-inline-flex gap-2">
-                                                    <button type="button"
-                                                            class="btn btn-sm btn-outline-primary"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#editCategoryModal"
-                                                            data-edit-category
-                                                            data-id="@row.Id"
-                                                            data-code="@row.Code"
-                                                            data-name="@row.Name"
-                                                            data-description="@row.Description"
-                                                            data-parent-category-id="@(row.ParentCategoryId?.ToString() ?? string.Empty)">
-                                                        Düzenle
-                                                    </button>
-                                                    <form asp-action="Delete" asp-route-id="@row.Id" method="post" onsubmit="return confirm('Kategori silinsin mi?');">
-                                                        @Html.AntiForgeryToken()
-                                                        <button type="submit" class="btn btn-sm btn-outline-danger">Sil</button>
-                                                    </form>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                        var deleteFormId = $"delete-category-{row.Id:N}";
+
+                                        <div class="nk-tb-item">
+                                            <div class="nk-tb-col tb-col-sm">
+                                                <span class="tb-lead">@row.Name</span>
+                                                @if (!string.IsNullOrWhiteSpace(row.Description))
+                                                {
+                                                    <span class="tb-sub d-block">@row.Description</span>
+                                                }
+                                            </div>
+                                            <div class="nk-tb-col">
+                                                <span class="tb-sub">@row.Code</span>
+                                            </div>
+                                            <div class="nk-tb-col tb-col-md">
+                                                <span class="tb-sub">@(row.ParentCategoryId?.ToString() ?? "-")</span>
+                                            </div>
+                                            <div class="nk-tb-col tb-col-md">
+                                                <span class="tb-sub">@(row.UpdatedAt?.ToString("dd.MM.yyyy HH:mm") ?? "-")</span>
+                                            </div>
+                                            <div class="nk-tb-col nk-tb-col-tools">
+                                                <ul class="nk-tb-actions gx-1 my-n1">
+                                                    <li class="me-n1">
+                                                        <div class="dropdown">
+                                                            <a href="#" class="dropdown-toggle btn btn-icon btn-trigger" data-bs-toggle="dropdown">
+                                                                <em class="icon ni ni-more-h"></em>
+                                                            </a>
+                                                            <div class="dropdown-menu dropdown-menu-end">
+                                                                <ul class="link-list-opt no-bdr">
+                                                                    <li>
+                                                                        <a asp-action="Edit" asp-route-id="@row.Id">
+                                                                            <em class="icon ni ni-edit"></em>
+                                                                            <span>Düzenle</span>
+                                                                        </a>
+                                                                    </li>
+                                                                    <li>
+                                                                        <a href="#" onclick="if (confirm('Bu kategoriyi silmek istediğinize emin misiniz?')) { document.getElementById('@deleteFormId').submit(); } return false;">
+                                                                            <em class="icon ni ni-trash"></em>
+                                                                            <span>Sil</span>
+                                                                        </a>
+                                                                    </li>
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </li>
+                                                </ul>
+
+                                                <form id="@deleteFormId" asp-action="Delete" asp-route-id="@row.Id" method="post" class="d-none">
+                                                    @Html.AntiForgeryToken()
+                                                </form>
+                                            </div>
+                                        </div>
                                     }
                                 }
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                </div>
-
-                <div class="modal fade" id="createCategoryModal" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-lg" role="document">
-                        <div class="modal-content pm-modal">
-                            <form method="post" asp-action="CreateFromModal">
-                                @Html.AntiForgeryToken()
-
-                                <div class="modal-header">
-                                    <h5 class="modal-title">Yeni Kategori</h5>
-                                    <a href="#" class="close" data-bs-dismiss="modal" aria-label="Close">
-                                        <em class="icon ni ni-cross"></em>
-                                    </a>
-                                </div>
-
-                                <div class="modal-body">
-                                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
-
-                                    <div class="row g-gs">
-                                        <div class="col-md-4">
-                                            <label asp-for="CreateModal.Code" class="form-label"></label>
-                                            <input asp-for="CreateModal.Code" class="form-control" />
-                                            <span asp-validation-for="CreateModal.Code" class="text-danger"></span>
-                                        </div>
-                                        <div class="col-md-8">
-                                            <label asp-for="CreateModal.Name" class="form-label"></label>
-                                            <input asp-for="CreateModal.Name" class="form-control" />
-                                            <span asp-validation-for="CreateModal.Name" class="text-danger"></span>
-                                        </div>
-                                        <div class="col-12">
-                                            <label asp-for="CreateModal.Description" class="form-label"></label>
-                                            <textarea asp-for="CreateModal.Description" rows="3" class="form-control"></textarea>
-                                            <span asp-validation-for="CreateModal.Description" class="text-danger"></span>
-                                        </div>
-                                        <div class="col-12">
-                                            <label asp-for="CreateModal.ParentCategoryId" class="form-label"></label>
-                                            <input asp-for="CreateModal.ParentCategoryId" class="form-control" />
-                                            <small class="text-soft">Boş bırakabilirsiniz veya üst kategori GUID değeri girebilirsiniz.</small>
-                                            <span asp-validation-for="CreateModal.ParentCategoryId" class="text-danger"></span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="modal-footer bg-light">
-                                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Vazgeç</button>
-                                    <button type="submit" class="btn btn-primary">Kaydet</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal fade" id="editCategoryModal" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-lg" role="document">
-                        <div class="modal-content pm-modal">
-                            <form method="post" asp-action="EditFromModal">
-                                @Html.AntiForgeryToken()
-                                <input asp-for="EditModal.Id" type="hidden" id="editCategoryId" />
-
-                                <div class="modal-header">
-                                    <h5 class="modal-title">Kategori Düzenle</h5>
-                                    <a href="#" class="close" data-bs-dismiss="modal" aria-label="Close">
-                                        <em class="icon ni ni-cross"></em>
-                                    </a>
-                                </div>
-
-                                <div class="modal-body">
-                                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
-
-                                    <div class="row g-gs">
-                                        <div class="col-md-4">
-                                            <label asp-for="EditModal.Code" class="form-label"></label>
-                                            <input asp-for="EditModal.Code" class="form-control" id="editCategoryCode" />
-                                            <span asp-validation-for="EditModal.Code" class="text-danger"></span>
-                                        </div>
-                                        <div class="col-md-8">
-                                            <label asp-for="EditModal.Name" class="form-label"></label>
-                                            <input asp-for="EditModal.Name" class="form-control" id="editCategoryName" />
-                                            <span asp-validation-for="EditModal.Name" class="text-danger"></span>
-                                        </div>
-                                        <div class="col-12">
-                                            <label asp-for="EditModal.Description" class="form-label"></label>
-                                            <textarea asp-for="EditModal.Description" rows="3" class="form-control" id="editCategoryDescription"></textarea>
-                                            <span asp-validation-for="EditModal.Description" class="text-danger"></span>
-                                        </div>
-                                        <div class="col-12">
-                                            <label asp-for="EditModal.ParentCategoryId" class="form-label"></label>
-                                            <input asp-for="EditModal.ParentCategoryId" class="form-control" id="editCategoryParentCategoryId" />
-                                            <small class="text-soft">Boş bırakabilirsiniz veya üst kategori GUID değeri girebilirsiniz.</small>
-                                            <span asp-validation-for="EditModal.ParentCategoryId" class="text-danger"></span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="modal-footer bg-light">
-                                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Vazgeç</button>
-                                    <button type="submit" class="btn btn-primary">Güncelle</button>
-                                </div>
-                            </form>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -192,56 +112,3 @@
         </div>
     </div>
 </div>
-
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            var editCategoryIdInput = document.getElementById('editCategoryId');
-            var editCategoryCodeInput = document.getElementById('editCategoryCode');
-            var editCategoryNameInput = document.getElementById('editCategoryName');
-            var editCategoryDescriptionInput = document.getElementById('editCategoryDescription');
-            var editCategoryParentCategoryIdInput = document.getElementById('editCategoryParentCategoryId');
-
-            var editButtons = document.querySelectorAll('[data-edit-category]');
-            editButtons.forEach(function (button) {
-                button.addEventListener('click', function () {
-                    if (editCategoryIdInput) {
-                        editCategoryIdInput.value = button.getAttribute('data-id') || '';
-                    }
-
-                    if (editCategoryCodeInput) {
-                        editCategoryCodeInput.value = button.getAttribute('data-code') || '';
-                    }
-
-                    if (editCategoryNameInput) {
-                        editCategoryNameInput.value = button.getAttribute('data-name') || '';
-                    }
-
-                    if (editCategoryDescriptionInput) {
-                        editCategoryDescriptionInput.value = button.getAttribute('data-description') || '';
-                    }
-
-                    if (editCategoryParentCategoryIdInput) {
-                        editCategoryParentCategoryIdInput.value = button.getAttribute('data-parent-category-id') || '';
-                    }
-                });
-            });
-
-            var shouldOpenCreateModal = @Model.OpenCreateModal.ToString().ToLowerInvariant();
-            var shouldOpenEditModal = @Model.OpenEditModal.ToString().ToLowerInvariant();
-
-            var createModalElement = document.getElementById('createCategoryModal');
-            var editModalElement = document.getElementById('editCategoryModal');
-
-            if (createModalElement && shouldOpenCreateModal && window.bootstrap) {
-                window.bootstrap.Modal.getOrCreateInstance(createModalElement).show();
-            }
-
-            if (editModalElement && shouldOpenEditModal && window.bootstrap) {
-                window.bootstrap.Modal.getOrCreateInstance(editModalElement).show();
-            }
-        });
-    </script>
-}

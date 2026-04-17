@@ -4,250 +4,142 @@
     ViewData["Title"] = "Tedarikçiler";
 }
 
-<div class="nk-content nk-content-fluid pm-list-page">
+<div class="nk-content">
     <div class="container-fluid">
         <div class="nk-content-inner">
             <div class="nk-content-body">
-                <partial name="_StatusMessage" />
-
                 <div class="nk-block-head nk-block-head-sm">
                     <div class="nk-block-between">
                         <div class="nk-block-head-content">
                             <h3 class="nk-block-title page-title">Tedarikçiler</h3>
                             <div class="nk-block-des text-soft">
-                                <p>Tedarikçi iletişim ve aktiflik bilgilerini tek listede yönetin.</p>
+                                <p>Tedarikçi iletişim ve aktiflik bilgilerini yönetin.</p>
                             </div>
                         </div>
                         <div class="nk-block-head-content">
-                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createSupplierModal">
-                                <em class="icon ni ni-plus"></em><span>Yeni Tedarikçi</span>
-                            </button>
+                            <a asp-action="Create" class="btn btn-primary d-inline-flex">
+                                <em class="icon ni ni-plus"></em>
+                                <span>Yeni Tedarikçi</span>
+                            </a>
                         </div>
                     </div>
                 </div>
 
+                @await Html.PartialAsync("_StatusMessage")
+
                 <div class="nk-block">
-                    <div class="card card-bordered mb-3 pm-filter-card">
+                    <div class="card card-bordered mb-3">
                         <div class="card-inner">
-                            <form method="get" class="row g-gs align-items-end pm-filter-form">
-                                <div class="col-md-4 col-lg-3">
-                                    <label class="form-label" for="includeInactive">Listeleme</label>
-                                    <select id="includeInactive" name="includeInactive" class="form-select">
-                                        <option value="false" selected="@(!Model.IncludeInactive)">Sadece aktif</option>
-                                        <option value="true" selected="@(Model.IncludeInactive)">Tüm kayıtlar</option>
-                                    </select>
+                            <form method="get" class="row g-3 align-end">
+                                <div class="col-lg-3">
+                                    <div class="form-group">
+                                        <label class="form-label" for="includeInactive">Listeleme</label>
+                                        <div class="form-control-wrap">
+                                            <select id="includeInactive" name="includeInactive" class="form-select">
+                                                <option value="false" selected="@(!Model.IncludeInactive)">Sadece aktifler</option>
+                                                <option value="true" selected="@(Model.IncludeInactive)">Tüm kayıtlar</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="col-auto">
-                                    <button type="submit" class="btn btn-primary">Uygula</button>
+                                <div class="col-lg-2">
+                                    <div class="form-group">
+                                        <button type="submit" class="btn btn-primary w-100">Uygula</button>
+                                    </div>
                                 </div>
                             </form>
                         </div>
                     </div>
 
-                    <div class="card card-bordered card-stretch pm-table-card">
-                    <div class="card-inner border-bottom d-flex justify-content-between align-items-center">
-                        <h6 class="title mb-0">Tedarikçi Listesi</h6>
-                        <span class="text-soft small">Toplam: @Model.Suppliers.Count</span>
-                    </div>
-                    <div class="card-inner p-0">
-                        <div class="table-responsive">
-                            <table class="table table-tranx mb-0 pm-table">
-                                <thead>
-                                    <tr class="tb-tnx-head">
-                                        <th>Kod</th>
-                                        <th>Ad</th>
-                                        <th>E-Posta</th>
-                                        <th>Telefon</th>
-                                        <th>Aktif</th>
-                                        <th class="text-end">İşlem</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                    <div class="card card-bordered">
+                        <div class="card-inner p-0">
+                            <div class="nk-tb-list nk-tb-ulist">
+                                <div class="nk-tb-item nk-tb-head">
+                                    <div class="nk-tb-col"><span>Kod</span></div>
+                                    <div class="nk-tb-col tb-col-sm"><span>Tedarikçi</span></div>
+                                    <div class="nk-tb-col tb-col-md"><span>E-posta</span></div>
+                                    <div class="nk-tb-col tb-col-md"><span>Telefon</span></div>
+                                    <div class="nk-tb-col tb-col-md"><span>Durum</span></div>
+                                    <div class="nk-tb-col nk-tb-col-tools text-end"></div>
+                                </div>
+
                                 @if (Model.Suppliers.Count == 0)
                                 {
-                                    <tr><td colspan="6" class="text-center py-4">Kayıt bulunamadı.</td></tr>
+                                    <div class="nk-tb-item">
+                                        <div class="nk-tb-col">
+                                            <span class="tb-sub">Kayıt bulunamadı.</span>
+                                        </div>
+                                    </div>
                                 }
                                 else
                                 {
-                                    @foreach (var row in Model.Suppliers)
+                                    foreach (var row in Model.Suppliers)
                                     {
-                                        <tr>
-                                            <td><span class="tb-sub">@row.SupplierCode</span></td>
-                                            <td><span class="tb-lead">@row.Name</span></td>
-                                            <td>@(row.Email ?? "-")</td>
-                                            <td>@(row.Phone ?? "-")</td>
-                                            <td>
+                                        var deleteFormId = $"delete-supplier-{row.Id:N}";
+
+                                        <div class="nk-tb-item">
+                                            <div class="nk-tb-col">
+                                                <span class="tb-sub">@row.SupplierCode</span>
+                                            </div>
+                                            <div class="nk-tb-col tb-col-sm">
+                                                <span class="tb-lead">@row.Name</span>
+                                                @if (!string.IsNullOrWhiteSpace(row.TaxNumber))
+                                                {
+                                                    <span class="tb-sub d-block">Vergi No: @row.TaxNumber</span>
+                                                }
+                                            </div>
+                                            <div class="nk-tb-col tb-col-md">
+                                                <span class="tb-sub">@(string.IsNullOrWhiteSpace(row.Email) ? "-" : row.Email)</span>
+                                            </div>
+                                            <div class="nk-tb-col tb-col-md">
+                                                <span class="tb-sub">@(string.IsNullOrWhiteSpace(row.Phone) ? "-" : row.Phone)</span>
+                                            </div>
+                                            <div class="nk-tb-col tb-col-md">
                                                 @if (row.IsActive)
                                                 {
-                                                    <span class="badge bg-success">Aktif</span>
+                                                    <span class="badge badge-dim bg-success">Aktif</span>
                                                 }
                                                 else
                                                 {
-                                                    <span class="badge bg-secondary">Pasif</span>
+                                                    <span class="badge badge-dim bg-light">Pasif</span>
                                                 }
-                                            </td>
-                                            <td class="text-end">
-                                                <div class="d-inline-flex gap-2">
-                                                    <button type="button"
-                                                            class="btn btn-sm btn-outline-primary"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#editSupplierModal"
-                                                            data-edit-supplier
-                                                            data-id="@row.Id"
-                                                            data-supplier-code="@row.SupplierCode"
-                                                            data-name="@row.Name"
-                                                            data-tax-number="@row.TaxNumber"
-                                                            data-email="@row.Email"
-                                                            data-phone="@row.Phone"
-                                                            data-address="@row.Address"
-                                                            data-is-active="@(row.IsActive ? "true" : "false")">
-                                                        Düzenle
-                                                    </button>
-                                                    <form asp-action="Delete" asp-route-id="@row.Id" method="post" onsubmit="return confirm('Tedarikçi silinsin mi?');">
-                                                        @Html.AntiForgeryToken()
-                                                        <button type="submit" class="btn btn-sm btn-outline-danger">Sil</button>
-                                                    </form>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                            </div>
+                                            <div class="nk-tb-col nk-tb-col-tools">
+                                                <ul class="nk-tb-actions gx-1 my-n1">
+                                                    <li class="me-n1">
+                                                        <div class="dropdown">
+                                                            <a href="#" class="dropdown-toggle btn btn-icon btn-trigger" data-bs-toggle="dropdown">
+                                                                <em class="icon ni ni-more-h"></em>
+                                                            </a>
+                                                            <div class="dropdown-menu dropdown-menu-end">
+                                                                <ul class="link-list-opt no-bdr">
+                                                                    <li>
+                                                                        <a asp-action="Edit" asp-route-id="@row.Id">
+                                                                            <em class="icon ni ni-edit"></em>
+                                                                            <span>Düzenle</span>
+                                                                        </a>
+                                                                    </li>
+                                                                    <li>
+                                                                        <a href="#" onclick="if (confirm('Bu tedarikçiyi silmek istediğinize emin misiniz?')) { document.getElementById('@deleteFormId').submit(); } return false;">
+                                                                            <em class="icon ni ni-trash"></em>
+                                                                            <span>Sil</span>
+                                                                        </a>
+                                                                    </li>
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </li>
+                                                </ul>
+
+                                                <form id="@deleteFormId" asp-action="Delete" asp-route-id="@row.Id" method="post" class="d-none">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="includeInactive" value="@Model.IncludeInactive.ToString().ToLowerInvariant()" />
+                                                </form>
+                                            </div>
+                                        </div>
                                     }
                                 }
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                </div>
-
-                <div class="modal fade" id="createSupplierModal" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-lg" role="document">
-                        <div class="modal-content pm-modal">
-                            <form method="post" asp-action="CreateFromModal">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="includeInactive" value="@Model.IncludeInactive.ToString().ToLowerInvariant()" />
-
-                                <div class="modal-header">
-                                    <h5 class="modal-title">Yeni Tedarikçi</h5>
-                                    <a href="#" class="close" data-bs-dismiss="modal" aria-label="Close">
-                                        <em class="icon ni ni-cross"></em>
-                                    </a>
-                                </div>
-
-                                <div class="modal-body">
-                                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
-
-                                    <div class="row g-gs">
-                                        <div class="col-md-4">
-                                            <label asp-for="CreateModal.SupplierCode" class="form-label"></label>
-                                            <input asp-for="CreateModal.SupplierCode" class="form-control" />
-                                            <span asp-validation-for="CreateModal.SupplierCode" class="text-danger"></span>
-                                        </div>
-                                        <div class="col-md-8">
-                                            <label asp-for="CreateModal.Name" class="form-label"></label>
-                                            <input asp-for="CreateModal.Name" class="form-control" />
-                                            <span asp-validation-for="CreateModal.Name" class="text-danger"></span>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <label asp-for="CreateModal.TaxNumber" class="form-label"></label>
-                                            <input asp-for="CreateModal.TaxNumber" class="form-control" />
-                                            <span asp-validation-for="CreateModal.TaxNumber" class="text-danger"></span>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <label asp-for="CreateModal.Email" class="form-label"></label>
-                                            <input asp-for="CreateModal.Email" class="form-control" />
-                                            <span asp-validation-for="CreateModal.Email" class="text-danger"></span>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <label asp-for="CreateModal.Phone" class="form-label"></label>
-                                            <input asp-for="CreateModal.Phone" class="form-control" />
-                                            <span asp-validation-for="CreateModal.Phone" class="text-danger"></span>
-                                        </div>
-                                        <div class="col-12">
-                                            <label asp-for="CreateModal.Address" class="form-label"></label>
-                                            <textarea asp-for="CreateModal.Address" rows="3" class="form-control"></textarea>
-                                            <span asp-validation-for="CreateModal.Address" class="text-danger"></span>
-                                        </div>
-                                        <div class="col-12">
-                                            <div class="form-check form-switch">
-                                                <input asp-for="CreateModal.IsActive" class="form-check-input" />
-                                                <label asp-for="CreateModal.IsActive" class="form-check-label"></label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="modal-footer bg-light">
-                                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Vazgeç</button>
-                                    <button type="submit" class="btn btn-primary">Kaydet</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal fade" id="editSupplierModal" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-lg" role="document">
-                        <div class="modal-content pm-modal">
-                            <form method="post" asp-action="EditFromModal">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="includeInactive" value="@Model.IncludeInactive.ToString().ToLowerInvariant()" />
-                                <input asp-for="EditModal.Id" type="hidden" id="editSupplierId" />
-
-                                <div class="modal-header">
-                                    <h5 class="modal-title">Tedarikçi Düzenle</h5>
-                                    <a href="#" class="close" data-bs-dismiss="modal" aria-label="Close">
-                                        <em class="icon ni ni-cross"></em>
-                                    </a>
-                                </div>
-
-                                <div class="modal-body">
-                                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
-
-                                    <div class="row g-gs">
-                                        <div class="col-md-4">
-                                            <label asp-for="EditModal.SupplierCode" class="form-label"></label>
-                                            <input asp-for="EditModal.SupplierCode" class="form-control" id="editSupplierCode" />
-                                            <span asp-validation-for="EditModal.SupplierCode" class="text-danger"></span>
-                                        </div>
-                                        <div class="col-md-8">
-                                            <label asp-for="EditModal.Name" class="form-label"></label>
-                                            <input asp-for="EditModal.Name" class="form-control" id="editSupplierName" />
-                                            <span asp-validation-for="EditModal.Name" class="text-danger"></span>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <label asp-for="EditModal.TaxNumber" class="form-label"></label>
-                                            <input asp-for="EditModal.TaxNumber" class="form-control" id="editSupplierTaxNumber" />
-                                            <span asp-validation-for="EditModal.TaxNumber" class="text-danger"></span>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <label asp-for="EditModal.Email" class="form-label"></label>
-                                            <input asp-for="EditModal.Email" class="form-control" id="editSupplierEmail" />
-                                            <span asp-validation-for="EditModal.Email" class="text-danger"></span>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <label asp-for="EditModal.Phone" class="form-label"></label>
-                                            <input asp-for="EditModal.Phone" class="form-control" id="editSupplierPhone" />
-                                            <span asp-validation-for="EditModal.Phone" class="text-danger"></span>
-                                        </div>
-                                        <div class="col-12">
-                                            <label asp-for="EditModal.Address" class="form-label"></label>
-                                            <textarea asp-for="EditModal.Address" rows="3" class="form-control" id="editSupplierAddress"></textarea>
-                                            <span asp-validation-for="EditModal.Address" class="text-danger"></span>
-                                        </div>
-                                        <div class="col-12">
-                                            <div class="form-check form-switch">
-                                                <input asp-for="EditModal.IsActive" class="form-check-input" id="editSupplierIsActive" />
-                                                <label asp-for="EditModal.IsActive" class="form-check-label"></label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="modal-footer bg-light">
-                                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Vazgeç</button>
-                                    <button type="submit" class="btn btn-primary">Güncelle</button>
-                                </div>
-                            </form>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -255,71 +147,3 @@
         </div>
     </div>
 </div>
-
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            var editSupplierIdInput = document.getElementById('editSupplierId');
-            var editSupplierCodeInput = document.getElementById('editSupplierCode');
-            var editSupplierNameInput = document.getElementById('editSupplierName');
-            var editSupplierTaxNumberInput = document.getElementById('editSupplierTaxNumber');
-            var editSupplierEmailInput = document.getElementById('editSupplierEmail');
-            var editSupplierPhoneInput = document.getElementById('editSupplierPhone');
-            var editSupplierAddressInput = document.getElementById('editSupplierAddress');
-            var editSupplierIsActiveInput = document.getElementById('editSupplierIsActive');
-
-            var editButtons = document.querySelectorAll('[data-edit-supplier]');
-            editButtons.forEach(function (button) {
-                button.addEventListener('click', function () {
-                    if (editSupplierIdInput) {
-                        editSupplierIdInput.value = button.getAttribute('data-id') || '';
-                    }
-
-                    if (editSupplierCodeInput) {
-                        editSupplierCodeInput.value = button.getAttribute('data-supplier-code') || '';
-                    }
-
-                    if (editSupplierNameInput) {
-                        editSupplierNameInput.value = button.getAttribute('data-name') || '';
-                    }
-
-                    if (editSupplierTaxNumberInput) {
-                        editSupplierTaxNumberInput.value = button.getAttribute('data-tax-number') || '';
-                    }
-
-                    if (editSupplierEmailInput) {
-                        editSupplierEmailInput.value = button.getAttribute('data-email') || '';
-                    }
-
-                    if (editSupplierPhoneInput) {
-                        editSupplierPhoneInput.value = button.getAttribute('data-phone') || '';
-                    }
-
-                    if (editSupplierAddressInput) {
-                        editSupplierAddressInput.value = button.getAttribute('data-address') || '';
-                    }
-
-                    if (editSupplierIsActiveInput) {
-                        editSupplierIsActiveInput.checked = (button.getAttribute('data-is-active') || '') === 'true';
-                    }
-                });
-            });
-
-            var shouldOpenCreateModal = @Model.OpenCreateModal.ToString().ToLowerInvariant();
-            var shouldOpenEditModal = @Model.OpenEditModal.ToString().ToLowerInvariant();
-
-            var createModalElement = document.getElementById('createSupplierModal');
-            var editModalElement = document.getElementById('editSupplierModal');
-
-            if (createModalElement && shouldOpenCreateModal && window.bootstrap) {
-                window.bootstrap.Modal.getOrCreateInstance(createModalElement).show();
-            }
-
-            if (editModalElement && shouldOpenEditModal && window.bootstrap) {
-                window.bootstrap.Modal.getOrCreateInstance(editModalElement).show();
-            }
-        });
-    </script>
-}

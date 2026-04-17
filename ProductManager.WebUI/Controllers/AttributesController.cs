@@ -49,8 +49,8 @@ public sealed class AttributesController : Controller
             IsRequired = model.IsRequired,
             IsFilterable = model.IsFilterable,
             IsVariantAxis = model.IsVariantAxis,
-            AllowedValuesJson = model.AllowedValuesJson,
-            ValidationRuleJson = model.ValidationRuleJson
+            AllowedValuesJson = null,
+            ValidationRuleJson = null
         }, cancellationToken);
 
         TempData["Success"] = "Attribute olusturuldu.";
@@ -80,8 +80,8 @@ public sealed class AttributesController : Controller
             IsRequired = model.IsRequired,
             IsFilterable = model.IsFilterable,
             IsVariantAxis = model.IsVariantAxis,
-            AllowedValuesJson = model.AllowedValuesJson,
-            ValidationRuleJson = model.ValidationRuleJson
+            AllowedValuesJson = null,
+            ValidationRuleJson = null
         }, cancellationToken);
 
         TempData["Success"] = "Attribute olusturuldu.";
@@ -133,8 +133,8 @@ public sealed class AttributesController : Controller
             IsRequired = model.IsRequired,
             IsFilterable = model.IsFilterable,
             IsVariantAxis = model.IsVariantAxis,
-            AllowedValuesJson = model.AllowedValuesJson,
-            ValidationRuleJson = model.ValidationRuleJson
+            AllowedValuesJson = null,
+            ValidationRuleJson = null
         }, cancellationToken);
 
         if (!updated)
@@ -179,8 +179,8 @@ public sealed class AttributesController : Controller
             IsRequired = model.IsRequired,
             IsFilterable = model.IsFilterable,
             IsVariantAxis = model.IsVariantAxis,
-            AllowedValuesJson = model.AllowedValuesJson,
-            ValidationRuleJson = model.ValidationRuleJson
+            AllowedValuesJson = null,
+            ValidationRuleJson = null
         }, cancellationToken);
 
         if (!updated)

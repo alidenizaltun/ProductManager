@@ -104,7 +104,7 @@ public sealed class ProductFormViewModel
     [StringLength(512)]
     public string? Tags { get; set; }
 
-    [Display(Name = "Ek Veri (JSON)")]
+    [Display(Name = "Ek Teknik Metadata")]
     public string? MetadataJson { get; set; }
 }
 

@@ -96,6 +96,15 @@
                                     <span>Gizlilik</span>
                                 </a>
                             </li>
+                            <li>
+                                <form asp-controller="Auth" asp-action="Logout" method="post" class="m-0">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-link text-start p-0 d-flex align-items-center gap-2">
+                                        <em class="icon ni ni-signout"></em>
+                                        <span>Cikis Yap</span>
+                                    </button>
+                                </form>
+                            </li>
                         </ul>
                     </div>
                 </div>

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using ProductManager.Service.Shared.Abstract;
 using ProductManager.Shared.Dtos.ProductOperations;
 using ProductManager.WebUI.Models.ProductOperations;
@@ -23,11 +24,14 @@ public sealed class CategoriesController : Controller
     }
 
     [HttpGet]
-    public IActionResult Create()
+    public async Task<IActionResult> Create(CancellationToken cancellationToken)
     {
         SetBreadcrumb("Yeni Kategori");
         ViewData["Title"] = "Yeni Kategori";
-        return View("Edit", new CategoryFormViewModel());
+
+        var model = new CategoryFormViewModel();
+        await PopulateParentCategoryOptionsAsync(model, cancellationToken);
+        return View("Edit", model);
     }
 
     [HttpPost]
@@ -38,6 +42,8 @@ public sealed class CategoriesController : Controller
         {
             SetBreadcrumb("Yeni Kategori");
             ViewData["Title"] = "Yeni Kategori";
+
+            await PopulateParentCategoryOptionsAsync(model, cancellationToken);
             return View("Edit", model);
         }
 
@@ -92,14 +98,17 @@ public sealed class CategoriesController : Controller
         SetBreadcrumb("Kategori Duzenle");
         ViewData["Title"] = "Kategori Duzenle";
 
-        return View(new CategoryFormViewModel
+        var model = new CategoryFormViewModel
         {
             Id = category.Id,
             Code = category.Code,
             Name = category.Name,
             Description = category.Description,
             ParentCategoryId = category.ParentCategoryId
-        });
+        };
+
+        await PopulateParentCategoryOptionsAsync(model, cancellationToken);
+        return View(model);
     }
 
     [HttpPost]
@@ -110,6 +119,8 @@ public sealed class CategoriesController : Controller
         {
             SetBreadcrumb("Kategori Duzenle");
             ViewData["Title"] = "Kategori Duzenle";
+
+            await PopulateParentCategoryOptionsAsync(model, cancellationToken);
             return View(model);
         }
 
@@ -189,15 +200,56 @@ public sealed class CategoriesController : Controller
         bool openEditModal = false)
     {
         var categories = await _service.GetCategoriesAsync(cancellationToken);
+        var createModalModel = createModal ?? new CategoryFormViewModel();
+        var editModalModel = editModal ?? new CategoryFormViewModel();
+
+        createModalModel.ParentCategoryOptions = BuildParentCategoryOptions(
+            categories,
+            createModalModel.ParentCategoryId,
+            excludedCategoryId: null);
+
+        editModalModel.ParentCategoryOptions = BuildParentCategoryOptions(
+            categories,
+            editModalModel.ParentCategoryId,
+            excludedCategoryId: editModalModel.Id);
 
         return new CategoryListPageViewModel
         {
             Categories = categories,
-            CreateModal = createModal ?? new CategoryFormViewModel(),
-            EditModal = editModal ?? new CategoryFormViewModel(),
+            CreateModal = createModalModel,
+            EditModal = editModalModel,
             OpenCreateModal = openCreateModal,
             OpenEditModal = openEditModal
         };
+    }
+
+    private async Task PopulateParentCategoryOptionsAsync(CategoryFormViewModel model, CancellationToken cancellationToken)
+    {
+        var categories = await _service.GetCategoriesAsync(cancellationToken);
+        model.ParentCategoryOptions = BuildParentCategoryOptions(categories, model.ParentCategoryId, model.Id);
+    }
+
+    private static IReadOnlyList<SelectListItem> BuildParentCategoryOptions(
+        IReadOnlyList<ProductCategoryDto> categories,
+        Guid? selectedCategoryId,
+        Guid? excludedCategoryId)
+    {
+        var items = new List<SelectListItem>
+        {
+            new("Üst kategori yok", string.Empty, !selectedCategoryId.HasValue)
+        };
+
+        foreach (var category in categories
+                     .Where(x => x.Id != excludedCategoryId)
+                     .OrderBy(x => x.Name, StringComparer.CurrentCultureIgnoreCase))
+        {
+            items.Add(new SelectListItem(
+                $"{category.Name} ({category.Code})",
+                category.Id.ToString(),
+                selectedCategoryId == category.Id));
+        }
+
+        return items;
     }
 
     private void SetBreadcrumb(string breadcrumb)

@@ -1,5 +1,6 @@
 using Dapper;
 using ProductManager.Shared.Dtos.ProductOperations;
+using System.Text;
 
 namespace ProductManager.Repository.Concrete
 {
@@ -8,14 +9,15 @@ namespace ProductManager.Repository.Concrete
         public async Task<IReadOnlyList<ProductDto>> GetProductsAsync(ProductFilterDto filter, CancellationToken cancellationToken = default)
         {
             var take = NormalizeTake(filter.Take);
+            var search = string.IsNullOrWhiteSpace(filter.Search) ? null : filter.Search.Trim();
+            var includeLargeFields = filter.IncludeLargeFields;
 
-            const string sql = @"
+            var sqlBuilder = new StringBuilder(@"
 SELECT TOP (@Take)
     Id,
     ProductCode,
     Name,
     ShortDescription,
-    Description,
     Kind,
     Status,
     Brand,
@@ -30,33 +32,52 @@ SELECT TOP (@Take)
     TaxRate,
     TaxCode,
     Tags,
-    MetadataJson,
     CreatedAt,
-    UpdatedAt
+    UpdatedAt");
+
+            if (includeLargeFields)
+            {
+                sqlBuilder.Append(",\n    Description,\n    MetadataJson");
+            }
+
+            sqlBuilder.Append(@"
 FROM [Product].[Products]
-WHERE IsDeleted = 0
-  AND (
-        @Search IS NULL
-        OR ProductCode LIKE '%' + @Search + '%'
-        OR Name LIKE '%' + @Search + '%'
-      )
-  AND (@Kind IS NULL OR Kind = @Kind)
-  AND (@Status IS NULL OR Status = @Status)
-  AND (@IsActive IS NULL OR IsActive = @IsActive)
-ORDER BY CreatedAt DESC;";
+WHERE IsDeleted = 0");
+
+            var parameters = new DynamicParameters();
+            parameters.Add("Take", take);
+
+            if (search is not null)
+            {
+                sqlBuilder.Append("\n  AND (ProductCode LIKE @SearchPattern OR Name LIKE @SearchPattern)");
+                parameters.Add("SearchPattern", $"%{search}%");
+            }
+
+            if (filter.Kind.HasValue)
+            {
+                sqlBuilder.Append("\n  AND Kind = @Kind");
+                parameters.Add("Kind", filter.Kind);
+            }
+
+            if (filter.Status.HasValue)
+            {
+                sqlBuilder.Append("\n  AND Status = @Status");
+                parameters.Add("Status", filter.Status);
+            }
+
+            if (filter.IsActive.HasValue)
+            {
+                sqlBuilder.Append("\n  AND IsActive = @IsActive");
+                parameters.Add("IsActive", filter.IsActive);
+            }
+
+            sqlBuilder.Append("\nORDER BY CreatedAt DESC;");
 
             using var connection = CreateConnection();
             var products = await connection.QueryAsync<ProductDto>(
                 new CommandDefinition(
-                    sql,
-                    new
-                    {
-                        Take = take,
-                        Search = string.IsNullOrWhiteSpace(filter.Search) ? null : filter.Search.Trim(),
-                        filter.Kind,
-                        filter.Status,
-                        filter.IsActive
-                    },
+                    sqlBuilder.ToString(),
+                    parameters,
                     cancellationToken: cancellationToken));
 
             return products.AsList();

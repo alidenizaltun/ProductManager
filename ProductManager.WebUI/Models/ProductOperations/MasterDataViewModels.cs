@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using ProductManager.Shared.Dtos.ProductOperations;
 
 namespace ProductManager.WebUI.Models.ProductOperations;
@@ -31,6 +32,8 @@ public sealed class CategoryFormViewModel
 
     [Display(Name = "Üst Kategori")]
     public Guid? ParentCategoryId { get; set; }
+
+    public IReadOnlyList<SelectListItem> ParentCategoryOptions { get; set; } = [];
 }
 
 public sealed class AttributeDefinitionListPageViewModel
@@ -68,10 +71,10 @@ public sealed class AttributeDefinitionFormViewModel
     [Display(Name = "Varyant Ekseni")]
     public bool IsVariantAxis { get; set; }
 
-    [Display(Name = "İzinli Değerler (JSON)")]
+    [Display(Name = "İzinli Değerler")]
     public string? AllowedValuesJson { get; set; }
 
-    [Display(Name = "Doğrulama Kuralı (JSON)")]
+    [Display(Name = "Doğrulama Kuralı")]
     public string? ValidationRuleJson { get; set; }
 }
 

@@ -1,397 +1,344 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using ProductManager.Service.Shared.Abstract;
 using ProductManager.Shared.Dtos.ProductOperations;
-using ProductManager.WebUI.Models.ProductOperations;
+using ProductManager.WebUI.Models.Products;
 
-namespace ProductManager.WebUI.Controllers;
-
-public sealed class ProductsController : Controller
+namespace ProductManager.WebUI.Controllers
 {
-    private readonly IProductOperationsService _service;
-
-    public ProductsController(IProductOperationsService service)
+    public sealed class ProductsController : Controller
     {
-        _service = service;
-    }
+        private readonly IProductOperationsService _productOperationsService;
 
-    [HttpGet]
-    public async Task<IActionResult> Index([FromQuery] ProductFilterInput filter, Guid? editId, bool openCreateModal, CancellationToken cancellationToken)
-    {
-        SetBreadcrumb("Urunler");
-        var viewModel = await BuildIndexPageViewModelAsync(
-            filter,
-            cancellationToken,
-            openCreateModal: openCreateModal,
-            editId: editId,
-            openEditModal: editId.HasValue);
-
-        return View(viewModel);
-    }
-
-    [HttpGet]
-    public IActionResult Create()
-    {
-        SetBreadcrumb("Yeni Urun");
-        ViewData["Title"] = "Yeni Urun";
-        return View("Edit", new ProductFormViewModel());
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(ProductFormViewModel model, CancellationToken cancellationToken)
-    {
-        if (!ModelState.IsValid)
+        private static readonly IReadOnlyDictionary<int, string> ProductKinds = new Dictionary<int, string>
         {
-            SetBreadcrumb("Yeni Urun");
-            ViewData["Title"] = "Yeni Urun";
-            return View("Edit", model);
-        }
-
-        var created = await _service.CreateProductAsync(MapToCreateRequest(model), cancellationToken);
-        TempData["Success"] = "Urun basariyla olusturuldu.";
-
-        return RedirectToAction(nameof(Edit), new { id = created.Id });
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> CreateFromModal(
-        [Bind(Prefix = nameof(ProductListPageViewModel.CreateModal))] ProductFormViewModel model,
-        [Bind(Prefix = nameof(ProductListPageViewModel.Filter))] ProductFilterInput filter,
-        CancellationToken cancellationToken)
-    {
-        if (!ModelState.IsValid)
-        {
-            SetBreadcrumb("Urunler");
-            var invalidViewModel = await BuildIndexPageViewModelAsync(
-                filter,
-                cancellationToken,
-                createModal: model,
-                openCreateModal: true);
-
-            return View(nameof(Index), invalidViewModel);
-        }
-
-        await _service.CreateProductAsync(MapToCreateRequest(model), cancellationToken);
-        TempData["Success"] = "Urun basariyla olusturuldu.";
-
-        return RedirectToAction(nameof(Index), BuildFilterRouteValues(filter));
-    }
-
-    [HttpGet]
-    public async Task<IActionResult> Edit(Guid id, CancellationToken cancellationToken)
-    {
-        var product = await _service.GetProductByIdAsync(id, cancellationToken);
-        if (product is null)
-        {
-            return NotFound();
-        }
-
-        SetBreadcrumb("Urun Duzenle");
-        ViewData["Title"] = "Urun Duzenle";
-
-        return View(MapToForm(product));
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(Guid id, ProductFormViewModel model, CancellationToken cancellationToken)
-    {
-        if (!ModelState.IsValid)
-        {
-            SetBreadcrumb("Urun Duzenle");
-            ViewData["Title"] = "Urun Duzenle";
-            return View(model);
-        }
-
-        var updated = await _service.UpdateProductAsync(id, MapToUpdateRequest(model), cancellationToken);
-        if (!updated)
-        {
-            return NotFound();
-        }
-
-        TempData["Success"] = "Urun bilgileri guncellendi.";
-        return RedirectToAction(nameof(Edit), new { id });
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> EditFromModal(
-        [Bind(Prefix = nameof(ProductListPageViewModel.EditModal))] ProductFormViewModel model,
-        [Bind(Prefix = nameof(ProductListPageViewModel.Filter))] ProductFilterInput filter,
-        CancellationToken cancellationToken)
-    {
-        Guid productId = Guid.Empty;
-        if (model.Id is Guid parsedId)
-        {
-            productId = parsedId;
-        }
-        else
-        {
-            ModelState.AddModelError($"{nameof(ProductListPageViewModel.EditModal)}.{nameof(ProductFormViewModel.Id)}", "Urun bilgisi bulunamadi.");
-        }
-
-        if (!ModelState.IsValid)
-        {
-            SetBreadcrumb("Urunler");
-            var invalidViewModel = await BuildIndexPageViewModelAsync(
-                filter,
-                cancellationToken,
-                editModal: model,
-                openEditModal: true);
-
-            return View(nameof(Index), invalidViewModel);
-        }
-
-        var updated = await _service.UpdateProductAsync(productId, MapToUpdateRequest(model), cancellationToken);
-        if (!updated)
-        {
-            return NotFound();
-        }
-
-        TempData["Success"] = "Urun bilgileri guncellendi.";
-        return RedirectToAction(nameof(Index), BuildFilterRouteValues(filter));
-    }
-
-    [HttpGet]
-    public async Task<IActionResult> Details(Guid id, CancellationToken cancellationToken)
-    {
-        var product = await _service.GetProductByIdAsync(id, cancellationToken);
-        if (product is null)
-        {
-            return NotFound();
-        }
-
-        var categoryMapsTask = _service.GetProductCategoryMapsAsync(id, cancellationToken);
-        var categoriesTask = _service.GetCategoriesAsync(cancellationToken);
-        var attributeDefinitionsTask = _service.GetAttributeDefinitionsAsync(cancellationToken);
-        var attributeValuesTask = _service.GetProductAttributeValuesAsync(id, cancellationToken);
-        var mediaTask = _service.GetProductMediaAsync(id, cancellationToken);
-        var bundleItemsTask = _service.GetBundleItemsAsync(id, cancellationToken);
-        var variantsTask = _service.GetProductVariantsAsync(id, cancellationToken);
-        var pricesTask = _service.GetProductPricesAsync(id, cancellationToken);
-        var inventoriesTask = _service.GetProductInventoriesAsync(new ProductInventoryFilterDto { ProductId = id, Take = 200 }, cancellationToken);
-        var supplierMapsTask = _service.GetProductSupplierMapsAsync(id, cancellationToken);
-        var suppliersTask = _service.GetSuppliersAsync(true, cancellationToken);
-        var physicalProfileTask = _service.GetPhysicalProfileAsync(id, cancellationToken);
-        var softwareProfileTask = _service.GetSoftwareProfileAsync(id, cancellationToken);
-        var serviceProfileTask = _service.GetServiceProfileAsync(id, cancellationToken);
-        var subscriptionProfileTask = _service.GetSubscriptionProfileAsync(id, cancellationToken);
-
-        await Task.WhenAll(
-            categoryMapsTask,
-            categoriesTask,
-            attributeDefinitionsTask,
-            attributeValuesTask,
-            mediaTask,
-            bundleItemsTask,
-            variantsTask,
-            pricesTask,
-            inventoriesTask,
-            supplierMapsTask,
-            suppliersTask,
-            physicalProfileTask,
-            softwareProfileTask,
-            serviceProfileTask,
-            subscriptionProfileTask);
-
-        var viewModel = new ProductDetailsViewModel
-        {
-            Product = product,
-            CategoryMaps = await categoryMapsTask,
-            Categories = await categoriesTask,
-            AttributeDefinitions = await attributeDefinitionsTask,
-            AttributeValues = await attributeValuesTask,
-            Media = await mediaTask,
-            BundleItems = await bundleItemsTask,
-            Variants = await variantsTask,
-            Prices = await pricesTask,
-            Inventories = await inventoriesTask,
-            SupplierMaps = await supplierMapsTask,
-            Suppliers = await suppliersTask,
-            PhysicalProfile = await physicalProfileTask,
-            SoftwareProfile = await softwareProfileTask,
-            ServiceProfile = await serviceProfileTask,
-            SubscriptionProfile = await subscriptionProfileTask
+            [1] = "Fiziksel",
+            [2] = "Yazılım",
+            [3] = "Hizmet",
+            [4] = "Abonelik",
+            [5] = "Paket",
+            [6] = "Dijital Varlık",
+            [99] = "Diğer"
         };
 
-        SetBreadcrumb("Urun Detayi");
-        ViewData["Title"] = "Urun Detayi";
-
-        return View(viewModel);
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
-    {
-        await _service.DeleteProductAsync(id, cancellationToken);
-        TempData["Success"] = "Urun silindi.";
-
-        return RedirectToAction(nameof(Index));
-    }
-
-    private void SetBreadcrumb(string breadcrumb)
-    {
-        ViewData["Breadcrumb"] = breadcrumb;
-    }
-
-    private async Task<ProductListPageViewModel> BuildIndexPageViewModelAsync(
-        ProductFilterInput filter,
-        CancellationToken cancellationToken,
-        ProductFormViewModel? createModal = null,
-        ProductFormViewModel? editModal = null,
-        bool openCreateModal = false,
-        bool openEditModal = false,
-        Guid? editId = null)
-    {
-        var normalizedFilter = new ProductFilterInput
+        private static readonly IReadOnlyDictionary<int, string> ProductStatuses = new Dictionary<int, string>
         {
-            Search = filter.Search,
-            Kind = filter.Kind,
-            Status = filter.Status,
-            IsActive = filter.IsActive,
-            Take = NormalizeTake(filter.Take)
+            [1] = "Draft",
+            [2] = "Active",
+            [3] = "Passive",
+            [4] = "Archived"
         };
 
-        var products = await _service.GetProductsAsync(
-            new ProductFilterDto
-            {
-                Search = normalizedFilter.Search,
-                Kind = normalizedFilter.Kind,
-                Status = normalizedFilter.Status,
-                IsActive = normalizedFilter.IsActive,
-                Take = normalizedFilter.Take
-            },
-            cancellationToken);
+        private static readonly IReadOnlyList<string> CurrencyCodes =
+        [
+            "TRY",
+            "USD",
+            "EUR",
+            "GBP"
+        ];
 
-        ProductFormViewModel resolvedEditModal = editModal ?? new ProductFormViewModel();
-        var shouldOpenEditModal = openEditModal;
-
-        if (editModal is null && editId.HasValue)
+        public ProductsController(IProductOperationsService productOperationsService)
         {
-            var editTarget = products.FirstOrDefault(x => x.Id == editId.Value)
-                             ?? await _service.GetProductByIdAsync(editId.Value, cancellationToken);
+            _productOperationsService = productOperationsService;
+        }
 
-            if (editTarget is not null)
+        [HttpGet]
+        public async Task<IActionResult> Index(ProductIndexViewModel query, CancellationToken cancellationToken)
+        {
+            var take = NormalizeTake(query.Take);
+
+            var products = await _productOperationsService.GetProductsAsync(
+                new ProductFilterDto
+                {
+                    Search = query.Search,
+                    Kind = query.Kind,
+                    Status = query.Status,
+                    IsActive = query.IsActive,
+                    Take = take,
+                    IncludeLargeFields = false
+                },
+                cancellationToken);
+
+            var viewModel = new ProductIndexViewModel
             {
-                resolvedEditModal = MapToForm(editTarget);
+                Search = query.Search,
+                Kind = query.Kind,
+                Status = query.Status,
+                IsActive = query.IsActive,
+                Take = take,
+                Products = products,
+                KindLabels = ProductKinds,
+                StatusLabels = ProductStatuses,
+                KindOptions = BuildSelectOptions(ProductKinds, query.Kind, "Tüm Türler"),
+                StatusOptions = BuildSelectOptions(ProductStatuses, query.Status, "Tüm Durumlar"),
+                ActivityOptions = BuildActivityOptions(query.IsActive)
+            };
+
+            SetPageMetadata("Ürünler");
+            return View(viewModel);
+        }
+
+        [HttpGet]
+        public IActionResult Create()
+        {
+            var viewModel = BuildProductForm(new ProductFormViewModel());
+            SetPageMetadata("Yeni Ürün");
+            return View(viewModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(ProductFormViewModel model, CancellationToken cancellationToken)
+        {
+            if (!ModelState.IsValid)
+            {
+                SetPageMetadata("Yeni Ürün");
+                return View(BuildProductForm(model));
             }
-            else
+
+            try
             {
-                shouldOpenEditModal = false;
+                await _productOperationsService.CreateProductAsync(MapToCreateRequest(model), cancellationToken);
+                TempData["Success"] = "Ürün başarıyla oluşturuldu.";
+                return RedirectToAction(nameof(Index));
+            }
+            catch
+            {
+                ModelState.AddModelError(string.Empty, "Ürün oluşturulurken beklenmeyen bir hata oluştu.");
+                SetPageMetadata("Yeni Ürün");
+                return View(BuildProductForm(model));
             }
         }
 
-        return new ProductListPageViewModel
+        [HttpGet]
+        public async Task<IActionResult> Edit(Guid id, CancellationToken cancellationToken)
         {
-            Filter = normalizedFilter,
-            Products = products,
-            CreateModal = createModal ?? new ProductFormViewModel(),
-            EditModal = resolvedEditModal,
-            OpenCreateModal = openCreateModal,
-            OpenEditModal = shouldOpenEditModal
-        };
-    }
+            if (id == Guid.Empty)
+            {
+                TempData["Error"] = "Geçersiz ürün kimliği.";
+                return RedirectToAction(nameof(Index));
+            }
 
-    private static object BuildFilterRouteValues(ProductFilterInput filter)
-    {
-        return new
-        {
-            filter.Search,
-            filter.Kind,
-            filter.Status,
-            filter.IsActive,
-            Take = NormalizeTake(filter.Take)
-        };
-    }
+            var product = await _productOperationsService.GetProductByIdAsync(id, cancellationToken);
+            if (product is null)
+            {
+                TempData["Error"] = "Güncellenecek ürün bulunamadı.";
+                return RedirectToAction(nameof(Index));
+            }
 
-    private static int NormalizeTake(int take)
-    {
-        if (take < 1)
-        {
-            return 100;
+            var viewModel = BuildProductForm(MapToForm(product));
+            SetPageMetadata("Ürün Düzenle");
+            return View(viewModel);
         }
 
-        return take > 500 ? 500 : take;
-    }
-
-    private static ProductFormViewModel MapToForm(ProductDto product)
-    {
-        return new ProductFormViewModel
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(ProductFormViewModel model, CancellationToken cancellationToken)
         {
-            Id = product.Id,
-            ProductCode = product.ProductCode,
-            Name = product.Name,
-            ShortDescription = product.ShortDescription,
-            Description = product.Description,
-            Kind = product.Kind,
-            Status = product.Status,
-            Brand = product.Brand,
-            Manufacturer = product.Manufacturer,
-            Barcode = product.Barcode,
-            IsActive = product.IsActive,
-            IsSellable = product.IsSellable,
-            IsPurchasable = product.IsPurchasable,
-            TrackInventory = product.TrackInventory,
-            DefaultCurrencyCode = product.DefaultCurrencyCode,
-            UnitOfMeasure = product.UnitOfMeasure,
-            TaxRate = product.TaxRate,
-            TaxCode = product.TaxCode,
-            Tags = product.Tags,
-            MetadataJson = product.MetadataJson
-        };
-    }
+            if (model.Id is null || model.Id == Guid.Empty)
+            {
+                TempData["Error"] = "Geçersiz ürün kimliği.";
+                return RedirectToAction(nameof(Index));
+            }
 
-    private static CreateProductRequestDto MapToCreateRequest(ProductFormViewModel model)
-    {
-        return new CreateProductRequestDto
-        {
-            ProductCode = model.ProductCode.Trim(),
-            Name = model.Name.Trim(),
-            ShortDescription = model.ShortDescription,
-            Description = model.Description,
-            Kind = model.Kind,
-            Status = model.Status,
-            Brand = model.Brand,
-            Manufacturer = model.Manufacturer,
-            Barcode = model.Barcode,
-            IsActive = model.IsActive,
-            IsSellable = model.IsSellable,
-            IsPurchasable = model.IsPurchasable,
-            TrackInventory = model.TrackInventory,
-            DefaultCurrencyCode = model.DefaultCurrencyCode.Trim().ToUpperInvariant(),
-            UnitOfMeasure = model.UnitOfMeasure,
-            TaxRate = model.TaxRate,
-            TaxCode = model.TaxCode,
-            Tags = model.Tags,
-            MetadataJson = model.MetadataJson
-        };
-    }
+            if (!ModelState.IsValid)
+            {
+                SetPageMetadata("Ürün Düzenle");
+                return View(BuildProductForm(model));
+            }
 
-    private static UpdateProductRequestDto MapToUpdateRequest(ProductFormViewModel model)
-    {
-        return new UpdateProductRequestDto
+            try
+            {
+                var updated = await _productOperationsService.UpdateProductAsync(model.Id.Value, MapToUpdateRequest(model), cancellationToken);
+
+                if (!updated)
+                {
+                    TempData["Error"] = "Ürün güncellenemedi veya bulunamadı.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                TempData["Success"] = "Ürün başarıyla güncellendi.";
+                return RedirectToAction(nameof(Index));
+            }
+            catch
+            {
+                ModelState.AddModelError(string.Empty, "Ürün güncellenirken beklenmeyen bir hata oluştu.");
+                SetPageMetadata("Ürün Düzenle");
+                return View(BuildProductForm(model));
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
         {
-            ProductCode = model.ProductCode.Trim(),
-            Name = model.Name.Trim(),
-            ShortDescription = model.ShortDescription,
-            Description = model.Description,
-            Kind = model.Kind,
-            Status = model.Status,
-            Brand = model.Brand,
-            Manufacturer = model.Manufacturer,
-            Barcode = model.Barcode,
-            IsActive = model.IsActive,
-            IsSellable = model.IsSellable,
-            IsPurchasable = model.IsPurchasable,
-            TrackInventory = model.TrackInventory,
-            DefaultCurrencyCode = model.DefaultCurrencyCode.Trim().ToUpperInvariant(),
-            UnitOfMeasure = model.UnitOfMeasure,
-            TaxRate = model.TaxRate,
-            TaxCode = model.TaxCode,
-            Tags = model.Tags,
-            MetadataJson = model.MetadataJson
-        };
+            if (id == Guid.Empty)
+            {
+                TempData["Error"] = "Geçersiz ürün kimliği.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            try
+            {
+                var deleted = await _productOperationsService.DeleteProductAsync(id, cancellationToken);
+                TempData[deleted ? "Success" : "Error"] = deleted
+                    ? "Ürün başarıyla silindi."
+                    : "Ürün silinemedi veya bulunamadı.";
+            }
+            catch
+            {
+                TempData["Error"] = "Ürün silinirken beklenmeyen bir hata oluştu.";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        private ProductFormViewModel BuildProductForm(ProductFormViewModel model)
+        {
+            model.KindOptions = BuildSelectOptions(ProductKinds, model.Kind);
+            model.StatusOptions = BuildSelectOptions(ProductStatuses, model.Status);
+            model.CurrencyOptions = BuildCurrencyOptions(model.DefaultCurrencyCode);
+            model.DefaultCurrencyCode = NormalizeCurrency(model.DefaultCurrencyCode);
+            return model;
+        }
+
+        private static ProductFormViewModel MapToForm(ProductDto product)
+        {
+            return new ProductFormViewModel
+            {
+                Id = product.Id,
+                ProductCode = product.ProductCode,
+                Name = product.Name,
+                ShortDescription = product.ShortDescription,
+                Description = product.Description,
+                Kind = product.Kind,
+                Status = product.Status,
+                Brand = product.Brand,
+                Manufacturer = product.Manufacturer,
+                Barcode = product.Barcode,
+                IsActive = product.IsActive,
+                IsSellable = product.IsSellable,
+                IsPurchasable = product.IsPurchasable,
+                TrackInventory = product.TrackInventory,
+                DefaultCurrencyCode = product.DefaultCurrencyCode,
+                UnitOfMeasure = product.UnitOfMeasure,
+                TaxRate = product.TaxRate,
+                TaxCode = product.TaxCode,
+                Tags = product.Tags,
+                MetadataJson = product.MetadataJson
+            };
+        }
+
+        private static CreateProductRequestDto MapToCreateRequest(ProductFormViewModel model)
+        {
+            return new CreateProductRequestDto
+            {
+                ProductCode = NormalizeRequired(model.ProductCode),
+                Name = NormalizeRequired(model.Name),
+                ShortDescription = NormalizeOptional(model.ShortDescription),
+                Description = NormalizeOptional(model.Description),
+                Kind = model.Kind,
+                Status = model.Status,
+                Brand = NormalizeOptional(model.Brand),
+                Manufacturer = NormalizeOptional(model.Manufacturer),
+                Barcode = NormalizeOptional(model.Barcode),
+                IsActive = model.IsActive,
+                IsSellable = model.IsSellable,
+                IsPurchasable = model.IsPurchasable,
+                TrackInventory = model.TrackInventory,
+                DefaultCurrencyCode = NormalizeCurrency(model.DefaultCurrencyCode),
+                UnitOfMeasure = NormalizeOptional(model.UnitOfMeasure),
+                TaxRate = model.TaxRate,
+                TaxCode = NormalizeOptional(model.TaxCode),
+                Tags = NormalizeOptional(model.Tags),
+                MetadataJson = null
+            };
+        }
+
+        private static UpdateProductRequestDto MapToUpdateRequest(ProductFormViewModel model)
+        {
+            return new UpdateProductRequestDto
+            {
+                ProductCode = NormalizeRequired(model.ProductCode),
+                Name = NormalizeRequired(model.Name),
+                ShortDescription = NormalizeOptional(model.ShortDescription),
+                Description = NormalizeOptional(model.Description),
+                Kind = model.Kind,
+                Status = model.Status,
+                Brand = NormalizeOptional(model.Brand),
+                Manufacturer = NormalizeOptional(model.Manufacturer),
+                Barcode = NormalizeOptional(model.Barcode),
+                IsActive = model.IsActive,
+                IsSellable = model.IsSellable,
+                IsPurchasable = model.IsPurchasable,
+                TrackInventory = model.TrackInventory,
+                DefaultCurrencyCode = NormalizeCurrency(model.DefaultCurrencyCode),
+                UnitOfMeasure = NormalizeOptional(model.UnitOfMeasure),
+                TaxRate = model.TaxRate,
+                TaxCode = NormalizeOptional(model.TaxCode),
+                Tags = NormalizeOptional(model.Tags),
+                MetadataJson = null
+            };
+        }
+
+        private void SetPageMetadata(string breadcrumb)
+        {
+            ViewData["Title"] = breadcrumb;
+            ViewData["Breadcrumb"] = breadcrumb;
+        }
+
+        private static IReadOnlyList<SelectListItem> BuildSelectOptions(
+            IReadOnlyDictionary<int, string> source,
+            int? selectedValue,
+            string? emptyLabel = null)
+        {
+            var items = new List<SelectListItem>();
+
+            if (!string.IsNullOrWhiteSpace(emptyLabel))
+            {
+                items.Add(new SelectListItem(emptyLabel, string.Empty, !selectedValue.HasValue));
+            }
+
+            foreach (var item in source)
+            {
+                items.Add(new SelectListItem(item.Value, item.Key.ToString(), selectedValue == item.Key));
+            }
+
+            return items;
+        }
+
+        private static IReadOnlyList<SelectListItem> BuildCurrencyOptions(string? selectedCurrency)
+        {
+            var selected = NormalizeCurrency(selectedCurrency);
+            var items = new List<SelectListItem>(CurrencyCodes.Count);
+
+            foreach (var code in CurrencyCodes)
+            {
+                items.Add(new SelectListItem(code, code, selected.Equals(code, StringComparison.OrdinalIgnoreCase)));
+            }
+
+            return items;
+        }
+
+        private static IReadOnlyList<SelectListItem> BuildActivityOptions(bool? selected)
+        {
+            return
+            [
+                new SelectListItem("Tüm Durumlar", string.Empty, !selected.HasValue),
+                new SelectListItem("Sadece Aktif", bool.TrueString.ToLowerInvariant(), selected is true),
+                new SelectListItem("Sadece Pasif", bool.FalseString.ToLowerInvariant(), selected is false)
+            ];
+        }
+
+        private static string NormalizeRequired(string value) => value.Trim();
+
+        private static string? NormalizeOptional(string? value)
+            => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+        private static string NormalizeCurrency(string? value)
+            => string.IsNullOrWhiteSpace(value) ? "TRY" : value.Trim().ToUpperInvariant();
+
+        private static int NormalizeTake(int take)
+            => take <= 0 ? 50 : Math.Min(take, 200);
     }
 }

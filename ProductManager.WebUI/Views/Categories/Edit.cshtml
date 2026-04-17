@@ -5,66 +5,91 @@
     ViewData["Title"] = isEdit ? "Kategori Düzenle" : "Yeni Kategori";
 }
 
-<div class="nk-content nk-content-fluid pm-form-page">
+<div class="nk-content">
     <div class="container-fluid">
         <div class="nk-content-inner">
             <div class="nk-content-body">
-                <partial name="_StatusMessage" />
-
                 <div class="nk-block-head nk-block-head-sm">
                     <div class="nk-block-between">
                         <div class="nk-block-head-content">
                             <h3 class="nk-block-title page-title">@(isEdit ? "Kategori Düzenle" : "Yeni Kategori")</h3>
                             <div class="nk-block-des text-soft">
-                                <p>Kategori kodu, adı ve hiyerarşi bağlantısını tanımlayın.</p>
+                                <p>Kategori kodu, adı ve hiyerarşi bilgisini düzenleyin.</p>
                             </div>
                         </div>
                         <div class="nk-block-head-content">
-                            <a asp-action="Index" class="btn btn-outline-light bg-white"><em class="icon ni ni-arrow-left"></em><span>Listeye Dön</span></a>
+                            <a asp-action="Index" class="btn btn-outline-light">Listeye Dön</a>
                         </div>
                     </div>
                 </div>
 
+                @await Html.PartialAsync("_StatusMessage")
+
                 <div class="nk-block">
-                <form method="post" asp-action="@(isEdit ? "Edit" : "Create")">
-                    @Html.AntiForgeryToken()
-                    <input asp-for="Id" type="hidden" />
-
-                    <div class="card card-bordered pm-form-card">
-                        <div class="card-inner border-bottom py-2">
-                            <h6 class="title mb-0">Kategori Bilgileri</h6>
-                        </div>
+                    <div class="card card-bordered">
                         <div class="card-inner">
-                            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-                            <div class="row g-gs">
-                                <div class="col-md-4">
-                                    <label asp-for="Code" class="form-label"></label>
-                                    <input asp-for="Code" class="form-control" />
-                                    <span asp-validation-for="Code" class="text-danger"></span>
-                                </div>
-                                <div class="col-md-8">
-                                    <label asp-for="Name" class="form-label"></label>
-                                    <input asp-for="Name" class="form-control" />
-                                    <span asp-validation-for="Name" class="text-danger"></span>
-                                </div>
-                                <div class="col-12">
-                                    <label asp-for="Description" class="form-label"></label>
-                                    <textarea asp-for="Description" rows="3" class="form-control"></textarea>
-                                </div>
-                                <div class="col-12">
-                                    <label asp-for="ParentCategoryId" class="form-label"></label>
-                                    <input asp-for="ParentCategoryId" class="form-control" />
-                                    <small class="text-soft">Boş bırakabilirsiniz veya üst kategori GUID değeri girebilirsiniz.</small>
-                                </div>
+                            <div class="card-head">
+                                <h5 class="card-title">Kategori Bilgileri</h5>
                             </div>
 
-                            <div class="mt-4 pt-3 border-top d-flex flex-wrap justify-content-end gap-2">
-                                <button type="submit" class="btn btn-primary">Kaydet</button>
-                                <a asp-action="Index" class="btn btn-outline-light">Listeye Dön</a>
-                            </div>
+                            <form method="post" asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" class="row g-4">
+                                @Html.AntiForgeryToken()
+                                <input asp-for="Id" type="hidden" />
+
+                                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                                <div class="col-lg-4">
+                                    <div class="form-group">
+                                        <label asp-for="Code" class="form-label"></label>
+                                        <div class="form-control-wrap">
+                                            <input asp-for="Code" class="form-control" placeholder="Örn: KAT-001" />
+                                        </div>
+                                        <span asp-validation-for="Code" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-8">
+                                    <div class="form-group">
+                                        <label asp-for="Name" class="form-label"></label>
+                                        <div class="form-control-wrap">
+                                            <input asp-for="Name" class="form-control" placeholder="Kategori adını girin" />
+                                        </div>
+                                        <span asp-validation-for="Name" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-12">
+                                    <div class="form-group">
+                                        <label asp-for="Description" class="form-label"></label>
+                                        <div class="form-control-wrap">
+                                            <textarea asp-for="Description" class="form-control" rows="3" placeholder="Kategori açıklaması"></textarea>
+                                        </div>
+                                        <span asp-validation-for="Description" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-12">
+                                    <div class="form-group">
+                                        <label asp-for="ParentCategoryId" class="form-label"></label>
+                                        <div class="form-control-wrap">
+                                            <select asp-for="ParentCategoryId" asp-items="Model.ParentCategoryOptions" class="form-select"></select>
+                                        </div>
+                                        <span asp-validation-for="ParentCategoryId" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="col-12">
+                                    <div class="form-group">
+                                        <button type="submit" class="btn btn-primary">
+                                            <em class="icon ni ni-save"></em>
+                                            <span>@(isEdit ? "Değişiklikleri Kaydet" : "Kategoriyi Kaydet")</span>
+                                        </button>
+                                        <a asp-action="Index" class="btn btn-outline-light">İptal</a>
+                                    </div>
+                                </div>
+                            </form>
                         </div>
                     </div>
-                </form>
                 </div>
             </div>
         </div>

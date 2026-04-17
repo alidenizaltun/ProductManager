@@ -33,6 +33,7 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public int? Status { get; init; }
         public bool? IsActive { get; init; }
         public int Take { get; init; } = 100;
+        public bool IncludeLargeFields { get; init; } = true;
     }
 
     public sealed record CreateProductRequestDto

@@ -7,6 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ProductManager.Domain\ProductManager.Domain.csproj" />
+    <ProjectReference Include="..\ProductManager.EFCore\ProductManager.EFCore.csproj" />
     <ProjectReference Include="..\ProductManager.WebUI.Presentation\ProductManager.WebUI.Presentation.csproj" />
   </ItemGroup>
 

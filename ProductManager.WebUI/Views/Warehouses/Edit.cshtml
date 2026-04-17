@@ -5,79 +5,120 @@
     ViewData["Title"] = isEdit ? "Depo Düzenle" : "Yeni Depo";
 }
 
-<div class="nk-content nk-content-fluid pm-form-page">
+<div class="nk-content">
     <div class="container-fluid">
         <div class="nk-content-inner">
             <div class="nk-content-body">
-                <partial name="_StatusMessage" />
-
                 <div class="nk-block-head nk-block-head-sm">
                     <div class="nk-block-between">
                         <div class="nk-block-head-content">
                             <h3 class="nk-block-title page-title">@(isEdit ? "Depo Düzenle" : "Yeni Depo")</h3>
                             <div class="nk-block-des text-soft">
-                                <p>Depo lokasyon ve operasyon tanımlarını düzenleyin.</p>
+                                <p>Depo kimlik, lokasyon ve aktiflik bilgilerini güncelleyin.</p>
                             </div>
                         </div>
                         <div class="nk-block-head-content">
-                            <a asp-action="Index" class="btn btn-outline-light bg-white"><em class="icon ni ni-arrow-left"></em><span>Listeye Dön</span></a>
+                            <a asp-action="Index" class="btn btn-outline-light">Listeye Dön</a>
                         </div>
                     </div>
                 </div>
 
-                <div class="nk-block">
-                <form method="post" asp-action="@(isEdit ? "Edit" : "Create")">
-                    @Html.AntiForgeryToken()
-                    <input asp-for="Id" type="hidden" />
+                @await Html.PartialAsync("_StatusMessage")
 
-                    <div class="card card-bordered pm-form-card">
-                        <div class="card-inner border-bottom py-2">
-                            <h6 class="title mb-0">Depo Bilgileri</h6>
-                        </div>
+                <div class="nk-block">
+                    <div class="card card-bordered">
                         <div class="card-inner">
-                            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-                            <div class="row g-gs">
-                                <div class="col-md-4">
-                                    <label asp-for="Code" class="form-label"></label>
-                                    <input asp-for="Code" class="form-control" />
-                                    <span asp-validation-for="Code" class="text-danger"></span>
-                                </div>
-                                <div class="col-md-8">
-                                    <label asp-for="Name" class="form-label"></label>
-                                    <input asp-for="Name" class="form-control" />
-                                    <span asp-validation-for="Name" class="text-danger"></span>
-                                </div>
-                                <div class="col-md-6">
-                                    <label asp-for="City" class="form-label"></label>
-                                    <input asp-for="City" class="form-control" />
-                                </div>
-                                <div class="col-md-6">
-                                    <label asp-for="Country" class="form-label"></label>
-                                    <input asp-for="Country" class="form-control" />
-                                </div>
-                                <div class="col-12">
-                                    <label asp-for="Description" class="form-label"></label>
-                                    <textarea asp-for="Description" rows="2" class="form-control"></textarea>
-                                </div>
-                                <div class="col-12">
-                                    <label asp-for="Address" class="form-label"></label>
-                                    <textarea asp-for="Address" rows="2" class="form-control"></textarea>
-                                </div>
-                                <div class="col-12">
-                                    <div class="form-check form-switch">
-                                        <input asp-for="IsActive" class="form-check-input" />
-                                        <label asp-for="IsActive" class="form-check-label"></label>
+                            <div class="card-head">
+                                <h5 class="card-title">Depo Bilgileri</h5>
+                            </div>
+
+                            <form method="post" asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" class="row g-4">
+                                @Html.AntiForgeryToken()
+                                <input asp-for="Id" type="hidden" />
+
+                                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                                <div class="col-lg-4">
+                                    <div class="form-group">
+                                        <label asp-for="Code" class="form-label"></label>
+                                        <div class="form-control-wrap">
+                                            <input asp-for="Code" class="form-control" placeholder="Örn: DEP-001" />
+                                        </div>
+                                        <span asp-validation-for="Code" class="text-danger"></span>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div class="mt-4 pt-3 border-top d-flex flex-wrap justify-content-end gap-2">
-                                <button type="submit" class="btn btn-primary">Kaydet</button>
-                                <a asp-action="Index" class="btn btn-outline-light">Listeye Dön</a>
-                            </div>
+                                <div class="col-lg-8">
+                                    <div class="form-group">
+                                        <label asp-for="Name" class="form-label"></label>
+                                        <div class="form-control-wrap">
+                                            <input asp-for="Name" class="form-control" placeholder="Depo adını girin" />
+                                        </div>
+                                        <span asp-validation-for="Name" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-6">
+                                    <div class="form-group">
+                                        <label asp-for="City" class="form-label"></label>
+                                        <div class="form-control-wrap">
+                                            <input asp-for="City" class="form-control" placeholder="Şehir" />
+                                        </div>
+                                        <span asp-validation-for="City" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-6">
+                                    <div class="form-group">
+                                        <label asp-for="Country" class="form-label"></label>
+                                        <div class="form-control-wrap">
+                                            <input asp-for="Country" class="form-control" placeholder="Ülke" />
+                                        </div>
+                                        <span asp-validation-for="Country" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-12">
+                                    <div class="form-group">
+                                        <label asp-for="Address" class="form-label"></label>
+                                        <div class="form-control-wrap">
+                                            <textarea asp-for="Address" class="form-control" rows="2" placeholder="Adres bilgisi"></textarea>
+                                        </div>
+                                        <span asp-validation-for="Address" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-12">
+                                    <div class="form-group">
+                                        <label asp-for="Description" class="form-label"></label>
+                                        <div class="form-control-wrap">
+                                            <textarea asp-for="Description" class="form-control" rows="2" placeholder="Açıklama"></textarea>
+                                        </div>
+                                        <span asp-validation-for="Description" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-12">
+                                    <div class="form-group">
+                                        <div class="custom-control custom-control-sm custom-checkbox">
+                                            <input asp-for="IsActive" class="custom-control-input" />
+                                            <label class="custom-control-label" for="@Html.IdFor(m => m.IsActive)">Aktif</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-12">
+                                    <div class="form-group">
+                                        <button type="submit" class="btn btn-primary">
+                                            <em class="icon ni ni-save"></em>
+                                            <span>@(isEdit ? "Değişiklikleri Kaydet" : "Depoyu Kaydet")</span>
+                                        </button>
+                                        <a asp-action="Index" class="btn btn-outline-light">İptal</a>
+                                    </div>
+                                </div>
+                            </form>
                         </div>
                     </div>
-                </form>
                 </div>
             </div>
         </div>
