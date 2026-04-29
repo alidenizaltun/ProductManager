@@ -1,5 +1,6 @@
 using Dapper;
 using ProductManager.Shared.Dtos.ProductOperations;
+using System.Data;
 using System.Text;
 
 namespace ProductManager.Repository.Concrete
@@ -206,6 +207,1198 @@ VALUES
 
             return await GetProductByIdAsync(productId, cancellationToken)
                 ?? throw new InvalidOperationException("Product could not be loaded after insert.");
+        }
+
+        public async Task<ProductDto> CreateProductFullAsync(CreateProductFullRequestDto request, CancellationToken cancellationToken = default)
+        {
+            if (request.Product is null)
+            {
+                throw new InvalidOperationException("Product payload is required.");
+            }
+
+            var productId = Guid.NewGuid();
+            var now = DateTime.UtcNow;
+
+            using var connection = CreateConnection();
+            connection.Open();
+            using var transaction = connection.BeginTransaction();
+
+            try
+            {
+                const string productSql = @"
+INSERT INTO [Product].[Products]
+(
+    Id,
+    ProductCode,
+    Name,
+    ShortDescription,
+    Description,
+    Kind,
+    Status,
+    Brand,
+    Manufacturer,
+    Barcode,
+    IsActive,
+    IsSellable,
+    IsPurchasable,
+    TrackInventory,
+    DefaultCurrencyCode,
+    UnitOfMeasure,
+    TaxRate,
+    TaxCode,
+    Tags,
+    MetadataJson,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @ProductCode,
+    @Name,
+    @ShortDescription,
+    @Description,
+    @Kind,
+    @Status,
+    @Brand,
+    @Manufacturer,
+    @Barcode,
+    @IsActive,
+    @IsSellable,
+    @IsPurchasable,
+    @TrackInventory,
+    @DefaultCurrencyCode,
+    @UnitOfMeasure,
+    @TaxRate,
+    @TaxCode,
+    @Tags,
+    @MetadataJson,
+    @Now,
+    0
+);";
+
+                await connection.ExecuteAsync(
+                    new CommandDefinition(
+                        productSql,
+                        new
+                        {
+                            Id = productId,
+                            request.Product.ProductCode,
+                            request.Product.Name,
+                            request.Product.ShortDescription,
+                            request.Product.Description,
+                            request.Product.Kind,
+                            request.Product.Status,
+                            request.Product.Brand,
+                            request.Product.Manufacturer,
+                            request.Product.Barcode,
+                            request.Product.IsActive,
+                            request.Product.IsSellable,
+                            request.Product.IsPurchasable,
+                            request.Product.TrackInventory,
+                            request.Product.DefaultCurrencyCode,
+                            request.Product.UnitOfMeasure,
+                            request.Product.TaxRate,
+                            request.Product.TaxCode,
+                            request.Product.Tags,
+                            request.Product.MetadataJson,
+                            Now = now
+                        },
+                        transaction,
+                        cancellationToken: cancellationToken));
+
+                await InsertAttributeValuesAsync(connection, transaction, productId, now, request.AttributeValues, cancellationToken);
+                await InsertVariantsAsync(connection, transaction, productId, now, request.Variants, cancellationToken);
+                await InsertPricesAsync(connection, transaction, productId, now, request.Prices, cancellationToken);
+                await InsertInventoriesAsync(connection, transaction, productId, now, request.Inventories, cancellationToken);
+                await InsertMediaAsync(connection, transaction, productId, now, request.MediaItems, cancellationToken);
+                await InsertCategoryMapsAsync(connection, transaction, productId, now, request.CategoryMaps, cancellationToken);
+                await InsertBundleItemsAsync(connection, transaction, productId, now, request.BundleItems, cancellationToken);
+                await InsertSupplierMapsAsync(connection, transaction, productId, now, request.SupplierMaps, cancellationToken);
+                await InsertInventoryTransactionsAsync(connection, transaction, productId, now, request.InventoryTransactions, cancellationToken);
+                await InsertInventoryReservationsAsync(connection, transaction, productId, now, request.InventoryReservations, cancellationToken);
+                await InsertPriceListItemsAsync(connection, transaction, productId, now, request.PriceListItems, cancellationToken);
+                await UpsertPhysicalProfileAsync(connection, transaction, productId, now, request.PhysicalProfile, cancellationToken);
+                await UpsertSoftwareProfileAsync(connection, transaction, productId, now, request.SoftwareProfile, cancellationToken);
+                await UpsertServiceProfileAsync(connection, transaction, productId, now, request.ServiceProfile, cancellationToken);
+                await UpsertSubscriptionProfileAsync(connection, transaction, productId, now, request.SubscriptionProfile, cancellationToken);
+
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+
+            return await GetProductByIdAsync(productId, cancellationToken)
+                ?? throw new InvalidOperationException("Product could not be loaded after insert.");
+        }
+
+        private static async Task InsertAttributeValuesAsync(
+            IDbConnection connection,
+            IDbTransaction transaction,
+            Guid productId,
+            DateTime now,
+            IReadOnlyList<CreateProductAttributeValueRequestDto>? values,
+            CancellationToken cancellationToken)
+        {
+            if (values is null || values.Count == 0)
+            {
+                return;
+            }
+
+            const string sql = @"
+INSERT INTO [Product].[ProductAttributeValues]
+(
+    Id,
+    ProductId,
+    AttributeDefinitionId,
+    ValueText,
+    ValueNumber,
+    ValueBool,
+    ValueDate,
+    ValueJson,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @ProductId,
+    @AttributeDefinitionId,
+    @ValueText,
+    @ValueNumber,
+    @ValueBool,
+    @ValueDate,
+    @ValueJson,
+    @Now,
+    0
+);";
+
+            var parameters = values.Select(value => new
+            {
+                Id = Guid.NewGuid(),
+                ProductId = productId,
+                value.AttributeDefinitionId,
+                value.ValueText,
+                value.ValueNumber,
+                value.ValueBool,
+                value.ValueDate,
+                value.ValueJson,
+                Now = now
+            });
+
+            await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
+        }
+
+        private static async Task InsertVariantsAsync(
+            IDbConnection connection,
+            IDbTransaction transaction,
+            Guid productId,
+            DateTime now,
+            IReadOnlyList<CreateProductVariantRequestDto>? variants,
+            CancellationToken cancellationToken)
+        {
+            if (variants is null || variants.Count == 0)
+            {
+                return;
+            }
+
+            const string sql = @"
+INSERT INTO [Product].[ProductVariants]
+(
+    Id,
+    ProductId,
+    Sku,
+    Barcode,
+    Name,
+    OptionValuesJson,
+    AdditionalPrice,
+    AdditionalCost,
+    IsActive,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @ProductId,
+    @Sku,
+    @Barcode,
+    @Name,
+    @OptionValuesJson,
+    @AdditionalPrice,
+    @AdditionalCost,
+    @IsActive,
+    @Now,
+    0
+);";
+
+            var parameters = variants.Select(variant => new
+            {
+                Id = Guid.NewGuid(),
+                ProductId = productId,
+                variant.Sku,
+                variant.Barcode,
+                variant.Name,
+                variant.OptionValuesJson,
+                variant.AdditionalPrice,
+                variant.AdditionalCost,
+                variant.IsActive,
+                Now = now
+            });
+
+            await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
+        }
+
+        private static async Task InsertPricesAsync(
+            IDbConnection connection,
+            IDbTransaction transaction,
+            Guid productId,
+            DateTime now,
+            IReadOnlyList<CreateProductPriceRequestDto>? prices,
+            CancellationToken cancellationToken)
+        {
+            if (prices is null || prices.Count == 0)
+            {
+                return;
+            }
+
+            const string sql = @"
+INSERT INTO [Product].[ProductPrices]
+(
+    Id,
+    ProductId,
+    ProductVariantId,
+    PriceType,
+    Amount,
+    CompareAtAmount,
+    CurrencyCode,
+    MinQuantity,
+    MaxQuantity,
+    ValidFrom,
+    ValidTo,
+    SalesChannel,
+    CustomerGroupCode,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @ProductId,
+    @ProductVariantId,
+    @PriceType,
+    @Amount,
+    @CompareAtAmount,
+    @CurrencyCode,
+    @MinQuantity,
+    @MaxQuantity,
+    @ValidFrom,
+    @ValidTo,
+    @SalesChannel,
+    @CustomerGroupCode,
+    @Now,
+    0
+);";
+
+            var parameters = prices.Select(price => new
+            {
+                Id = Guid.NewGuid(),
+                ProductId = productId,
+                price.ProductVariantId,
+                price.PriceType,
+                price.Amount,
+                price.CompareAtAmount,
+                price.CurrencyCode,
+                price.MinQuantity,
+                price.MaxQuantity,
+                price.ValidFrom,
+                price.ValidTo,
+                price.SalesChannel,
+                price.CustomerGroupCode,
+                Now = now
+            });
+
+            await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
+        }
+
+        private static async Task InsertInventoriesAsync(
+            IDbConnection connection,
+            IDbTransaction transaction,
+            Guid productId,
+            DateTime now,
+            IReadOnlyList<CreateProductInventoryRequestDto>? inventories,
+            CancellationToken cancellationToken)
+        {
+            if (inventories is null || inventories.Count == 0)
+            {
+                return;
+            }
+
+            const string sql = @"
+INSERT INTO [Product].[ProductInventories]
+(
+    Id,
+    ProductId,
+    ProductVariantId,
+    WarehouseId,
+    WarehouseCode,
+    QuantityOnHand,
+    QuantityReserved,
+    ReorderPoint,
+    ReorderQuantity,
+    InventoryPolicy,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @ProductId,
+    @ProductVariantId,
+    @WarehouseId,
+    @WarehouseCode,
+    @QuantityOnHand,
+    @QuantityReserved,
+    @ReorderPoint,
+    @ReorderQuantity,
+    @InventoryPolicy,
+    @Now,
+    0
+);";
+
+            var parameters = inventories.Select(inventory => new
+            {
+                Id = Guid.NewGuid(),
+                ProductId = productId,
+                inventory.ProductVariantId,
+                inventory.WarehouseId,
+                inventory.WarehouseCode,
+                inventory.QuantityOnHand,
+                inventory.QuantityReserved,
+                inventory.ReorderPoint,
+                inventory.ReorderQuantity,
+                inventory.InventoryPolicy,
+                Now = now
+            });
+
+            await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
+        }
+
+        private static async Task InsertMediaAsync(
+            IDbConnection connection,
+            IDbTransaction transaction,
+            Guid productId,
+            DateTime now,
+            IReadOnlyList<CreateProductMediaRequestDto>? mediaItems,
+            CancellationToken cancellationToken)
+        {
+            if (mediaItems is null || mediaItems.Count == 0)
+            {
+                return;
+            }
+
+            const string sql = @"
+INSERT INTO [Product].[ProductMediaItems]
+(
+    Id,
+    ProductId,
+    MediaType,
+    Url,
+    ThumbnailUrl,
+    MimeType,
+    AltText,
+    IsPrimary,
+    SortOrder,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @ProductId,
+    @MediaType,
+    @Url,
+    @ThumbnailUrl,
+    @MimeType,
+    @AltText,
+    @IsPrimary,
+    @SortOrder,
+    @Now,
+    0
+);";
+
+            var parameters = mediaItems.Select(media => new
+            {
+                Id = Guid.NewGuid(),
+                ProductId = productId,
+                media.MediaType,
+                media.Url,
+                media.ThumbnailUrl,
+                media.MimeType,
+                media.AltText,
+                media.IsPrimary,
+                media.SortOrder,
+                Now = now
+            });
+
+            await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
+        }
+
+        private static async Task InsertCategoryMapsAsync(
+            IDbConnection connection,
+            IDbTransaction transaction,
+            Guid productId,
+            DateTime now,
+            IReadOnlyList<CreateProductCategoryMapRequestDto>? categoryMaps,
+            CancellationToken cancellationToken)
+        {
+            if (categoryMaps is null || categoryMaps.Count == 0)
+            {
+                return;
+            }
+
+            const string sql = @"
+INSERT INTO [Product].[ProductCategoryMaps]
+(
+    Id,
+    ProductId,
+    ProductCategoryId,
+    IsPrimary,
+    SortOrder,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @ProductId,
+    @ProductCategoryId,
+    @IsPrimary,
+    @SortOrder,
+    @Now,
+    0
+);";
+
+            var parameters = categoryMaps.Select(map => new
+            {
+                Id = Guid.NewGuid(),
+                ProductId = productId,
+                map.ProductCategoryId,
+                map.IsPrimary,
+                map.SortOrder,
+                Now = now
+            });
+
+            await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
+        }
+
+        private static async Task InsertBundleItemsAsync(
+            IDbConnection connection,
+            IDbTransaction transaction,
+            Guid productId,
+            DateTime now,
+            IReadOnlyList<CreateProductBundleItemRequestDto>? bundleItems,
+            CancellationToken cancellationToken)
+        {
+            if (bundleItems is null || bundleItems.Count == 0)
+            {
+                return;
+            }
+
+            const string sql = @"
+INSERT INTO [Product].[ProductBundleItems]
+(
+    Id,
+    BundleProductId,
+    ChildProductId,
+    ChildVariantId,
+    Quantity,
+    IsOptional,
+    RuleJson,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @BundleProductId,
+    @ChildProductId,
+    @ChildVariantId,
+    @Quantity,
+    @IsOptional,
+    @RuleJson,
+    @Now,
+    0
+);";
+
+            var parameters = bundleItems.Select(item => new
+            {
+                Id = Guid.NewGuid(),
+                BundleProductId = item.BundleProductId == Guid.Empty ? productId : item.BundleProductId,
+                item.ChildProductId,
+                item.ChildVariantId,
+                item.Quantity,
+                item.IsOptional,
+                item.RuleJson,
+                Now = now
+            });
+
+            await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
+        }
+
+        private static async Task InsertSupplierMapsAsync(
+            IDbConnection connection,
+            IDbTransaction transaction,
+            Guid productId,
+            DateTime now,
+            IReadOnlyList<CreateProductSupplierMapRequestDto>? supplierMaps,
+            CancellationToken cancellationToken)
+        {
+            if (supplierMaps is null || supplierMaps.Count == 0)
+            {
+                return;
+            }
+
+            const string sql = @"
+INSERT INTO [Product].[ProductSupplierMaps]
+(
+    Id,
+    ProductId,
+    ProductSupplierId,
+    SupplierProductCode,
+    SupplierCost,
+    LeadTimeInDays,
+    MinOrderQuantity,
+    IsPreferred,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @ProductId,
+    @ProductSupplierId,
+    @SupplierProductCode,
+    @SupplierCost,
+    @LeadTimeInDays,
+    @MinOrderQuantity,
+    @IsPreferred,
+    @Now,
+    0
+);";
+
+            var parameters = supplierMaps.Select(map => new
+            {
+                Id = Guid.NewGuid(),
+                ProductId = productId,
+                map.ProductSupplierId,
+                map.SupplierProductCode,
+                map.SupplierCost,
+                map.LeadTimeInDays,
+                map.MinOrderQuantity,
+                map.IsPreferred,
+                Now = now
+            });
+
+            await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
+        }
+
+        private static async Task InsertInventoryTransactionsAsync(
+            IDbConnection connection,
+            IDbTransaction transaction,
+            Guid productId,
+            DateTime now,
+            IReadOnlyList<CreateInventoryTransactionRequestDto>? transactions,
+            CancellationToken cancellationToken)
+        {
+            if (transactions is null || transactions.Count == 0)
+            {
+                return;
+            }
+
+            const string sql = @"
+INSERT INTO [Product].[InventoryTransactions]
+(
+    Id,
+    ProductId,
+    ProductVariantId,
+    WarehouseId,
+    TransactionType,
+    Quantity,
+    UnitCost,
+    ReferenceType,
+    ReferenceNumber,
+    Note,
+    OccurredAt,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @ProductId,
+    @ProductVariantId,
+    @WarehouseId,
+    @TransactionType,
+    @Quantity,
+    @UnitCost,
+    @ReferenceType,
+    @ReferenceNumber,
+    @Note,
+    @OccurredAt,
+    @Now,
+    0
+);";
+
+            var parameters = transactions.Select(transactionItem => new
+            {
+                Id = Guid.NewGuid(),
+                ProductId = productId,
+                transactionItem.ProductVariantId,
+                transactionItem.WarehouseId,
+                transactionItem.TransactionType,
+                transactionItem.Quantity,
+                transactionItem.UnitCost,
+                transactionItem.ReferenceType,
+                transactionItem.ReferenceNumber,
+                transactionItem.Note,
+                OccurredAt = transactionItem.OccurredAt ?? now,
+                Now = now
+            });
+
+            await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
+        }
+
+        private static async Task InsertInventoryReservationsAsync(
+            IDbConnection connection,
+            IDbTransaction transaction,
+            Guid productId,
+            DateTime now,
+            IReadOnlyList<CreateInventoryReservationRequestDto>? reservations,
+            CancellationToken cancellationToken)
+        {
+            if (reservations is null || reservations.Count == 0)
+            {
+                return;
+            }
+
+            const string sql = @"
+INSERT INTO [Product].[InventoryReservations]
+(
+    Id,
+    ProductId,
+    ProductVariantId,
+    WarehouseId,
+    Quantity,
+    ReservationCode,
+    ReservedUntil,
+    Status,
+    SourceType,
+    SourceId,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @ProductId,
+    @ProductVariantId,
+    @WarehouseId,
+    @Quantity,
+    @ReservationCode,
+    @ReservedUntil,
+    @Status,
+    @SourceType,
+    @SourceId,
+    @Now,
+    0
+);";
+
+            var parameters = reservations.Select(reservation => new
+            {
+                Id = Guid.NewGuid(),
+                ProductId = productId,
+                reservation.ProductVariantId,
+                reservation.WarehouseId,
+                reservation.Quantity,
+                reservation.ReservationCode,
+                reservation.ReservedUntil,
+                reservation.Status,
+                reservation.SourceType,
+                reservation.SourceId,
+                Now = now
+            });
+
+            await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
+        }
+
+        private static async Task InsertPriceListItemsAsync(
+            IDbConnection connection,
+            IDbTransaction transaction,
+            Guid productId,
+            DateTime now,
+            IReadOnlyList<CreateProductPriceListItemRequestDto>? items,
+            CancellationToken cancellationToken)
+        {
+            if (items is null || items.Count == 0)
+            {
+                return;
+            }
+
+            const string sql = @"
+INSERT INTO [Product].[ProductPriceListItems]
+(
+    Id,
+    ProductPriceListId,
+    ProductId,
+    ProductVariantId,
+    Amount,
+    CompareAtAmount,
+    MinQuantity,
+    MaxQuantity,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @ProductPriceListId,
+    @ProductId,
+    @ProductVariantId,
+    @Amount,
+    @CompareAtAmount,
+    @MinQuantity,
+    @MaxQuantity,
+    @Now,
+    0
+);";
+
+            var parameters = items.Select(item => new
+            {
+                Id = Guid.NewGuid(),
+                item.ProductPriceListId,
+                ProductId = productId,
+                item.ProductVariantId,
+                item.Amount,
+                item.CompareAtAmount,
+                item.MinQuantity,
+                item.MaxQuantity,
+                Now = now
+            });
+
+            await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
+        }
+
+        private static async Task UpsertPhysicalProfileAsync(
+            IDbConnection connection,
+            IDbTransaction transaction,
+            Guid productId,
+            DateTime now,
+            UpsertProductPhysicalProfileRequestDto? profile,
+            CancellationToken cancellationToken)
+        {
+            if (profile is null)
+            {
+                return;
+            }
+
+            const string updateSql = @"
+UPDATE [Product].[ProductPhysicalProfiles]
+SET
+    Weight = @Weight,
+    Width = @Width,
+    Height = @Height,
+    Length = @Length,
+    RequiresShipping = @RequiresShipping,
+    IsFragile = @IsFragile,
+    IsHazardous = @IsHazardous,
+    RequiresSerialNumber = @RequiresSerialNumber,
+    WarrantyInMonths = @WarrantyInMonths,
+    IsDeleted = 0,
+    DeletedAt = NULL,
+    UpdatedAt = @Now
+WHERE ProductId = @ProductId;";
+
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(
+                    updateSql,
+                    new
+                    {
+                        ProductId = productId,
+                        profile.Weight,
+                        profile.Width,
+                        profile.Height,
+                        profile.Length,
+                        profile.RequiresShipping,
+                        profile.IsFragile,
+                        profile.IsHazardous,
+                        profile.RequiresSerialNumber,
+                        profile.WarrantyInMonths,
+                        Now = now
+                    },
+                    transaction,
+                    cancellationToken: cancellationToken));
+
+            if (affectedRows > 0)
+            {
+                return;
+            }
+
+            const string insertSql = @"
+INSERT INTO [Product].[ProductPhysicalProfiles]
+(
+    Id,
+    ProductId,
+    Weight,
+    Width,
+    Height,
+    Length,
+    RequiresShipping,
+    IsFragile,
+    IsHazardous,
+    RequiresSerialNumber,
+    WarrantyInMonths,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @ProductId,
+    @Weight,
+    @Width,
+    @Height,
+    @Length,
+    @RequiresShipping,
+    @IsFragile,
+    @IsHazardous,
+    @RequiresSerialNumber,
+    @WarrantyInMonths,
+    @Now,
+    0
+);";
+
+            await connection.ExecuteAsync(
+                new CommandDefinition(
+                    insertSql,
+                    new
+                    {
+                        Id = Guid.NewGuid(),
+                        ProductId = productId,
+                        profile.Weight,
+                        profile.Width,
+                        profile.Height,
+                        profile.Length,
+                        profile.RequiresShipping,
+                        profile.IsFragile,
+                        profile.IsHazardous,
+                        profile.RequiresSerialNumber,
+                        profile.WarrantyInMonths,
+                        Now = now
+                    },
+                    transaction,
+                    cancellationToken: cancellationToken));
+        }
+
+        private static async Task UpsertSoftwareProfileAsync(
+            IDbConnection connection,
+            IDbTransaction transaction,
+            Guid productId,
+            DateTime now,
+            UpsertProductSoftwareProfileRequestDto? profile,
+            CancellationToken cancellationToken)
+        {
+            if (profile is null)
+            {
+                return;
+            }
+
+            const string updateSql = @"
+UPDATE [Product].[ProductSoftwareProfiles]
+SET
+    Version = @Version,
+    LicenseModel = @LicenseModel,
+    SeatCount = @SeatCount,
+    DownloadUrl = @DownloadUrl,
+    SupportedPlatformsJson = @SupportedPlatformsJson,
+    SystemRequirementsJson = @SystemRequirementsJson,
+    ReleaseNotes = @ReleaseNotes,
+    IsDeleted = 0,
+    DeletedAt = NULL,
+    UpdatedAt = @Now
+WHERE ProductId = @ProductId;";
+
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(
+                    updateSql,
+                    new
+                    {
+                        ProductId = productId,
+                        profile.Version,
+                        profile.LicenseModel,
+                        profile.SeatCount,
+                        profile.DownloadUrl,
+                        profile.SupportedPlatformsJson,
+                        profile.SystemRequirementsJson,
+                        profile.ReleaseNotes,
+                        Now = now
+                    },
+                    transaction,
+                    cancellationToken: cancellationToken));
+
+            if (affectedRows > 0)
+            {
+                return;
+            }
+
+            const string insertSql = @"
+INSERT INTO [Product].[ProductSoftwareProfiles]
+(
+    Id,
+    ProductId,
+    Version,
+    LicenseModel,
+    SeatCount,
+    DownloadUrl,
+    SupportedPlatformsJson,
+    SystemRequirementsJson,
+    ReleaseNotes,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @ProductId,
+    @Version,
+    @LicenseModel,
+    @SeatCount,
+    @DownloadUrl,
+    @SupportedPlatformsJson,
+    @SystemRequirementsJson,
+    @ReleaseNotes,
+    @Now,
+    0
+);";
+
+            await connection.ExecuteAsync(
+                new CommandDefinition(
+                    insertSql,
+                    new
+                    {
+                        Id = Guid.NewGuid(),
+                        ProductId = productId,
+                        profile.Version,
+                        profile.LicenseModel,
+                        profile.SeatCount,
+                        profile.DownloadUrl,
+                        profile.SupportedPlatformsJson,
+                        profile.SystemRequirementsJson,
+                        profile.ReleaseNotes,
+                        Now = now
+                    },
+                    transaction,
+                    cancellationToken: cancellationToken));
+        }
+
+        private static async Task UpsertServiceProfileAsync(
+            IDbConnection connection,
+            IDbTransaction transaction,
+            Guid productId,
+            DateTime now,
+            UpsertProductServiceProfileRequestDto? profile,
+            CancellationToken cancellationToken)
+        {
+            if (profile is null)
+            {
+                return;
+            }
+
+            const string updateSql = @"
+UPDATE [Product].[ProductServiceProfiles]
+SET
+    DeliveryMode = @DeliveryMode,
+    DurationInMinutes = @DurationInMinutes,
+    MaxConcurrentBooking = @MaxConcurrentBooking,
+    ServiceAreaJson = @ServiceAreaJson,
+    ServiceLevelAgreementJson = @ServiceLevelAgreementJson,
+    CapacityRuleJson = @CapacityRuleJson,
+    IsDeleted = 0,
+    DeletedAt = NULL,
+    UpdatedAt = @Now
+WHERE ProductId = @ProductId;";
+
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(
+                    updateSql,
+                    new
+                    {
+                        ProductId = productId,
+                        profile.DeliveryMode,
+                        profile.DurationInMinutes,
+                        profile.MaxConcurrentBooking,
+                        profile.ServiceAreaJson,
+                        profile.ServiceLevelAgreementJson,
+                        profile.CapacityRuleJson,
+                        Now = now
+                    },
+                    transaction,
+                    cancellationToken: cancellationToken));
+
+            if (affectedRows > 0)
+            {
+                return;
+            }
+
+            const string insertSql = @"
+INSERT INTO [Product].[ProductServiceProfiles]
+(
+    Id,
+    ProductId,
+    DeliveryMode,
+    DurationInMinutes,
+    MaxConcurrentBooking,
+    ServiceAreaJson,
+    ServiceLevelAgreementJson,
+    CapacityRuleJson,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @ProductId,
+    @DeliveryMode,
+    @DurationInMinutes,
+    @MaxConcurrentBooking,
+    @ServiceAreaJson,
+    @ServiceLevelAgreementJson,
+    @CapacityRuleJson,
+    @Now,
+    0
+);";
+
+            await connection.ExecuteAsync(
+                new CommandDefinition(
+                    insertSql,
+                    new
+                    {
+                        Id = Guid.NewGuid(),
+                        ProductId = productId,
+                        profile.DeliveryMode,
+                        profile.DurationInMinutes,
+                        profile.MaxConcurrentBooking,
+                        profile.ServiceAreaJson,
+                        profile.ServiceLevelAgreementJson,
+                        profile.CapacityRuleJson,
+                        Now = now
+                    },
+                    transaction,
+                    cancellationToken: cancellationToken));
+        }
+
+        private static async Task UpsertSubscriptionProfileAsync(
+            IDbConnection connection,
+            IDbTransaction transaction,
+            Guid productId,
+            DateTime now,
+            UpsertProductSubscriptionProfileRequestDto? profile,
+            CancellationToken cancellationToken)
+        {
+            if (profile is null)
+            {
+                return;
+            }
+
+            const string updateSql = @"
+UPDATE [Product].[ProductSubscriptionProfiles]
+SET
+    BillingPeriodUnit = @BillingPeriodUnit,
+    BillingPeriodValue = @BillingPeriodValue,
+    TrialDays = @TrialDays,
+    AutoRenew = @AutoRenew,
+    GracePeriodDays = @GracePeriodDays,
+    CancellationPolicy = @CancellationPolicy,
+    SubscriptionRulesJson = @SubscriptionRulesJson,
+    IsDeleted = 0,
+    DeletedAt = NULL,
+    UpdatedAt = @Now
+WHERE ProductId = @ProductId;";
+
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(
+                    updateSql,
+                    new
+                    {
+                        ProductId = productId,
+                        profile.BillingPeriodUnit,
+                        profile.BillingPeriodValue,
+                        profile.TrialDays,
+                        profile.AutoRenew,
+                        profile.GracePeriodDays,
+                        profile.CancellationPolicy,
+                        profile.SubscriptionRulesJson,
+                        Now = now
+                    },
+                    transaction,
+                    cancellationToken: cancellationToken));
+
+            if (affectedRows > 0)
+            {
+                return;
+            }
+
+            const string insertSql = @"
+INSERT INTO [Product].[ProductSubscriptionProfiles]
+(
+    Id,
+    ProductId,
+    BillingPeriodUnit,
+    BillingPeriodValue,
+    TrialDays,
+    AutoRenew,
+    GracePeriodDays,
+    CancellationPolicy,
+    SubscriptionRulesJson,
+    CreatedAt,
+    IsDeleted
+)
+VALUES
+(
+    @Id,
+    @ProductId,
+    @BillingPeriodUnit,
+    @BillingPeriodValue,
+    @TrialDays,
+    @AutoRenew,
+    @GracePeriodDays,
+    @CancellationPolicy,
+    @SubscriptionRulesJson,
+    @Now,
+    0
+);";
+
+            await connection.ExecuteAsync(
+                new CommandDefinition(
+                    insertSql,
+                    new
+                    {
+                        Id = Guid.NewGuid(),
+                        ProductId = productId,
+                        profile.BillingPeriodUnit,
+                        profile.BillingPeriodValue,
+                        profile.TrialDays,
+                        profile.AutoRenew,
+                        profile.GracePeriodDays,
+                        profile.CancellationPolicy,
+                        profile.SubscriptionRulesJson,
+                        Now = now
+                    },
+                    transaction,
+                    cancellationToken: cancellationToken));
         }
 
         public async Task<bool> UpdateProductAsync(Guid productId, UpdateProductRequestDto request, CancellationToken cancellationToken = default)

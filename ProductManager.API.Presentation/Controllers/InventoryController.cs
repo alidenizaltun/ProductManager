@@ -16,6 +16,72 @@ public sealed class InventoryController : ControllerBase
         _service = service;
     }
 
+    [HttpGet("inventories")]
+    [ProducesResponseType(typeof(IReadOnlyList<ProductInventoryDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<ProductInventoryDto>>> GetInventories(
+        [FromQuery] ProductInventoryFilterDto? filter,
+        CancellationToken cancellationToken)
+    {
+        var effectiveFilter = filter ?? new ProductInventoryFilterDto();
+        var inventories = await _service.GetProductInventoriesAsync(effectiveFilter, cancellationToken);
+        return Ok(inventories);
+    }
+
+    [HttpGet("inventories/{inventoryId:guid}")]
+    [ProducesResponseType(typeof(ProductInventoryDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ProductInventoryDto>> GetInventoryById(Guid inventoryId, CancellationToken cancellationToken)
+    {
+        var inventory = await _service.GetInventoryByIdAsync(inventoryId, cancellationToken);
+        if (inventory is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(inventory);
+    }
+
+    [HttpPost("inventories")]
+    [ProducesResponseType(typeof(ProductInventoryDto), StatusCodes.Status201Created)]
+    public async Task<ActionResult<ProductInventoryDto>> CreateInventory(
+        [FromBody] CreateProductInventoryRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var inventory = await _service.CreateInventoryAsync(request, cancellationToken);
+        return CreatedAtAction(nameof(GetInventoryById), new { inventoryId = inventory.Id }, inventory);
+    }
+
+    [HttpPut("inventories/{inventoryId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateInventory(
+        Guid inventoryId,
+        [FromBody] UpdateProductInventoryRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var updated = await _service.UpdateInventoryAsync(inventoryId, request, cancellationToken);
+        if (!updated)
+        {
+            return NotFound();
+        }
+
+        return NoContent();
+    }
+
+    [HttpDelete("inventories/{inventoryId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteInventory(Guid inventoryId, CancellationToken cancellationToken)
+    {
+        var deleted = await _service.DeleteInventoryAsync(inventoryId, cancellationToken);
+        if (!deleted)
+        {
+            return NotFound();
+        }
+
+        return NoContent();
+    }
+
     [HttpGet("transactions")]
     [ProducesResponseType(typeof(IReadOnlyList<InventoryTransactionDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<InventoryTransactionDto>>> GetTransactions(
@@ -34,7 +100,21 @@ public sealed class InventoryController : ControllerBase
         CancellationToken cancellationToken)
     {
         var transaction = await _service.CreateInventoryTransactionAsync(request, cancellationToken);
-        return CreatedAtAction(nameof(GetTransactions), transaction);
+        return CreatedAtAction(nameof(GetTransactionById), new { transactionId = transaction.Id }, transaction);
+    }
+
+    [HttpGet("transactions/{transactionId:guid}")]
+    [ProducesResponseType(typeof(InventoryTransactionDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<InventoryTransactionDto>> GetTransactionById(Guid transactionId, CancellationToken cancellationToken)
+    {
+        var transaction = await _service.GetInventoryTransactionByIdAsync(transactionId, cancellationToken);
+        if (transaction is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(transaction);
     }
 
     [HttpGet("reservations")]
@@ -55,7 +135,21 @@ public sealed class InventoryController : ControllerBase
         CancellationToken cancellationToken)
     {
         var reservation = await _service.CreateInventoryReservationAsync(request, cancellationToken);
-        return CreatedAtAction(nameof(GetReservations), reservation);
+        return CreatedAtAction(nameof(GetReservationById), new { reservationId = reservation.Id }, reservation);
+    }
+
+    [HttpGet("reservations/{reservationId:guid}")]
+    [ProducesResponseType(typeof(InventoryReservationDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<InventoryReservationDto>> GetReservationById(Guid reservationId, CancellationToken cancellationToken)
+    {
+        var reservation = await _service.GetInventoryReservationByIdAsync(reservationId, cancellationToken);
+        if (reservation is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(reservation);
     }
 
     [HttpPatch("reservations/{reservationId:guid}/status")]

@@ -81,4 +81,24 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public string? Tags { get; init; }
         public string? MetadataJson { get; init; }
     }
+
+    public sealed record CreateProductFullRequestDto
+    {
+        public required CreateProductRequestDto Product { get; init; }
+        public IReadOnlyList<CreateProductAttributeValueRequestDto>? AttributeValues { get; init; }
+        public IReadOnlyList<CreateProductVariantRequestDto>? Variants { get; init; }
+        public IReadOnlyList<CreateProductPriceRequestDto>? Prices { get; init; }
+        public IReadOnlyList<CreateProductInventoryRequestDto>? Inventories { get; init; }
+        public IReadOnlyList<CreateProductMediaRequestDto>? MediaItems { get; init; }
+        public IReadOnlyList<CreateProductCategoryMapRequestDto>? CategoryMaps { get; init; }
+        public IReadOnlyList<CreateProductBundleItemRequestDto>? BundleItems { get; init; }
+        public IReadOnlyList<CreateProductSupplierMapRequestDto>? SupplierMaps { get; init; }
+        public IReadOnlyList<CreateInventoryTransactionRequestDto>? InventoryTransactions { get; init; }
+        public IReadOnlyList<CreateInventoryReservationRequestDto>? InventoryReservations { get; init; }
+        public IReadOnlyList<CreateProductPriceListItemRequestDto>? PriceListItems { get; init; }
+        public UpsertProductPhysicalProfileRequestDto? PhysicalProfile { get; init; }
+        public UpsertProductSoftwareProfileRequestDto? SoftwareProfile { get; init; }
+        public UpsertProductServiceProfileRequestDto? ServiceProfile { get; init; }
+        public UpsertProductSubscriptionProfileRequestDto? SubscriptionProfile { get; init; }
+    }
 }

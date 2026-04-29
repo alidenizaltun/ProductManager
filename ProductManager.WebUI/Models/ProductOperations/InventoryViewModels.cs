@@ -72,8 +72,8 @@ public sealed class InventoryTransactionFormViewModel
     [Display(Name = "İşlem Zamanı")]
     public DateTime? OccurredAt { get; set; }
 
-    public IReadOnlyList<ProductDto> Products { get; init; } = Array.Empty<ProductDto>();
-    public IReadOnlyList<WarehouseDto> Warehouses { get; init; } = Array.Empty<WarehouseDto>();
+    public IReadOnlyList<LookupItemDto> Products { get; init; } = Array.Empty<LookupItemDto>();
+    public IReadOnlyList<LookupItemDto> Warehouses { get; init; } = Array.Empty<LookupItemDto>();
 }
 
 public sealed class InventoryReservationFilterInput
@@ -146,8 +146,8 @@ public sealed class InventoryReservationFormViewModel
     [StringLength(128)]
     public string? SourceId { get; set; }
 
-    public IReadOnlyList<ProductDto> Products { get; init; } = Array.Empty<ProductDto>();
-    public IReadOnlyList<WarehouseDto> Warehouses { get; init; } = Array.Empty<WarehouseDto>();
+    public IReadOnlyList<LookupItemDto> Products { get; init; } = Array.Empty<LookupItemDto>();
+    public IReadOnlyList<LookupItemDto> Warehouses { get; init; } = Array.Empty<LookupItemDto>();
 }
 
 public sealed class InventoryReservationStatusFormViewModel

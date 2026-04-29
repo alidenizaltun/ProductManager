@@ -5,8 +5,10 @@ namespace ProductManager.Repository.Shared.Abstract
     public interface IProductOperationsRepository
     {
         Task<IReadOnlyList<ProductDto>> GetProductsAsync(ProductFilterDto filter, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<LookupItemDto>> GetProductLookupsAsync(bool includeInactive = false, CancellationToken cancellationToken = default);
         Task<ProductDto?> GetProductByIdAsync(Guid productId, CancellationToken cancellationToken = default);
         Task<ProductDto> CreateProductAsync(CreateProductRequestDto request, CancellationToken cancellationToken = default);
+        Task<ProductDto> CreateProductFullAsync(CreateProductFullRequestDto request, CancellationToken cancellationToken = default);
         Task<bool> UpdateProductAsync(Guid productId, UpdateProductRequestDto request, CancellationToken cancellationToken = default);
         Task<bool> DeleteProductAsync(Guid productId, CancellationToken cancellationToken = default);
 
@@ -23,6 +25,7 @@ namespace ProductManager.Repository.Shared.Abstract
         Task<bool> DeleteAttributeValueAsync(Guid attributeValueId, CancellationToken cancellationToken = default);
 
         Task<IReadOnlyList<ProductCategoryDto>> GetCategoriesAsync(CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<LookupItemDto>> GetCategoryLookupsAsync(CancellationToken cancellationToken = default);
         Task<ProductCategoryDto?> GetCategoryByIdAsync(Guid categoryId, CancellationToken cancellationToken = default);
         Task<ProductCategoryDto> CreateCategoryAsync(CreateProductCategoryRequestDto request, CancellationToken cancellationToken = default);
         Task<bool> UpdateCategoryAsync(Guid categoryId, UpdateProductCategoryRequestDto request, CancellationToken cancellationToken = default);
@@ -81,6 +84,7 @@ namespace ProductManager.Repository.Shared.Abstract
         Task<bool> DeleteSubscriptionProfileAsync(Guid productId, CancellationToken cancellationToken = default);
 
         Task<IReadOnlyList<ProductSupplierDto>> GetSuppliersAsync(bool includeInactive = false, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<LookupItemDto>> GetSupplierLookupsAsync(bool includeInactive = false, CancellationToken cancellationToken = default);
         Task<ProductSupplierDto?> GetSupplierByIdAsync(Guid supplierId, CancellationToken cancellationToken = default);
         Task<ProductSupplierDto> CreateSupplierAsync(CreateProductSupplierRequestDto request, CancellationToken cancellationToken = default);
         Task<bool> UpdateSupplierAsync(Guid supplierId, UpdateProductSupplierRequestDto request, CancellationToken cancellationToken = default);
@@ -93,20 +97,24 @@ namespace ProductManager.Repository.Shared.Abstract
         Task<bool> DeleteSupplierMapAsync(Guid supplierMapId, CancellationToken cancellationToken = default);
 
         Task<IReadOnlyList<WarehouseDto>> GetWarehousesAsync(bool includeInactive = false, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<LookupItemDto>> GetWarehouseLookupsAsync(bool includeInactive = false, CancellationToken cancellationToken = default);
         Task<WarehouseDto?> GetWarehouseByIdAsync(Guid warehouseId, CancellationToken cancellationToken = default);
         Task<WarehouseDto> CreateWarehouseAsync(CreateWarehouseRequestDto request, CancellationToken cancellationToken = default);
         Task<bool> UpdateWarehouseAsync(Guid warehouseId, UpdateWarehouseRequestDto request, CancellationToken cancellationToken = default);
         Task<bool> DeleteWarehouseAsync(Guid warehouseId, CancellationToken cancellationToken = default);
 
         Task<IReadOnlyList<InventoryTransactionDto>> GetInventoryTransactionsAsync(InventoryTransactionFilterDto filter, CancellationToken cancellationToken = default);
+        Task<InventoryTransactionDto?> GetInventoryTransactionByIdAsync(Guid transactionId, CancellationToken cancellationToken = default);
         Task<InventoryTransactionDto> CreateInventoryTransactionAsync(CreateInventoryTransactionRequestDto request, CancellationToken cancellationToken = default);
 
         Task<IReadOnlyList<InventoryReservationDto>> GetInventoryReservationsAsync(InventoryReservationFilterDto filter, CancellationToken cancellationToken = default);
+        Task<InventoryReservationDto?> GetInventoryReservationByIdAsync(Guid reservationId, CancellationToken cancellationToken = default);
         Task<InventoryReservationDto> CreateInventoryReservationAsync(CreateInventoryReservationRequestDto request, CancellationToken cancellationToken = default);
         Task<bool> UpdateInventoryReservationStatusAsync(Guid reservationId, UpdateInventoryReservationStatusRequestDto request, CancellationToken cancellationToken = default);
         Task<bool> DeleteInventoryReservationAsync(Guid reservationId, CancellationToken cancellationToken = default);
 
         Task<IReadOnlyList<ProductPriceListDto>> GetPriceListsAsync(bool includeInactive = false, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<LookupItemDto>> GetPriceListLookupsAsync(bool includeInactive = false, CancellationToken cancellationToken = default);
         Task<ProductPriceListDto?> GetPriceListByIdAsync(Guid priceListId, CancellationToken cancellationToken = default);
         Task<ProductPriceListDto> CreatePriceListAsync(CreateProductPriceListRequestDto request, CancellationToken cancellationToken = default);
         Task<bool> UpdatePriceListAsync(Guid priceListId, UpdateProductPriceListRequestDto request, CancellationToken cancellationToken = default);

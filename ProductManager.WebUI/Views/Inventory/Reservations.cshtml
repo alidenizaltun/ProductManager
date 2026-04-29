@@ -183,7 +183,7 @@
                                         <option value="">Ürün seçiniz</option>
                                         @foreach (var product in Model.CreateModal.Products)
                                         {
-                                            <option value="@product.Id">@product.ProductCode - @product.Name</option>
+                                            <option value="@product.Id">@product.Name</option>
                                         }
                                     </select>
                                     <span asp-validation-for="CreateModal.ProductId" class="text-danger"></span>
@@ -195,7 +195,7 @@
                                         <option value="">Depo seçiniz</option>
                                         @foreach (var warehouse in Model.CreateModal.Warehouses)
                                         {
-                                            <option value="@warehouse.Id">@warehouse.Code - @warehouse.Name</option>
+                                            <option value="@warehouse.Id">@warehouse.Name</option>
                                         }
                                     </select>
                                     <span asp-validation-for="CreateModal.WarehouseId" class="text-danger"></span>

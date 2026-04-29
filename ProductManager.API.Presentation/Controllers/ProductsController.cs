@@ -51,6 +51,16 @@ public sealed class ProductsController : ControllerBase
         return CreatedAtAction(nameof(GetProductById), new { productId = createdProduct.Id }, createdProduct);
     }
 
+    [HttpPost("full")]
+    [ProducesResponseType(typeof(ProductDto), StatusCodes.Status201Created)]
+    public async Task<ActionResult<ProductDto>> CreateProductFull(
+        [FromBody] CreateProductFullRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var createdProduct = await _service.CreateProductFullAsync(request, cancellationToken);
+        return CreatedAtAction(nameof(GetProductById), new { productId = createdProduct.Id }, createdProduct);
+    }
+
     [HttpPut("{productId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

@@ -1,0 +1,152 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using ProductManager.Service.Shared.Abstract;
+using ProductManager.Shared.Dtos.ProductOperations;
+
+namespace ProductManager.Presentation.Controllers;
+
+[ApiController]
+[Route("api/products")]
+public sealed class ProductCommerceController : ControllerBase
+{
+    private readonly IProductOperationsService _service;
+
+    public ProductCommerceController(IProductOperationsService service)
+    {
+        _service = service;
+    }
+
+    [HttpGet("{productId:guid}/variants")]
+    [ProducesResponseType(typeof(IReadOnlyList<ProductVariantDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<ProductVariantDto>>> GetVariants(
+        Guid productId,
+        CancellationToken cancellationToken)
+    {
+        var variants = await _service.GetProductVariantsAsync(productId, cancellationToken);
+        return Ok(variants);
+    }
+
+    [HttpGet("variants/{variantId:guid}")]
+    [ProducesResponseType(typeof(ProductVariantDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ProductVariantDto>> GetVariantById(Guid variantId, CancellationToken cancellationToken)
+    {
+        var variant = await _service.GetVariantByIdAsync(variantId, cancellationToken);
+        if (variant is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(variant);
+    }
+
+    [HttpPost("{productId:guid}/variants")]
+    [ProducesResponseType(typeof(ProductVariantDto), StatusCodes.Status201Created)]
+    public async Task<ActionResult<ProductVariantDto>> CreateVariant(
+        Guid productId,
+        [FromBody] CreateProductVariantRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var normalizedRequest = request with { ProductId = productId };
+        var createdVariant = await _service.CreateVariantAsync(normalizedRequest, cancellationToken);
+        return CreatedAtAction(nameof(GetVariantById), new { variantId = createdVariant.Id }, createdVariant);
+    }
+
+    [HttpPut("variants/{variantId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateVariant(
+        Guid variantId,
+        [FromBody] UpdateProductVariantRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var updated = await _service.UpdateVariantAsync(variantId, request, cancellationToken);
+        if (!updated)
+        {
+            return NotFound();
+        }
+
+        return NoContent();
+    }
+
+    [HttpDelete("variants/{variantId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteVariant(Guid variantId, CancellationToken cancellationToken)
+    {
+        var deleted = await _service.DeleteVariantAsync(variantId, cancellationToken);
+        if (!deleted)
+        {
+            return NotFound();
+        }
+
+        return NoContent();
+    }
+
+    [HttpGet("{productId:guid}/prices")]
+    [ProducesResponseType(typeof(IReadOnlyList<ProductPriceDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<ProductPriceDto>>> GetPrices(
+        Guid productId,
+        CancellationToken cancellationToken)
+    {
+        var prices = await _service.GetProductPricesAsync(productId, cancellationToken);
+        return Ok(prices);
+    }
+
+    [HttpGet("prices/{priceId:guid}")]
+    [ProducesResponseType(typeof(ProductPriceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ProductPriceDto>> GetPriceById(Guid priceId, CancellationToken cancellationToken)
+    {
+        var price = await _service.GetPriceByIdAsync(priceId, cancellationToken);
+        if (price is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(price);
+    }
+
+    [HttpPost("{productId:guid}/prices")]
+    [ProducesResponseType(typeof(ProductPriceDto), StatusCodes.Status201Created)]
+    public async Task<ActionResult<ProductPriceDto>> CreatePrice(
+        Guid productId,
+        [FromBody] CreateProductPriceRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var normalizedRequest = request with { ProductId = productId };
+        var createdPrice = await _service.CreatePriceAsync(normalizedRequest, cancellationToken);
+        return CreatedAtAction(nameof(GetPriceById), new { priceId = createdPrice.Id }, createdPrice);
+    }
+
+    [HttpPut("prices/{priceId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdatePrice(
+        Guid priceId,
+        [FromBody] UpdateProductPriceRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var updated = await _service.UpdatePriceAsync(priceId, request, cancellationToken);
+        if (!updated)
+        {
+            return NotFound();
+        }
+
+        return NoContent();
+    }
+
+    [HttpDelete("prices/{priceId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeletePrice(Guid priceId, CancellationToken cancellationToken)
+    {
+        var deleted = await _service.DeletePriceAsync(priceId, cancellationToken);
+        if (!deleted)
+        {
+            return NotFound();
+        }
+
+        return NoContent();
+    }
+}

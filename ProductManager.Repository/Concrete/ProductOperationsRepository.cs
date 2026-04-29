@@ -19,6 +19,41 @@ namespace ProductManager.Repository.Concrete
             _connectionString = configuration.GetActiveConnectionString();
         }
 
+        public async Task<IReadOnlyList<LookupItemDto>> GetProductLookupsAsync(bool includeInactive = false, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    CONCAT(ProductCode, ' - ', Name) AS Name
+FROM [Product].[Products]
+WHERE IsDeleted = 0
+  AND (@IncludeInactive = 1 OR IsActive = 1)
+ORDER BY Name;";
+
+            using var connection = CreateConnection();
+            var items = await connection.QueryAsync<LookupItemDto>(
+                new CommandDefinition(sql, new { IncludeInactive = includeInactive }, cancellationToken: cancellationToken));
+
+            return items.AsList();
+        }
+
+        public async Task<IReadOnlyList<LookupItemDto>> GetCategoryLookupsAsync(CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    Name
+FROM [Product].[ProductCategories]
+WHERE IsDeleted = 0
+ORDER BY Name;";
+
+            using var connection = CreateConnection();
+            var items = await connection.QueryAsync<LookupItemDto>(
+                new CommandDefinition(sql, cancellationToken: cancellationToken));
+
+            return items.AsList();
+        }
+
         public async Task<IReadOnlyList<ProductSupplierDto>> GetSuppliersAsync(bool includeInactive = false, CancellationToken cancellationToken = default)
         {
             const string sql = @"
@@ -43,6 +78,24 @@ ORDER BY Name;";
                 new CommandDefinition(sql, new { IncludeInactive = includeInactive }, cancellationToken: cancellationToken));
 
             return suppliers.AsList();
+        }
+
+        public async Task<IReadOnlyList<LookupItemDto>> GetSupplierLookupsAsync(bool includeInactive = false, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    Name
+FROM [Product].[ProductSuppliers]
+WHERE IsDeleted = 0
+  AND (@IncludeInactive = 1 OR IsActive = 1)
+ORDER BY Name;";
+
+            using var connection = CreateConnection();
+            var items = await connection.QueryAsync<LookupItemDto>(
+                new CommandDefinition(sql, new { IncludeInactive = includeInactive }, cancellationToken: cancellationToken));
+
+            return items.AsList();
         }
 
         public async Task<ProductSupplierDto?> GetSupplierByIdAsync(Guid supplierId, CancellationToken cancellationToken = default)
@@ -358,6 +411,24 @@ ORDER BY Name;";
             return warehouses.AsList();
         }
 
+        public async Task<IReadOnlyList<LookupItemDto>> GetWarehouseLookupsAsync(bool includeInactive = false, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    CONCAT(Code, ' - ', Name) AS Name
+FROM [Product].[Warehouses]
+WHERE IsDeleted = 0
+  AND (@IncludeInactive = 1 OR IsActive = 1)
+ORDER BY Name;";
+
+            using var connection = CreateConnection();
+            var items = await connection.QueryAsync<LookupItemDto>(
+                new CommandDefinition(sql, new { IncludeInactive = includeInactive }, cancellationToken: cancellationToken));
+
+            return items.AsList();
+        }
+
         public async Task<WarehouseDto?> GetWarehouseByIdAsync(Guid warehouseId, CancellationToken cancellationToken = default)
         {
             const string sql = @"
@@ -537,6 +608,31 @@ ORDER BY OccurredAt DESC, CreatedAt DESC;";
             return transactions.AsList();
         }
 
+        public async Task<InventoryTransactionDto?> GetInventoryTransactionByIdAsync(Guid transactionId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    ProductId,
+    ProductVariantId,
+    WarehouseId,
+    TransactionType,
+    Quantity,
+    UnitCost,
+    ReferenceType,
+    ReferenceNumber,
+    Note,
+    OccurredAt,
+    CreatedAt
+FROM [Product].[InventoryTransactions]
+WHERE Id = @TransactionId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            return await connection.QuerySingleOrDefaultAsync<InventoryTransactionDto>(
+                new CommandDefinition(sql, new { TransactionId = transactionId }, cancellationToken: cancellationToken));
+        }
+
         public async Task<InventoryTransactionDto> CreateInventoryTransactionAsync(CreateInventoryTransactionRequestDto request, CancellationToken cancellationToken = default)
         {
             const string sql = @"
@@ -598,28 +694,8 @@ VALUES
                     },
                     cancellationToken: cancellationToken));
 
-            const string readSql = @"
-SELECT
-    Id,
-    ProductId,
-    ProductVariantId,
-    WarehouseId,
-    TransactionType,
-    Quantity,
-    UnitCost,
-    ReferenceType,
-    ReferenceNumber,
-    Note,
-    OccurredAt,
-    CreatedAt
-FROM [Product].[InventoryTransactions]
-WHERE Id = @TransactionId
-  AND IsDeleted = 0;";
-
-            var created = await connection.QuerySingleOrDefaultAsync<InventoryTransactionDto>(
-                new CommandDefinition(readSql, new { TransactionId = transactionId }, cancellationToken: cancellationToken));
-
-            return created ?? throw new InvalidOperationException("Inventory transaction could not be loaded after insert.");
+            return await GetInventoryTransactionByIdAsync(transactionId, cancellationToken)
+                ?? throw new InvalidOperationException("Inventory transaction could not be loaded after insert.");
         }
 
         public async Task<IReadOnlyList<InventoryReservationDto>> GetInventoryReservationsAsync(InventoryReservationFilterDto filter, CancellationToken cancellationToken = default)
@@ -667,6 +743,31 @@ ORDER BY CreatedAt DESC;";
                     cancellationToken: cancellationToken));
 
             return reservations.AsList();
+        }
+
+        public async Task<InventoryReservationDto?> GetInventoryReservationByIdAsync(Guid reservationId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    ProductId,
+    ProductVariantId,
+    WarehouseId,
+    Quantity,
+    ReservationCode,
+    ReservedUntil,
+    Status,
+    SourceType,
+    SourceId,
+    CreatedAt,
+    UpdatedAt
+FROM [Product].[InventoryReservations]
+WHERE Id = @ReservationId
+  AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            return await connection.QuerySingleOrDefaultAsync<InventoryReservationDto>(
+                new CommandDefinition(sql, new { ReservationId = reservationId }, cancellationToken: cancellationToken));
         }
 
         public async Task<InventoryReservationDto> CreateInventoryReservationAsync(CreateInventoryReservationRequestDto request, CancellationToken cancellationToken = default)
@@ -725,28 +826,8 @@ VALUES
                     },
                     cancellationToken: cancellationToken));
 
-            const string readSql = @"
-SELECT
-    Id,
-    ProductId,
-    ProductVariantId,
-    WarehouseId,
-    Quantity,
-    ReservationCode,
-    ReservedUntil,
-    Status,
-    SourceType,
-    SourceId,
-    CreatedAt,
-    UpdatedAt
-FROM [Product].[InventoryReservations]
-WHERE Id = @ReservationId
-  AND IsDeleted = 0;";
-
-            var created = await connection.QuerySingleOrDefaultAsync<InventoryReservationDto>(
-                new CommandDefinition(readSql, new { ReservationId = reservationId }, cancellationToken: cancellationToken));
-
-            return created ?? throw new InvalidOperationException("Inventory reservation could not be loaded after insert.");
+            return await GetInventoryReservationByIdAsync(reservationId, cancellationToken)
+                ?? throw new InvalidOperationException("Inventory reservation could not be loaded after insert.");
         }
 
         public async Task<bool> UpdateInventoryReservationStatusAsync(Guid reservationId, UpdateInventoryReservationStatusRequestDto request, CancellationToken cancellationToken = default)
@@ -820,6 +901,24 @@ ORDER BY Name;";
                 new CommandDefinition(sql, new { IncludeInactive = includeInactive }, cancellationToken: cancellationToken));
 
             return priceLists.AsList();
+        }
+
+        public async Task<IReadOnlyList<LookupItemDto>> GetPriceListLookupsAsync(bool includeInactive = false, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT
+    Id,
+    Name
+FROM [Product].[ProductPriceLists]
+WHERE IsDeleted = 0
+  AND (@IncludeInactive = 1 OR IsActive = 1)
+ORDER BY Name;";
+
+            using var connection = CreateConnection();
+            var items = await connection.QueryAsync<LookupItemDto>(
+                new CommandDefinition(sql, new { IncludeInactive = includeInactive }, cancellationToken: cancellationToken));
+
+            return items.AsList();
         }
 
         public async Task<ProductPriceListDto?> GetPriceListByIdAsync(Guid priceListId, CancellationToken cancellationToken = default)
@@ -1132,5 +1231,6 @@ WHERE Id = @PriceListItemId
 
             return Math.Min(take, MaxTake);
         }
+
     }
 }

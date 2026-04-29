@@ -1,6 +1,8 @@
+using Microsoft.Data.SqlClient;
 using ProductManager.Repository.Shared.Abstract;
 using ProductManager.Service.Shared.Abstract;
 using ProductManager.Shared.Dtos.ProductOperations;
+using ProductManager.Shared.Infrastructure.Exceptions;
 
 namespace ProductManager.Service.Concrete
 {
@@ -16,17 +18,43 @@ namespace ProductManager.Service.Concrete
         public Task<IReadOnlyList<ProductDto>> GetProductsAsync(ProductFilterDto filter, CancellationToken cancellationToken = default)
             => _repository.GetProductsAsync(filter, cancellationToken);
 
+        public Task<IReadOnlyList<LookupItemDto>> GetProductLookupsAsync(bool includeInactive = false, CancellationToken cancellationToken = default)
+            => _repository.GetProductLookupsAsync(includeInactive, cancellationToken);
+
+        public async Task<ProductReferenceLookupsDto> GetReferenceLookupsAsync(bool includeInactive = false, CancellationToken cancellationToken = default)
+        {
+            var productsTask = _repository.GetProductLookupsAsync(includeInactive, cancellationToken);
+            var categoriesTask = _repository.GetCategoryLookupsAsync(cancellationToken);
+            var warehousesTask = _repository.GetWarehouseLookupsAsync(includeInactive, cancellationToken);
+            var suppliersTask = _repository.GetSupplierLookupsAsync(includeInactive, cancellationToken);
+            var priceListsTask = _repository.GetPriceListLookupsAsync(includeInactive, cancellationToken);
+
+            await Task.WhenAll(productsTask, categoriesTask, warehousesTask, suppliersTask, priceListsTask);
+
+            return new ProductReferenceLookupsDto
+            {
+                Products = await productsTask,
+                Categories = await categoriesTask,
+                Warehouses = await warehousesTask,
+                Suppliers = await suppliersTask,
+                PriceLists = await priceListsTask
+            };
+        }
+
         public Task<ProductDto?> GetProductByIdAsync(Guid productId, CancellationToken cancellationToken = default)
             => _repository.GetProductByIdAsync(productId, cancellationToken);
 
         public Task<ProductDto> CreateProductAsync(CreateProductRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.CreateProductAsync(request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.CreateProductAsync(request, cancellationToken));
+
+        public Task<ProductDto> CreateProductFullAsync(CreateProductFullRequestDto request, CancellationToken cancellationToken = default)
+            => ExecuteWithSqlMapping(() => _repository.CreateProductFullAsync(request, cancellationToken));
 
         public Task<bool> UpdateProductAsync(Guid productId, UpdateProductRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.UpdateProductAsync(productId, request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.UpdateProductAsync(productId, request, cancellationToken));
 
         public Task<bool> DeleteProductAsync(Guid productId, CancellationToken cancellationToken = default)
-            => _repository.DeleteProductAsync(productId, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.DeleteProductAsync(productId, cancellationToken));
 
         public Task<IReadOnlyList<ProductAttributeDefinitionDto>> GetAttributeDefinitionsAsync(CancellationToken cancellationToken = default)
             => _repository.GetAttributeDefinitionsAsync(cancellationToken);
@@ -35,13 +63,13 @@ namespace ProductManager.Service.Concrete
             => _repository.GetAttributeDefinitionByIdAsync(attributeDefinitionId, cancellationToken);
 
         public Task<ProductAttributeDefinitionDto> CreateAttributeDefinitionAsync(CreateProductAttributeDefinitionRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.CreateAttributeDefinitionAsync(request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.CreateAttributeDefinitionAsync(request, cancellationToken));
 
         public Task<bool> UpdateAttributeDefinitionAsync(Guid attributeDefinitionId, UpdateProductAttributeDefinitionRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.UpdateAttributeDefinitionAsync(attributeDefinitionId, request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.UpdateAttributeDefinitionAsync(attributeDefinitionId, request, cancellationToken));
 
         public Task<bool> DeleteAttributeDefinitionAsync(Guid attributeDefinitionId, CancellationToken cancellationToken = default)
-            => _repository.DeleteAttributeDefinitionAsync(attributeDefinitionId, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.DeleteAttributeDefinitionAsync(attributeDefinitionId, cancellationToken));
 
         public Task<IReadOnlyList<ProductAttributeValueDto>> GetProductAttributeValuesAsync(Guid productId, CancellationToken cancellationToken = default)
             => _repository.GetProductAttributeValuesAsync(productId, cancellationToken);
@@ -50,28 +78,31 @@ namespace ProductManager.Service.Concrete
             => _repository.GetAttributeValueByIdAsync(attributeValueId, cancellationToken);
 
         public Task<ProductAttributeValueDto> CreateAttributeValueAsync(CreateProductAttributeValueRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.CreateAttributeValueAsync(request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.CreateAttributeValueAsync(request, cancellationToken));
 
         public Task<bool> UpdateAttributeValueAsync(Guid attributeValueId, UpdateProductAttributeValueRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.UpdateAttributeValueAsync(attributeValueId, request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.UpdateAttributeValueAsync(attributeValueId, request, cancellationToken));
 
         public Task<bool> DeleteAttributeValueAsync(Guid attributeValueId, CancellationToken cancellationToken = default)
-            => _repository.DeleteAttributeValueAsync(attributeValueId, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.DeleteAttributeValueAsync(attributeValueId, cancellationToken));
 
         public Task<IReadOnlyList<ProductCategoryDto>> GetCategoriesAsync(CancellationToken cancellationToken = default)
             => _repository.GetCategoriesAsync(cancellationToken);
+
+        public Task<IReadOnlyList<LookupItemDto>> GetCategoryLookupsAsync(CancellationToken cancellationToken = default)
+            => _repository.GetCategoryLookupsAsync(cancellationToken);
 
         public Task<ProductCategoryDto?> GetCategoryByIdAsync(Guid categoryId, CancellationToken cancellationToken = default)
             => _repository.GetCategoryByIdAsync(categoryId, cancellationToken);
 
         public Task<ProductCategoryDto> CreateCategoryAsync(CreateProductCategoryRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.CreateCategoryAsync(request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.CreateCategoryAsync(request, cancellationToken));
 
         public Task<bool> UpdateCategoryAsync(Guid categoryId, UpdateProductCategoryRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.UpdateCategoryAsync(categoryId, request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.UpdateCategoryAsync(categoryId, request, cancellationToken));
 
         public Task<bool> DeleteCategoryAsync(Guid categoryId, CancellationToken cancellationToken = default)
-            => _repository.DeleteCategoryAsync(categoryId, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.DeleteCategoryAsync(categoryId, cancellationToken));
 
         public Task<IReadOnlyList<ProductCategoryMapDto>> GetProductCategoryMapsAsync(Guid productId, CancellationToken cancellationToken = default)
             => _repository.GetProductCategoryMapsAsync(productId, cancellationToken);
@@ -80,13 +111,13 @@ namespace ProductManager.Service.Concrete
             => _repository.GetCategoryMapByIdAsync(categoryMapId, cancellationToken);
 
         public Task<ProductCategoryMapDto> CreateCategoryMapAsync(CreateProductCategoryMapRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.CreateCategoryMapAsync(request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.CreateCategoryMapAsync(request, cancellationToken));
 
         public Task<bool> UpdateCategoryMapAsync(Guid categoryMapId, UpdateProductCategoryMapRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.UpdateCategoryMapAsync(categoryMapId, request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.UpdateCategoryMapAsync(categoryMapId, request, cancellationToken));
 
         public Task<bool> DeleteCategoryMapAsync(Guid categoryMapId, CancellationToken cancellationToken = default)
-            => _repository.DeleteCategoryMapAsync(categoryMapId, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.DeleteCategoryMapAsync(categoryMapId, cancellationToken));
 
         public Task<IReadOnlyList<ProductMediaDto>> GetProductMediaAsync(Guid productId, CancellationToken cancellationToken = default)
             => _repository.GetProductMediaAsync(productId, cancellationToken);
@@ -95,13 +126,13 @@ namespace ProductManager.Service.Concrete
             => _repository.GetMediaByIdAsync(mediaId, cancellationToken);
 
         public Task<ProductMediaDto> CreateMediaAsync(CreateProductMediaRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.CreateMediaAsync(request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.CreateMediaAsync(request, cancellationToken));
 
         public Task<bool> UpdateMediaAsync(Guid mediaId, UpdateProductMediaRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.UpdateMediaAsync(mediaId, request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.UpdateMediaAsync(mediaId, request, cancellationToken));
 
         public Task<bool> DeleteMediaAsync(Guid mediaId, CancellationToken cancellationToken = default)
-            => _repository.DeleteMediaAsync(mediaId, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.DeleteMediaAsync(mediaId, cancellationToken));
 
         public Task<IReadOnlyList<ProductBundleItemDto>> GetBundleItemsAsync(Guid bundleProductId, CancellationToken cancellationToken = default)
             => _repository.GetBundleItemsAsync(bundleProductId, cancellationToken);
@@ -110,13 +141,13 @@ namespace ProductManager.Service.Concrete
             => _repository.GetBundleItemByIdAsync(bundleItemId, cancellationToken);
 
         public Task<ProductBundleItemDto> CreateBundleItemAsync(CreateProductBundleItemRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.CreateBundleItemAsync(request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.CreateBundleItemAsync(request, cancellationToken));
 
         public Task<bool> UpdateBundleItemAsync(Guid bundleItemId, UpdateProductBundleItemRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.UpdateBundleItemAsync(bundleItemId, request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.UpdateBundleItemAsync(bundleItemId, request, cancellationToken));
 
         public Task<bool> DeleteBundleItemAsync(Guid bundleItemId, CancellationToken cancellationToken = default)
-            => _repository.DeleteBundleItemAsync(bundleItemId, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.DeleteBundleItemAsync(bundleItemId, cancellationToken));
 
         public Task<IReadOnlyList<ProductVariantDto>> GetProductVariantsAsync(Guid productId, CancellationToken cancellationToken = default)
             => _repository.GetProductVariantsAsync(productId, cancellationToken);
@@ -125,13 +156,13 @@ namespace ProductManager.Service.Concrete
             => _repository.GetVariantByIdAsync(variantId, cancellationToken);
 
         public Task<ProductVariantDto> CreateVariantAsync(CreateProductVariantRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.CreateVariantAsync(request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.CreateVariantAsync(request, cancellationToken));
 
         public Task<bool> UpdateVariantAsync(Guid variantId, UpdateProductVariantRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.UpdateVariantAsync(variantId, request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.UpdateVariantAsync(variantId, request, cancellationToken));
 
         public Task<bool> DeleteVariantAsync(Guid variantId, CancellationToken cancellationToken = default)
-            => _repository.DeleteVariantAsync(variantId, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.DeleteVariantAsync(variantId, cancellationToken));
 
         public Task<IReadOnlyList<ProductPriceDto>> GetProductPricesAsync(Guid productId, CancellationToken cancellationToken = default)
             => _repository.GetProductPricesAsync(productId, cancellationToken);
@@ -140,13 +171,13 @@ namespace ProductManager.Service.Concrete
             => _repository.GetPriceByIdAsync(priceId, cancellationToken);
 
         public Task<ProductPriceDto> CreatePriceAsync(CreateProductPriceRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.CreatePriceAsync(request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.CreatePriceAsync(request, cancellationToken));
 
         public Task<bool> UpdatePriceAsync(Guid priceId, UpdateProductPriceRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.UpdatePriceAsync(priceId, request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.UpdatePriceAsync(priceId, request, cancellationToken));
 
         public Task<bool> DeletePriceAsync(Guid priceId, CancellationToken cancellationToken = default)
-            => _repository.DeletePriceAsync(priceId, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.DeletePriceAsync(priceId, cancellationToken));
 
         public Task<IReadOnlyList<ProductInventoryDto>> GetProductInventoriesAsync(ProductInventoryFilterDto filter, CancellationToken cancellationToken = default)
             => _repository.GetProductInventoriesAsync(filter, cancellationToken);
@@ -155,64 +186,67 @@ namespace ProductManager.Service.Concrete
             => _repository.GetInventoryByIdAsync(inventoryId, cancellationToken);
 
         public Task<ProductInventoryDto> CreateInventoryAsync(CreateProductInventoryRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.CreateInventoryAsync(request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.CreateInventoryAsync(request, cancellationToken));
 
         public Task<bool> UpdateInventoryAsync(Guid inventoryId, UpdateProductInventoryRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.UpdateInventoryAsync(inventoryId, request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.UpdateInventoryAsync(inventoryId, request, cancellationToken));
 
         public Task<bool> DeleteInventoryAsync(Guid inventoryId, CancellationToken cancellationToken = default)
-            => _repository.DeleteInventoryAsync(inventoryId, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.DeleteInventoryAsync(inventoryId, cancellationToken));
 
         public Task<ProductPhysicalProfileDto?> GetPhysicalProfileAsync(Guid productId, CancellationToken cancellationToken = default)
             => _repository.GetPhysicalProfileAsync(productId, cancellationToken);
 
         public Task<ProductPhysicalProfileDto> UpsertPhysicalProfileAsync(Guid productId, UpsertProductPhysicalProfileRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.UpsertPhysicalProfileAsync(productId, request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.UpsertPhysicalProfileAsync(productId, request, cancellationToken));
 
         public Task<bool> DeletePhysicalProfileAsync(Guid productId, CancellationToken cancellationToken = default)
-            => _repository.DeletePhysicalProfileAsync(productId, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.DeletePhysicalProfileAsync(productId, cancellationToken));
 
         public Task<ProductSoftwareProfileDto?> GetSoftwareProfileAsync(Guid productId, CancellationToken cancellationToken = default)
             => _repository.GetSoftwareProfileAsync(productId, cancellationToken);
 
         public Task<ProductSoftwareProfileDto> UpsertSoftwareProfileAsync(Guid productId, UpsertProductSoftwareProfileRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.UpsertSoftwareProfileAsync(productId, request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.UpsertSoftwareProfileAsync(productId, request, cancellationToken));
 
         public Task<bool> DeleteSoftwareProfileAsync(Guid productId, CancellationToken cancellationToken = default)
-            => _repository.DeleteSoftwareProfileAsync(productId, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.DeleteSoftwareProfileAsync(productId, cancellationToken));
 
         public Task<ProductServiceProfileDto?> GetServiceProfileAsync(Guid productId, CancellationToken cancellationToken = default)
             => _repository.GetServiceProfileAsync(productId, cancellationToken);
 
         public Task<ProductServiceProfileDto> UpsertServiceProfileAsync(Guid productId, UpsertProductServiceProfileRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.UpsertServiceProfileAsync(productId, request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.UpsertServiceProfileAsync(productId, request, cancellationToken));
 
         public Task<bool> DeleteServiceProfileAsync(Guid productId, CancellationToken cancellationToken = default)
-            => _repository.DeleteServiceProfileAsync(productId, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.DeleteServiceProfileAsync(productId, cancellationToken));
 
         public Task<ProductSubscriptionProfileDto?> GetSubscriptionProfileAsync(Guid productId, CancellationToken cancellationToken = default)
             => _repository.GetSubscriptionProfileAsync(productId, cancellationToken);
 
         public Task<ProductSubscriptionProfileDto> UpsertSubscriptionProfileAsync(Guid productId, UpsertProductSubscriptionProfileRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.UpsertSubscriptionProfileAsync(productId, request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.UpsertSubscriptionProfileAsync(productId, request, cancellationToken));
 
         public Task<bool> DeleteSubscriptionProfileAsync(Guid productId, CancellationToken cancellationToken = default)
-            => _repository.DeleteSubscriptionProfileAsync(productId, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.DeleteSubscriptionProfileAsync(productId, cancellationToken));
 
         public Task<IReadOnlyList<ProductSupplierDto>> GetSuppliersAsync(bool includeInactive = false, CancellationToken cancellationToken = default)
             => _repository.GetSuppliersAsync(includeInactive, cancellationToken);
+
+        public Task<IReadOnlyList<LookupItemDto>> GetSupplierLookupsAsync(bool includeInactive = false, CancellationToken cancellationToken = default)
+            => _repository.GetSupplierLookupsAsync(includeInactive, cancellationToken);
 
         public Task<ProductSupplierDto?> GetSupplierByIdAsync(Guid supplierId, CancellationToken cancellationToken = default)
             => _repository.GetSupplierByIdAsync(supplierId, cancellationToken);
 
         public Task<ProductSupplierDto> CreateSupplierAsync(CreateProductSupplierRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.CreateSupplierAsync(request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.CreateSupplierAsync(request, cancellationToken));
 
         public Task<bool> UpdateSupplierAsync(Guid supplierId, UpdateProductSupplierRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.UpdateSupplierAsync(supplierId, request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.UpdateSupplierAsync(supplierId, request, cancellationToken));
 
         public Task<bool> DeleteSupplierAsync(Guid supplierId, CancellationToken cancellationToken = default)
-            => _repository.DeleteSupplierAsync(supplierId, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.DeleteSupplierAsync(supplierId, cancellationToken));
 
         public Task<IReadOnlyList<ProductSupplierMapDto>> GetProductSupplierMapsAsync(Guid productId, CancellationToken cancellationToken = default)
             => _repository.GetProductSupplierMapsAsync(productId, cancellationToken);
@@ -221,61 +255,73 @@ namespace ProductManager.Service.Concrete
             => _repository.GetSupplierMapByIdAsync(supplierMapId, cancellationToken);
 
         public Task<ProductSupplierMapDto> CreateSupplierMapAsync(CreateProductSupplierMapRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.CreateSupplierMapAsync(request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.CreateSupplierMapAsync(request, cancellationToken));
 
         public Task<bool> UpdateSupplierMapAsync(Guid supplierMapId, UpdateProductSupplierMapRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.UpdateSupplierMapAsync(supplierMapId, request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.UpdateSupplierMapAsync(supplierMapId, request, cancellationToken));
 
         public Task<bool> DeleteSupplierMapAsync(Guid supplierMapId, CancellationToken cancellationToken = default)
-            => _repository.DeleteSupplierMapAsync(supplierMapId, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.DeleteSupplierMapAsync(supplierMapId, cancellationToken));
 
         public Task<IReadOnlyList<WarehouseDto>> GetWarehousesAsync(bool includeInactive = false, CancellationToken cancellationToken = default)
             => _repository.GetWarehousesAsync(includeInactive, cancellationToken);
+
+        public Task<IReadOnlyList<LookupItemDto>> GetWarehouseLookupsAsync(bool includeInactive = false, CancellationToken cancellationToken = default)
+            => _repository.GetWarehouseLookupsAsync(includeInactive, cancellationToken);
 
         public Task<WarehouseDto?> GetWarehouseByIdAsync(Guid warehouseId, CancellationToken cancellationToken = default)
             => _repository.GetWarehouseByIdAsync(warehouseId, cancellationToken);
 
         public Task<WarehouseDto> CreateWarehouseAsync(CreateWarehouseRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.CreateWarehouseAsync(request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.CreateWarehouseAsync(request, cancellationToken));
 
         public Task<bool> UpdateWarehouseAsync(Guid warehouseId, UpdateWarehouseRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.UpdateWarehouseAsync(warehouseId, request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.UpdateWarehouseAsync(warehouseId, request, cancellationToken));
 
         public Task<bool> DeleteWarehouseAsync(Guid warehouseId, CancellationToken cancellationToken = default)
-            => _repository.DeleteWarehouseAsync(warehouseId, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.DeleteWarehouseAsync(warehouseId, cancellationToken));
 
         public Task<IReadOnlyList<InventoryTransactionDto>> GetInventoryTransactionsAsync(InventoryTransactionFilterDto filter, CancellationToken cancellationToken = default)
             => _repository.GetInventoryTransactionsAsync(filter, cancellationToken);
 
+        public Task<InventoryTransactionDto?> GetInventoryTransactionByIdAsync(Guid transactionId, CancellationToken cancellationToken = default)
+            => _repository.GetInventoryTransactionByIdAsync(transactionId, cancellationToken);
+
         public Task<InventoryTransactionDto> CreateInventoryTransactionAsync(CreateInventoryTransactionRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.CreateInventoryTransactionAsync(request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.CreateInventoryTransactionAsync(request, cancellationToken));
 
         public Task<IReadOnlyList<InventoryReservationDto>> GetInventoryReservationsAsync(InventoryReservationFilterDto filter, CancellationToken cancellationToken = default)
             => _repository.GetInventoryReservationsAsync(filter, cancellationToken);
 
+        public Task<InventoryReservationDto?> GetInventoryReservationByIdAsync(Guid reservationId, CancellationToken cancellationToken = default)
+            => _repository.GetInventoryReservationByIdAsync(reservationId, cancellationToken);
+
         public Task<InventoryReservationDto> CreateInventoryReservationAsync(CreateInventoryReservationRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.CreateInventoryReservationAsync(request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.CreateInventoryReservationAsync(request, cancellationToken));
 
         public Task<bool> UpdateInventoryReservationStatusAsync(Guid reservationId, UpdateInventoryReservationStatusRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.UpdateInventoryReservationStatusAsync(reservationId, request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.UpdateInventoryReservationStatusAsync(reservationId, request, cancellationToken));
 
         public Task<bool> DeleteInventoryReservationAsync(Guid reservationId, CancellationToken cancellationToken = default)
-            => _repository.DeleteInventoryReservationAsync(reservationId, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.DeleteInventoryReservationAsync(reservationId, cancellationToken));
 
         public Task<IReadOnlyList<ProductPriceListDto>> GetPriceListsAsync(bool includeInactive = false, CancellationToken cancellationToken = default)
             => _repository.GetPriceListsAsync(includeInactive, cancellationToken);
+
+        public Task<IReadOnlyList<LookupItemDto>> GetPriceListLookupsAsync(bool includeInactive = false, CancellationToken cancellationToken = default)
+            => _repository.GetPriceListLookupsAsync(includeInactive, cancellationToken);
 
         public Task<ProductPriceListDto?> GetPriceListByIdAsync(Guid priceListId, CancellationToken cancellationToken = default)
             => _repository.GetPriceListByIdAsync(priceListId, cancellationToken);
 
         public Task<ProductPriceListDto> CreatePriceListAsync(CreateProductPriceListRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.CreatePriceListAsync(request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.CreatePriceListAsync(request, cancellationToken));
 
         public Task<bool> UpdatePriceListAsync(Guid priceListId, UpdateProductPriceListRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.UpdatePriceListAsync(priceListId, request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.UpdatePriceListAsync(priceListId, request, cancellationToken));
 
         public Task<bool> DeletePriceListAsync(Guid priceListId, CancellationToken cancellationToken = default)
-            => _repository.DeletePriceListAsync(priceListId, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.DeletePriceListAsync(priceListId, cancellationToken));
 
         public Task<IReadOnlyList<ProductPriceListItemDto>> GetPriceListItemsAsync(Guid priceListId, CancellationToken cancellationToken = default)
             => _repository.GetPriceListItemsAsync(priceListId, cancellationToken);
@@ -284,12 +330,37 @@ namespace ProductManager.Service.Concrete
             => _repository.GetPriceListItemByIdAsync(priceListItemId, cancellationToken);
 
         public Task<ProductPriceListItemDto> CreatePriceListItemAsync(CreateProductPriceListItemRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.CreatePriceListItemAsync(request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.CreatePriceListItemAsync(request, cancellationToken));
 
         public Task<bool> UpdatePriceListItemAsync(Guid priceListItemId, UpdateProductPriceListItemRequestDto request, CancellationToken cancellationToken = default)
-            => _repository.UpdatePriceListItemAsync(priceListItemId, request, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.UpdatePriceListItemAsync(priceListItemId, request, cancellationToken));
 
         public Task<bool> DeletePriceListItemAsync(Guid priceListItemId, CancellationToken cancellationToken = default)
-            => _repository.DeletePriceListItemAsync(priceListItemId, cancellationToken);
+            => ExecuteWithSqlMapping(() => _repository.DeletePriceListItemAsync(priceListItemId, cancellationToken));
+
+        private static async Task<T> ExecuteWithSqlMapping<T>(Func<Task<T>> action)
+        {
+            try
+            {
+                return await action();
+            }
+            catch (SqlException ex)
+            {
+                throw MapSqlException(ex);
+            }
+        }
+
+        private static BaseException MapSqlException(SqlException ex)
+        {
+            return ex.Number switch
+            {
+                2601 or 2627 => new ConflictException("Aynı benzersiz alana sahip kayıt zaten mevcut."),
+                547 => new ValidationException("request", "İlişkili veri kuralı ihlal edildi."),
+                515 => new ValidationException("request", "Zorunlu bir alan boş bırakılamaz."),
+                8115 => new ValidationException("request", "Sayısal alan değeri izin verilen aralığın dışında."),
+                245 => new ValidationException("request", "Alan tipi geçersiz."),
+                _ => new BaseException("Veritabanı işlemi sırasında hata oluştu.", 500, ex)
+            };
+        }
     }
 }
