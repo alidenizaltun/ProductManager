@@ -8,6 +8,7 @@ namespace ProductManager.Service.Shared.Abstract
         Task<IReadOnlyList<LookupItemDto>> GetProductLookupsAsync(bool includeInactive = false, CancellationToken cancellationToken = default);
         Task<ProductReferenceLookupsDto> GetReferenceLookupsAsync(bool includeInactive = false, CancellationToken cancellationToken = default);
         Task<ProductDto?> GetProductByIdAsync(Guid productId, CancellationToken cancellationToken = default);
+        Task<ProductDetailDto?> GetProductDetailByIdAsync(Guid productId, CancellationToken cancellationToken = default);
         Task<ProductDto> CreateProductAsync(CreateProductRequestDto request, CancellationToken cancellationToken = default);
         Task<ProductDto> CreateProductFullAsync(CreateProductFullRequestDto request, CancellationToken cancellationToken = default);
         Task<bool> UpdateProductAsync(Guid productId, UpdateProductRequestDto request, CancellationToken cancellationToken = default);

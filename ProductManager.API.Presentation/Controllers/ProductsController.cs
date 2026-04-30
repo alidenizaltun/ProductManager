@@ -41,6 +41,20 @@ public sealed class ProductsController : ControllerBase
         return Ok(product);
     }
 
+    [HttpGet("{productId:guid}/detail")]
+    [ProducesResponseType(typeof(ProductDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ProductDetailDto>> GetProductDetail(Guid productId, CancellationToken cancellationToken)
+    {
+        var product = await _service.GetProductDetailByIdAsync(productId, cancellationToken);
+        if (product is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(product);
+    }
+
     [HttpPost]
     [ProducesResponseType(typeof(ProductDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<ProductDto>> CreateProduct(

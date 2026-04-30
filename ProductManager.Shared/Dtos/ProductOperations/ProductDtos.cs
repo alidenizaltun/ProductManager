@@ -82,6 +82,45 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public string? MetadataJson { get; init; }
     }
 
+    public sealed record ProductDetailDto
+    {
+        public Guid Id { get; init; }
+        public string ProductCode { get; init; } = string.Empty;
+        public string Name { get; init; } = string.Empty;
+        public string? ShortDescription { get; init; }
+        public string? Description { get; init; }
+        public int Kind { get; init; }
+        public int Status { get; init; }
+        public string? Brand { get; init; }
+        public string? Manufacturer { get; init; }
+        public string? Barcode { get; init; }
+        public bool IsActive { get; init; }
+        public bool IsSellable { get; init; }
+        public bool IsPurchasable { get; init; }
+        public bool TrackInventory { get; init; }
+        public string DefaultCurrencyCode { get; init; } = "TRY";
+        public string? UnitOfMeasure { get; init; }
+        public decimal? TaxRate { get; init; }
+        public string? TaxCode { get; init; }
+        public string? Tags { get; init; }
+        public string? MetadataJson { get; init; }
+        public DateTime CreatedAt { get; init; }
+        public DateTime? UpdatedAt { get; init; }
+
+        public IReadOnlyList<ProductAttributeValueDto> AttributeValues { get; init; } = [];
+        public IReadOnlyList<ProductVariantDto> Variants { get; init; } = [];
+        public IReadOnlyList<ProductPriceDto> Prices { get; init; } = [];
+        public IReadOnlyList<ProductInventoryDto> Inventories { get; init; } = [];
+        public IReadOnlyList<ProductMediaDto> MediaItems { get; init; } = [];
+        public IReadOnlyList<ProductCategoryMapDto> CategoryMaps { get; init; } = [];
+        public IReadOnlyList<ProductBundleItemDto> BundleItems { get; init; } = [];
+        public IReadOnlyList<ProductSupplierMapDto> SupplierMaps { get; init; } = [];
+        public ProductPhysicalProfileDto? PhysicalProfile { get; init; }
+        public ProductSoftwareProfileDto? SoftwareProfile { get; init; }
+        public ProductServiceProfileDto? ServiceProfile { get; init; }
+        public ProductSubscriptionProfileDto? SubscriptionProfile { get; init; }
+    }
+
     public sealed record CreateProductFullRequestDto
     {
         public required CreateProductRequestDto Product { get; init; }

@@ -44,6 +44,9 @@ namespace ProductManager.Service.Concrete
         public Task<ProductDto?> GetProductByIdAsync(Guid productId, CancellationToken cancellationToken = default)
             => _repository.GetProductByIdAsync(productId, cancellationToken);
 
+        public Task<ProductDetailDto?> GetProductDetailByIdAsync(Guid productId, CancellationToken cancellationToken = default)
+            => _repository.GetProductDetailByIdAsync(productId, cancellationToken);
+
         public Task<ProductDto> CreateProductAsync(CreateProductRequestDto request, CancellationToken cancellationToken = default)
             => ExecuteWithSqlMapping(() => _repository.CreateProductAsync(request, cancellationToken));
 

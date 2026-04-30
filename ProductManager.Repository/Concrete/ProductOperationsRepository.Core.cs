@@ -119,6 +119,159 @@ WHERE Id = @ProductId
                 new CommandDefinition(sql, new { ProductId = productId }, cancellationToken: cancellationToken));
         }
 
+        public async Task<ProductDetailDto?> GetProductDetailByIdAsync(Guid productId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+-- 1: Product
+SELECT
+    Id, ProductCode, Name, ShortDescription, Description, Kind, Status,
+    Brand, Manufacturer, Barcode, IsActive, IsSellable, IsPurchasable,
+    TrackInventory, DefaultCurrencyCode, UnitOfMeasure, TaxRate, TaxCode,
+    Tags, MetadataJson, CreatedAt, UpdatedAt
+FROM [Product].[Products]
+WHERE Id = @ProductId AND IsDeleted = 0;
+
+-- 2: AttributeValues
+SELECT
+    av.Id, av.ProductId, av.AttributeDefinitionId,
+    av.ValueText, av.ValueNumber, av.ValueBool, av.ValueDate, av.ValueJson,
+    av.CreatedAt, av.UpdatedAt
+FROM [Product].[ProductAttributeValues] av
+WHERE av.ProductId = @ProductId AND av.IsDeleted = 0;
+
+-- 3: Variants
+SELECT Id, ProductId, Sku, Barcode, Name, OptionValuesJson,
+       AdditionalPrice, AdditionalCost, IsActive, CreatedAt, UpdatedAt
+FROM [Product].[ProductVariants]
+WHERE ProductId = @ProductId AND IsDeleted = 0;
+
+-- 4: Prices
+SELECT Id, ProductId, ProductVariantId, PriceType, Amount, CompareAtAmount,
+       CurrencyCode, MinQuantity, MaxQuantity, ValidFrom, ValidTo,
+       SalesChannel, CustomerGroupCode, CreatedAt, UpdatedAt
+FROM [Product].[ProductPrices]
+WHERE ProductId = @ProductId AND IsDeleted = 0;
+
+-- 5: Inventories
+SELECT Id, ProductId, ProductVariantId, WarehouseId, WarehouseCode,
+       QuantityOnHand, QuantityReserved,
+       QuantityOnHand - QuantityReserved AS QuantityAvailable,
+       ReorderPoint, ReorderQuantity, InventoryPolicy, CreatedAt, UpdatedAt
+FROM [Product].[ProductInventories]
+WHERE ProductId = @ProductId AND IsDeleted = 0;
+
+-- 6: MediaItems
+SELECT Id, ProductId, MediaType, Url, ThumbnailUrl, MimeType, AltText,
+       IsPrimary, SortOrder, CreatedAt, UpdatedAt
+FROM [Product].[ProductMediaItems]
+WHERE ProductId = @ProductId AND IsDeleted = 0
+ORDER BY SortOrder;
+
+-- 7: CategoryMaps
+SELECT Id, ProductId, ProductCategoryId, IsPrimary, SortOrder, CreatedAt, UpdatedAt
+FROM [Product].[ProductCategoryMaps]
+WHERE ProductId = @ProductId AND IsDeleted = 0;
+
+-- 8: BundleItems
+SELECT Id, BundleProductId, ChildProductId, ChildVariantId, Quantity,
+       IsOptional, RuleJson, CreatedAt, UpdatedAt
+FROM [Product].[ProductBundleItems]
+WHERE BundleProductId = @ProductId AND IsDeleted = 0;
+
+-- 9: SupplierMaps
+SELECT Id, ProductId, ProductSupplierId, SupplierProductCode, SupplierCost,
+       LeadTimeInDays, MinOrderQuantity, IsPreferred, CreatedAt, UpdatedAt
+FROM [Product].[ProductSupplierMaps]
+WHERE ProductId = @ProductId AND IsDeleted = 0;
+
+-- 10: PhysicalProfile
+SELECT Id, ProductId, Weight, Width, Height, Length,
+       RequiresShipping, IsFragile, IsHazardous, RequiresSerialNumber,
+       WarrantyInMonths, CreatedAt, UpdatedAt
+FROM [Product].[ProductPhysicalProfiles]
+WHERE ProductId = @ProductId AND IsDeleted = 0;
+
+-- 11: SoftwareProfile
+SELECT Id, ProductId, Version, LicenseModel, SeatCount, DownloadUrl,
+       SupportedPlatformsJson, SystemRequirementsJson, ReleaseNotes, CreatedAt, UpdatedAt
+FROM [Product].[ProductSoftwareProfiles]
+WHERE ProductId = @ProductId AND IsDeleted = 0;
+
+-- 12: ServiceProfile
+SELECT Id, ProductId, DeliveryMode, DurationInMinutes, MaxConcurrentBooking,
+       ServiceAreaJson, ServiceLevelAgreementJson, CapacityRuleJson, CreatedAt, UpdatedAt
+FROM [Product].[ProductServiceProfiles]
+WHERE ProductId = @ProductId AND IsDeleted = 0;
+
+-- 13: SubscriptionProfile
+SELECT Id, ProductId, BillingPeriodUnit, BillingPeriodValue, TrialDays,
+       AutoRenew, GracePeriodDays, CancellationPolicy, SubscriptionRulesJson, CreatedAt, UpdatedAt
+FROM [Product].[ProductSubscriptionProfiles]
+WHERE ProductId = @ProductId AND IsDeleted = 0;
+";
+
+            using var connection = CreateConnection();
+            using var multi = await connection.QueryMultipleAsync(
+                new CommandDefinition(sql, new { ProductId = productId }, cancellationToken: cancellationToken));
+
+            var product = await multi.ReadSingleOrDefaultAsync<ProductDto>();
+            if (product is null)
+            {
+                return null;
+            }
+
+            var attributeValues = (await multi.ReadAsync<ProductAttributeValueDto>()).AsList();
+            var variants = (await multi.ReadAsync<ProductVariantDto>()).AsList();
+            var prices = (await multi.ReadAsync<ProductPriceDto>()).AsList();
+            var inventories = (await multi.ReadAsync<ProductInventoryDto>()).AsList();
+            var mediaItems = (await multi.ReadAsync<ProductMediaDto>()).AsList();
+            var categoryMaps = (await multi.ReadAsync<ProductCategoryMapDto>()).AsList();
+            var bundleItems = (await multi.ReadAsync<ProductBundleItemDto>()).AsList();
+            var supplierMaps = (await multi.ReadAsync<ProductSupplierMapDto>()).AsList();
+            var physicalProfile = await multi.ReadSingleOrDefaultAsync<ProductPhysicalProfileDto>();
+            var softwareProfile = await multi.ReadSingleOrDefaultAsync<ProductSoftwareProfileDto>();
+            var serviceProfile = await multi.ReadSingleOrDefaultAsync<ProductServiceProfileDto>();
+            var subscriptionProfile = await multi.ReadSingleOrDefaultAsync<ProductSubscriptionProfileDto>();
+
+            return new ProductDetailDto
+            {
+                Id = product.Id,
+                ProductCode = product.ProductCode,
+                Name = product.Name,
+                ShortDescription = product.ShortDescription,
+                Description = product.Description,
+                Kind = product.Kind,
+                Status = product.Status,
+                Brand = product.Brand,
+                Manufacturer = product.Manufacturer,
+                Barcode = product.Barcode,
+                IsActive = product.IsActive,
+                IsSellable = product.IsSellable,
+                IsPurchasable = product.IsPurchasable,
+                TrackInventory = product.TrackInventory,
+                DefaultCurrencyCode = product.DefaultCurrencyCode,
+                UnitOfMeasure = product.UnitOfMeasure,
+                TaxRate = product.TaxRate,
+                TaxCode = product.TaxCode,
+                Tags = product.Tags,
+                MetadataJson = product.MetadataJson,
+                CreatedAt = product.CreatedAt,
+                UpdatedAt = product.UpdatedAt,
+                AttributeValues = attributeValues,
+                Variants = variants,
+                Prices = prices,
+                Inventories = inventories,
+                MediaItems = mediaItems,
+                CategoryMaps = categoryMaps,
+                BundleItems = bundleItems,
+                SupplierMaps = supplierMaps,
+                PhysicalProfile = physicalProfile,
+                SoftwareProfile = softwareProfile,
+                ServiceProfile = serviceProfile,
+                SubscriptionProfile = subscriptionProfile,
+            };
+        }
+
         public async Task<ProductDto> CreateProductAsync(CreateProductRequestDto request, CancellationToken cancellationToken = default)
         {
             const string sql = @"
@@ -1464,20 +1617,90 @@ WHERE Id = @ProductId
 
         public async Task<bool> DeleteProductAsync(Guid productId, CancellationToken cancellationToken = default)
         {
-            const string sql = @"
+            const string deleteProductSql = @"
 UPDATE [Product].[Products]
-SET
-    IsDeleted = 1,
-    DeletedAt = @Now,
-    UpdatedAt = @Now
-WHERE Id = @ProductId
-  AND IsDeleted = 0;";
+SET IsDeleted = 1, DeletedAt = @Now, UpdatedAt = @Now
+WHERE Id = @ProductId AND IsDeleted = 0;";
+
+            const string cascadeSql = @"
+UPDATE [Product].[ProductAttributeValues]
+SET IsDeleted = 1, DeletedAt = @Now, UpdatedAt = @Now
+WHERE ProductId = @ProductId AND IsDeleted = 0;
+
+UPDATE [Product].[ProductVariants]
+SET IsDeleted = 1, DeletedAt = @Now, UpdatedAt = @Now
+WHERE ProductId = @ProductId AND IsDeleted = 0;
+
+UPDATE [Product].[ProductPrices]
+SET IsDeleted = 1, DeletedAt = @Now, UpdatedAt = @Now
+WHERE ProductId = @ProductId AND IsDeleted = 0;
+
+UPDATE [Product].[ProductInventories]
+SET IsDeleted = 1, DeletedAt = @Now, UpdatedAt = @Now
+WHERE ProductId = @ProductId AND IsDeleted = 0;
+
+UPDATE [Product].[ProductMediaItems]
+SET IsDeleted = 1, DeletedAt = @Now, UpdatedAt = @Now
+WHERE ProductId = @ProductId AND IsDeleted = 0;
+
+UPDATE [Product].[ProductCategoryMaps]
+SET IsDeleted = 1, DeletedAt = @Now, UpdatedAt = @Now
+WHERE ProductId = @ProductId AND IsDeleted = 0;
+
+UPDATE [Product].[ProductBundleItems]
+SET IsDeleted = 1, DeletedAt = @Now, UpdatedAt = @Now
+WHERE BundleProductId = @ProductId AND IsDeleted = 0;
+
+UPDATE [Product].[ProductSupplierMaps]
+SET IsDeleted = 1, DeletedAt = @Now, UpdatedAt = @Now
+WHERE ProductId = @ProductId AND IsDeleted = 0;
+
+UPDATE [Product].[ProductPhysicalProfiles]
+SET IsDeleted = 1, DeletedAt = @Now, UpdatedAt = @Now
+WHERE ProductId = @ProductId AND IsDeleted = 0;
+
+UPDATE [Product].[ProductSoftwareProfiles]
+SET IsDeleted = 1, DeletedAt = @Now, UpdatedAt = @Now
+WHERE ProductId = @ProductId AND IsDeleted = 0;
+
+UPDATE [Product].[ProductServiceProfiles]
+SET IsDeleted = 1, DeletedAt = @Now, UpdatedAt = @Now
+WHERE ProductId = @ProductId AND IsDeleted = 0;
+
+UPDATE [Product].[ProductSubscriptionProfiles]
+SET IsDeleted = 1, DeletedAt = @Now, UpdatedAt = @Now
+WHERE ProductId = @ProductId AND IsDeleted = 0;
+";
+
+            var now = DateTime.UtcNow;
+            var parameters = new { ProductId = productId, Now = now };
 
             using var connection = CreateConnection();
-            var affectedRows = await connection.ExecuteAsync(
-                new CommandDefinition(sql, new { ProductId = productId, Now = DateTime.UtcNow }, cancellationToken: cancellationToken));
+            connection.Open();
+            using var transaction = connection.BeginTransaction();
 
-            return affectedRows > 0;
+            try
+            {
+                var affectedRows = await connection.ExecuteAsync(
+                    new CommandDefinition(deleteProductSql, parameters, transaction, cancellationToken: cancellationToken));
+
+                if (affectedRows == 0)
+                {
+                    transaction.Rollback();
+                    return false;
+                }
+
+                await connection.ExecuteAsync(
+                    new CommandDefinition(cascadeSql, parameters, transaction, cancellationToken: cancellationToken));
+
+                transaction.Commit();
+                return true;
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
         }
 
         public async Task<IReadOnlyList<ProductAttributeDefinitionDto>> GetAttributeDefinitionsAsync(CancellationToken cancellationToken = default)
