@@ -41,7 +41,7 @@
                                         <option value="">Ürün seçiniz</option>
                                         @foreach (var product in Model.Products)
                                         {
-                                            <option value="@product.Id">@product.ProductCode - @product.Name</option>
+                                            <option value="@product.Id">@product.Name</option>
                                         }
                                     </select>
                                     <span asp-validation-for="ProductId" class="text-danger"></span>
@@ -52,7 +52,7 @@
                                         <option value="">Depo seçiniz</option>
                                         @foreach (var warehouse in Model.Warehouses)
                                         {
-                                            <option value="@warehouse.Id">@warehouse.Code - @warehouse.Name</option>
+                                            <option value="@warehouse.Id">@warehouse.Name</option>
                                         }
                                     </select>
                                 </div>

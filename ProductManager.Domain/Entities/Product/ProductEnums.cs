@@ -91,7 +91,8 @@ namespace ProductManager.Domain.Entities.Product
         Perpetual = 1,
         Subscription = 2,
         UsageBased = 3,
-        SeatBased = 4
+        SeatBased = 4,
+        Trial = 5
     }
 
     public enum BillingPeriodUnit

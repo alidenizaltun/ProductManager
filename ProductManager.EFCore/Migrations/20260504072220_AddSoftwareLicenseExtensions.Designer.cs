@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ProductManager.EfCore.Context;
 
@@ -11,9 +12,11 @@ using ProductManager.EfCore.Context;
 namespace ProductManager.EFCore.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260504072220_AddSoftwareLicenseExtensions")]
+    partial class AddSoftwareLicenseExtensions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -743,91 +746,6 @@ namespace ProductManager.EFCore.Migrations
                     b.HasIndex("WarehouseId");
 
                     b.ToTable("ProductInventories", "Product");
-                });
-
-            modelBuilder.Entity("ProductManager.Domain.Entities.Product.ProductLicenseOffering", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("AutoRenew")
-                        .HasColumnType("bit");
-
-                    b.Property<decimal>("BasePrice")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<int?>("BillingPeriodUnit")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("BillingPeriodValue")
-                        .HasColumnType("int");
-
-                    b.Property<Guid?>("ConvertToOfferingId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CurrencyCode")
-                        .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("GracePeriodDays")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("LicenseModel")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("MaxSeats")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("TrialDays")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("ValidFrom")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("ValidTo")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ConvertToOfferingId");
-
-                    b.HasIndex("ProductId", "Name")
-                        .IsUnique()
-                        .HasDatabaseName("IX_ProductLicenseOfferings_ProductId_Name");
-
-                    b.ToTable("ProductLicenseOfferings", "Product");
                 });
 
             modelBuilder.Entity("ProductManager.Domain.Entities.Product.ProductMedia", b =>
@@ -1776,24 +1694,6 @@ namespace ProductManager.EFCore.Migrations
                     b.Navigation("Warehouse");
                 });
 
-            modelBuilder.Entity("ProductManager.Domain.Entities.Product.ProductLicenseOffering", b =>
-                {
-                    b.HasOne("ProductManager.Domain.Entities.Product.ProductLicenseOffering", "ConvertToOffering")
-                        .WithMany()
-                        .HasForeignKey("ConvertToOfferingId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("ProductManager.Domain.Entities.Product.Product", "Product")
-                        .WithMany("LicenseOfferings")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ConvertToOffering");
-
-                    b.Navigation("Product");
-                });
-
             modelBuilder.Entity("ProductManager.Domain.Entities.Product.ProductMedia", b =>
                 {
                     b.HasOne("ProductManager.Domain.Entities.Product.Product", "Product")
@@ -1957,8 +1857,6 @@ namespace ProductManager.EFCore.Migrations
                     b.Navigation("InventoryReservations");
 
                     b.Navigation("InventoryTransactions");
-
-                    b.Navigation("LicenseOfferings");
 
                     b.Navigation("MediaItems");
 

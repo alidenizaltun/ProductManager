@@ -29,8 +29,11 @@ namespace ProductManager.EfCore.Context
         public DbSet<Warehouse> Warehouses => Set<Warehouse>();
         public DbSet<InventoryTransaction> InventoryTransactions => Set<InventoryTransaction>();
         public DbSet<InventoryReservation> InventoryReservations => Set<InventoryReservation>();
-        public DbSet<ProductPriceList> ProductPriceLists => Set<ProductPriceList>();
-        public DbSet<ProductPriceListItem> ProductPriceListItems => Set<ProductPriceListItem>();
+ public DbSet<ProductPriceList> ProductPriceLists => Set<ProductPriceList>();
+ public DbSet<ProductPriceListItem> ProductPriceListItems => Set<ProductPriceListItem>();
+ public DbSet<ProductModule> ProductModules => Set<ProductModule>();
+ public DbSet<SoftwarePricingTier> SoftwarePricingTiers => Set<SoftwarePricingTier>();
+ public DbSet<ProductLicenseOffering> ProductLicenseOfferings => Set<ProductLicenseOffering>();
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 

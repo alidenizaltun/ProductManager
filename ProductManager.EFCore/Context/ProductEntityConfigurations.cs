@@ -183,27 +183,112 @@ namespace ProductManager.EfCore.Context
         }
     }
 
-    public class ProductPriceListItemConfiguration : IEntityTypeConfiguration<ProductPriceListItem>
-    {
-        public void Configure(EntityTypeBuilder<ProductPriceListItem> builder)
-        {
-            builder.HasOne(i => i.ProductPriceList)
-                .WithMany(p => p.Items)
-                .HasForeignKey(i => i.ProductPriceListId)
-                .OnDelete(DeleteBehavior.Cascade);
+ public class ProductPriceListItemConfiguration : IEntityTypeConfiguration<ProductPriceListItem>
+ {
+ public void Configure(EntityTypeBuilder<ProductPriceListItem> builder)
+ {
+ builder.HasOne(i => i.ProductPriceList)
+ .WithMany(p => p.Items)
+ .HasForeignKey(i => i.ProductPriceListId)
+ .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasOne(i => i.Product)
-                .WithMany(p => p.PriceListItems)
-                .HasForeignKey(i => i.ProductId)
-                .OnDelete(DeleteBehavior.Cascade);
+ builder.HasOne(i => i.Product)
+ .WithMany(p => p.PriceListItems)
+ .HasForeignKey(i => i.ProductId)
+ .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasOne(i => i.ProductVariant)
-                .WithMany(v => v.PriceListItems)
-                .HasForeignKey(i => i.ProductVariantId)
-                .OnDelete(DeleteBehavior.Restrict);
+ builder.HasOne(i => i.ProductVariant)
+ .WithMany(v => v.PriceListItems)
+ .HasForeignKey(i => i.ProductVariantId)
+ .OnDelete(DeleteBehavior.Restrict);
 
-            builder.HasIndex(i => new { i.ProductPriceListId, i.ProductId, i.ProductVariantId, i.MinQuantity, i.MaxQuantity })
-                .HasDatabaseName("IX_ProductPriceListItems_UniqueRange");
-        }
-    }
+ builder.HasIndex(i => new { i.ProductPriceListId, i.ProductId, i.ProductVariantId, i.MinQuantity, i.MaxQuantity })
+ .HasDatabaseName("IX_ProductPriceListItems_UniqueRange");
+ }
+ }
+
+ public class ProductModuleConfiguration : IEntityTypeConfiguration<ProductModule>
+ {
+ public void Configure(EntityTypeBuilder<ProductModule> builder)
+ {
+ builder.HasOne(m => m.Product)
+ .WithMany(p => p.Modules)
+ .HasForeignKey(m => m.ProductId)
+ .OnDelete(DeleteBehavior.Cascade);
+
+ builder.HasIndex(m => new { m.ProductId, m.ModuleCode })
+ .IsUnique()
+ .HasDatabaseName("IX_ProductModules_ProductId_ModuleCode");
+
+ builder.Property(m => m.ModuleCode)
+ .HasMaxLength(64);
+
+ builder.Property(m => m.Name)
+ .HasMaxLength(200);
+
+ builder.Property(m => m.AdditionalPrice)
+ .HasPrecision(18, 4);
+
+ builder.Property(m => m.CurrencyCode)
+ .HasMaxLength(3);
+ }
+ }
+
+ public class SoftwarePricingTierConfiguration : IEntityTypeConfiguration<SoftwarePricingTier>
+ {
+ public void Configure(EntityTypeBuilder<SoftwarePricingTier> builder)
+ {
+ builder.HasOne(t => t.Product)
+ .WithMany(p => p.SoftwarePricingTiers)
+ .HasForeignKey(t => t.ProductId)
+ .OnDelete(DeleteBehavior.Cascade);
+
+ builder.HasIndex(t => new { t.ProductId, t.LicenseModel, t.Unit, t.MinUnits })
+ .HasDatabaseName("IX_SoftwarePricingTiers_ProductId_Model_Unit_Min");
+
+ builder.Property(t => t.Unit)
+ .HasMaxLength(50);
+
+ builder.Property(t => t.PricePerUnit)
+ .HasPrecision(18, 4);
+
+ builder.Property(t => t.FlatFee)
+ .HasPrecision(18, 4);
+
+ builder.Property(t => t.CurrencyCode)
+ .HasMaxLength(3);
+ }
+ }
+
+ public class ProductLicenseOfferingConfiguration : IEntityTypeConfiguration<ProductLicenseOffering>
+ {
+ public void Configure(EntityTypeBuilder<ProductLicenseOffering> builder)
+ {
+ builder.HasOne(o => o.Product)
+ .WithMany(p => p.LicenseOfferings)
+ .HasForeignKey(o => o.ProductId)
+ .OnDelete(DeleteBehavior.Cascade);
+
+ // Trial'dan dönüşüm hedefini self-referencing olarak tanımla
+ builder.HasOne(o => o.ConvertToOffering)
+ .WithMany()
+ .HasForeignKey(o => o.ConvertToOfferingId)
+ .OnDelete(DeleteBehavior.Restrict);
+
+ builder.Property(o => o.Name)
+ .HasMaxLength(200);
+
+ builder.Property(o => o.BasePrice)
+ .HasPrecision(18, 4);
+
+ builder.Property(o => o.CurrencyCode)
+ .HasMaxLength(3);
+
+ // Bir ürünün aynı LicenseModel tipinde birden fazla offering'i olabilir (farklı süreler).
+ // Benzersizliği Name üzerinden sağlıyoruz.
+ builder.HasIndex(o => new { o.ProductId, o.Name })
+ .IsUnique()
+ .HasDatabaseName("IX_ProductLicenseOfferings_ProductId_Name");
+ }
+ }
 }

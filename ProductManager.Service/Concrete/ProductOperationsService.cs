@@ -6,7 +6,7 @@ using ProductManager.Shared.Infrastructure.Exceptions;
 
 namespace ProductManager.Service.Concrete
 {
-    public sealed class ProductOperationsService : IProductOperationsService
+ public sealed partial class ProductOperationsService : IProductOperationsService
     {
         private readonly IProductOperationsRepository _repository;
 
