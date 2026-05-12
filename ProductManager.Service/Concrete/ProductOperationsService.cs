@@ -6,7 +6,7 @@ using ProductManager.Shared.Infrastructure.Exceptions;
 
 namespace ProductManager.Service.Concrete
 {
- public sealed partial class ProductOperationsService : IProductOperationsService
+    public sealed partial class ProductOperationsService : IProductOperationsService
     {
         private readonly IProductOperationsRepository _repository;
 
@@ -54,10 +54,13 @@ namespace ProductManager.Service.Concrete
             => ExecuteWithSqlMapping(() => _repository.CreateProductFullAsync(request, cancellationToken));
 
         public Task<bool> UpdateProductAsync(Guid productId, UpdateProductRequestDto request, CancellationToken cancellationToken = default)
-            => ExecuteWithSqlMapping(() => _repository.UpdateProductAsync(productId, request, cancellationToken));
+        => ExecuteWithSqlMapping(() => _repository.UpdateProductAsync(productId, request, cancellationToken));
+
+        public Task<bool> UpdateProductFullAsync(Guid productId, UpdateProductFullRequestDto request, CancellationToken cancellationToken = default)
+        => ExecuteWithSqlMapping(() => _repository.UpdateProductFullAsync(productId, request, cancellationToken));
 
         public Task<bool> DeleteProductAsync(Guid productId, CancellationToken cancellationToken = default)
-            => ExecuteWithSqlMapping(() => _repository.DeleteProductAsync(productId, cancellationToken));
+                   => ExecuteWithSqlMapping(() => _repository.DeleteProductAsync(productId, cancellationToken));
 
         public Task<IReadOnlyList<ProductAttributeDefinitionDto>> GetAttributeDefinitionsAsync(CancellationToken cancellationToken = default)
             => _repository.GetAttributeDefinitionsAsync(cancellationToken);

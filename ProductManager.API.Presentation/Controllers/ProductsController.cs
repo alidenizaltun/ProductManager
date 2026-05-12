@@ -79,11 +79,28 @@ public sealed class ProductsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateProduct(
-        Guid productId,
-        [FromBody] UpdateProductRequestDto request,
-        CancellationToken cancellationToken)
+    Guid productId,
+    [FromBody] UpdateProductRequestDto request,
+    CancellationToken cancellationToken)
     {
         var updated = await _service.UpdateProductAsync(productId, request, cancellationToken);
+        if (!updated)
+        {
+            return NotFound();
+        }
+
+        return NoContent();
+    }
+
+    [HttpPut("{productId:guid}/full")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateProductFull(
+    Guid productId,
+    [FromBody] UpdateProductFullRequestDto request,
+    CancellationToken cancellationToken)
+    {
+        var updated = await _service.UpdateProductFullAsync(productId, request, cancellationToken);
         if (!updated)
         {
             return NotFound();

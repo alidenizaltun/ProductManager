@@ -251,54 +251,54 @@ ORDER BY SortOrder, LicenseModel;
             var categoryMaps = (await multi.ReadAsync<ProductCategoryMapDto>()).AsList();
             var bundleItems = (await multi.ReadAsync<ProductBundleItemDto>()).AsList();
             var supplierMaps = (await multi.ReadAsync<ProductSupplierMapDto>()).AsList();
- var physicalProfile = await multi.ReadSingleOrDefaultAsync<ProductPhysicalProfileDto>();
- var softwareProfile = await multi.ReadSingleOrDefaultAsync<ProductSoftwareProfileDto>();
- var serviceProfile = await multi.ReadSingleOrDefaultAsync<ProductServiceProfileDto>();
- var subscriptionProfile = await multi.ReadSingleOrDefaultAsync<ProductSubscriptionProfileDto>();
- var modules = (await multi.ReadAsync<ProductModuleDto>()).AsList();
- var pricingTiers = (await multi.ReadAsync<SoftwarePricingTierDto>()).AsList();
- var licenseOfferings = (await multi.ReadAsync<ProductLicenseOfferingDto>()).AsList();
+            var physicalProfile = await multi.ReadSingleOrDefaultAsync<ProductPhysicalProfileDto>();
+            var softwareProfile = await multi.ReadSingleOrDefaultAsync<ProductSoftwareProfileDto>();
+            var serviceProfile = await multi.ReadSingleOrDefaultAsync<ProductServiceProfileDto>();
+            var subscriptionProfile = await multi.ReadSingleOrDefaultAsync<ProductSubscriptionProfileDto>();
+            var modules = (await multi.ReadAsync<ProductModuleDto>()).AsList();
+            var pricingTiers = (await multi.ReadAsync<SoftwarePricingTierDto>()).AsList();
+            var licenseOfferings = (await multi.ReadAsync<ProductLicenseOfferingDto>()).AsList();
 
- return new ProductDetailDto
- {
- Id = product.Id,
- ProductCode = product.ProductCode,
- Name = product.Name,
- ShortDescription = product.ShortDescription,
- Description = product.Description,
- Kind = product.Kind,
- Status = product.Status,
- Brand = product.Brand,
- Manufacturer = product.Manufacturer,
- Barcode = product.Barcode,
- IsActive = product.IsActive,
- IsSellable = product.IsSellable,
- IsPurchasable = product.IsPurchasable,
- TrackInventory = product.TrackInventory,
- DefaultCurrencyCode = product.DefaultCurrencyCode,
- UnitOfMeasure = product.UnitOfMeasure,
- TaxRate = product.TaxRate,
- TaxCode = product.TaxCode,
- Tags = product.Tags,
- MetadataJson = product.MetadataJson,
- CreatedAt = product.CreatedAt,
- UpdatedAt = product.UpdatedAt,
- AttributeValues = attributeValues,
- Variants = variants,
- Prices = prices,
- Inventories = inventories,
- MediaItems = mediaItems,
- CategoryMaps = categoryMaps,
- BundleItems = bundleItems,
- SupplierMaps = supplierMaps,
- PhysicalProfile = physicalProfile,
- SoftwareProfile = softwareProfile,
- ServiceProfile = serviceProfile,
- SubscriptionProfile = subscriptionProfile,
- Modules = modules,
- SoftwarePricingTiers = pricingTiers,
- LicenseOfferings = licenseOfferings,
- };
+            return new ProductDetailDto
+            {
+                Id = product.Id,
+                ProductCode = product.ProductCode,
+                Name = product.Name,
+                ShortDescription = product.ShortDescription,
+                Description = product.Description,
+                Kind = product.Kind,
+                Status = product.Status,
+                Brand = product.Brand,
+                Manufacturer = product.Manufacturer,
+                Barcode = product.Barcode,
+                IsActive = product.IsActive,
+                IsSellable = product.IsSellable,
+                IsPurchasable = product.IsPurchasable,
+                TrackInventory = product.TrackInventory,
+                DefaultCurrencyCode = product.DefaultCurrencyCode,
+                UnitOfMeasure = product.UnitOfMeasure,
+                TaxRate = product.TaxRate,
+                TaxCode = product.TaxCode,
+                Tags = product.Tags,
+                MetadataJson = product.MetadataJson,
+                CreatedAt = product.CreatedAt,
+                UpdatedAt = product.UpdatedAt,
+                AttributeValues = attributeValues,
+                Variants = variants,
+                Prices = prices,
+                Inventories = inventories,
+                MediaItems = mediaItems,
+                CategoryMaps = categoryMaps,
+                BundleItems = bundleItems,
+                SupplierMaps = supplierMaps,
+                PhysicalProfile = physicalProfile,
+                SoftwareProfile = softwareProfile,
+                ServiceProfile = serviceProfile,
+                SubscriptionProfile = subscriptionProfile,
+                Modules = modules,
+                SoftwarePricingTiers = pricingTiers,
+                LicenseOfferings = licenseOfferings,
+            };
         }
 
         public async Task<ProductDto> CreateProductAsync(CreateProductRequestDto request, CancellationToken cancellationToken = default)
@@ -499,11 +499,11 @@ VALUES
                 await InsertSupplierMapsAsync(connection, transaction, productId, now, request.SupplierMaps, cancellationToken);
                 await InsertInventoryTransactionsAsync(connection, transaction, productId, now, request.InventoryTransactions, cancellationToken);
                 await InsertInventoryReservationsAsync(connection, transaction, productId, now, request.InventoryReservations, cancellationToken);
- await InsertPriceListItemsAsync(connection, transaction, productId, now, request.PriceListItems, cancellationToken);
- await InsertModulesAsync(connection, transaction, productId, now, request.Modules, cancellationToken);
- await InsertSoftwarePricingTiersAsync(connection, transaction, productId, now, request.SoftwarePricingTiers, cancellationToken);
- await InsertLicenseOfferingsAsync(connection, transaction, productId, now, request.LicenseOfferings, cancellationToken);
- await UpsertPhysicalProfileAsync(connection, transaction, productId, now, request.PhysicalProfile, cancellationToken);
+                await InsertPriceListItemsAsync(connection, transaction, productId, now, request.PriceListItems, cancellationToken);
+                await InsertModulesAsync(connection, transaction, productId, now, request.Modules, cancellationToken);
+                await InsertSoftwarePricingTiersAsync(connection, transaction, productId, now, request.SoftwarePricingTiers, cancellationToken);
+                await InsertLicenseOfferingsAsync(connection, transaction, productId, now, request.LicenseOfferings, cancellationToken);
+                await UpsertPhysicalProfileAsync(connection, transaction, productId, now, request.PhysicalProfile, cancellationToken);
                 await UpsertSoftwareProfileAsync(connection, transaction, productId, now, request.SoftwareProfile, cancellationToken);
                 await UpsertServiceProfileAsync(connection, transaction, productId, now, request.ServiceProfile, cancellationToken);
                 await UpsertSubscriptionProfileAsync(connection, transaction, productId, now, request.SubscriptionProfile, cancellationToken);
@@ -919,7 +919,9 @@ VALUES
     0
 );";
 
-            var parameters = bundleItems.Select(item => new
+            var parameters = bundleItems
+            .Where(item => item.ChildProductId != Guid.Empty)
+            .Select(item => new
             {
                 Id = Guid.NewGuid(),
                 BundleProductId = item.BundleProductId == Guid.Empty ? productId : item.BundleProductId,
