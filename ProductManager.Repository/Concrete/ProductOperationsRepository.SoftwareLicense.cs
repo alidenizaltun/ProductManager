@@ -437,10 +437,10 @@ VALUES
  @TrialDays, @ConvertToOfferingId, @MaxSeats, @ValidFrom, @ValidTo,
  @IsActive, @SortOrder, @Now, 0);";
 
-            var parameters = offerings.Select(o => new
-            {
-                Id = Guid.NewGuid(),
-                ProductId = productId,
+ var parameters = offerings.Select(o => new
+ {
+ Id = o.Id ?? Guid.NewGuid(),
+ ProductId = productId,
                 o.LicenseModel,
                 o.Name,
                 o.Description,

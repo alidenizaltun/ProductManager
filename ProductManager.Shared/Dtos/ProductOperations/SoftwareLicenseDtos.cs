@@ -52,6 +52,7 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public Guid ProductLicenseOfferingId { get; init; }
         public string? LicenseOfferingName { get; init; }
         public Guid UnitDefinitionId { get; init; }
+        public string? UnitDefinitionCode { get; init; }
         public string? UnitDefinitionName { get; init; }
         public int MinUnits { get; init; }
         public int? MaxUnits { get; init; }
@@ -116,6 +117,7 @@ namespace ProductManager.Shared.Dtos.ProductOperations
 
     public sealed record CreateProductLicenseOfferingRequestDto
     {
+        public Guid? Id { get; init; }
         public required Guid ProductId { get; init; }
         public int LicenseModel { get; init; } = 1;
         public required string Name { get; init; }

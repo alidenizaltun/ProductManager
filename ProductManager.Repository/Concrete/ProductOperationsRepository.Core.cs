@@ -37,10 +37,10 @@ SELECT TOP (@Take)
     p.CreatedAt,
     p.UpdatedAt");
 
- if (includeLargeFields)
- {
- sqlBuilder.Append(",\n p.Description,\n p.MetadataJson");
- }
+            if (includeLargeFields)
+            {
+                sqlBuilder.Append(",\n p.Description,\n p.MetadataJson");
+            }
 
             sqlBuilder.Append(@"
 FROM [Product].[Products] p
@@ -222,11 +222,14 @@ WHERE ProductId = @ProductId AND IsDeleted = 0
 ORDER BY SortOrder, Name;
 
 -- 15: SoftwarePricingTiers
-SELECT Id, ProductId, LicenseModel, Unit, MinUnits, MaxUnits,
- PricePerUnit, FlatFee, CurrencyCode, IsActive, CreatedAt, UpdatedAt
-FROM [Product].[SoftwarePricingTiers]
-WHERE ProductId = @ProductId AND IsDeleted = 0
-ORDER BY LicenseModel, MinUnits;
+SELECT t.Id, t.ProductId, t.ProductLicenseOfferingId, o.Name AS LicenseOfferingName,
+ t.UnitDefinitionId, u.Code AS UnitDefinitionCode, u.Name AS UnitDefinitionName,
+ t.MinUnits, t.MaxUnits, t.PricePerUnit, t.FlatFee, t.CurrencyCode, t.IsActive, t.CreatedAt, t.UpdatedAt
+FROM [Product].[SoftwarePricingTiers] t
+LEFT JOIN [Product].[ProductLicenseOfferings] o ON o.Id = t.ProductLicenseOfferingId AND o.IsDeleted = 0
+LEFT JOIN [Product].[UnitDefinitions] u ON u.Id = t.UnitDefinitionId AND u.IsDeleted = 0
+WHERE t.ProductId = @ProductId AND t.IsDeleted = 0
+ORDER BY t.MinUnits;
 
 -- 16: LicenseOfferings
 SELECT Id, ProductId, LicenseModel, Name, Description, BasePrice, CurrencyCode,
@@ -507,8 +510,8 @@ VALUES
                 await InsertInventoryReservationsAsync(connection, transaction, productId, now, request.InventoryReservations, cancellationToken);
                 await InsertPriceListItemsAsync(connection, transaction, productId, now, request.PriceListItems, cancellationToken);
                 await InsertModulesAsync(connection, transaction, productId, now, request.Modules, cancellationToken);
-                await InsertSoftwarePricingTiersAsync(connection, transaction, productId, now, request.SoftwarePricingTiers, cancellationToken);
                 await InsertLicenseOfferingsAsync(connection, transaction, productId, now, request.LicenseOfferings, cancellationToken);
+                await InsertSoftwarePricingTiersAsync(connection, transaction, productId, now, request.SoftwarePricingTiers, cancellationToken);
                 await UpsertPhysicalProfileAsync(connection, transaction, productId, now, request.PhysicalProfile, cancellationToken);
                 await UpsertSoftwareProfileAsync(connection, transaction, productId, now, request.SoftwareProfile, cancellationToken);
                 await UpsertServiceProfileAsync(connection, transaction, productId, now, request.ServiceProfile, cancellationToken);
