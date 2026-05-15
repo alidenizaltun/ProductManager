@@ -49,8 +49,10 @@ namespace ProductManager.Shared.Dtos.ProductOperations
     {
         public Guid Id { get; init; }
         public Guid ProductId { get; init; }
-        public int LicenseModel { get; init; }
-        public string Unit { get; init; } = "user";
+        public Guid ProductLicenseOfferingId { get; init; }
+        public string? LicenseOfferingName { get; init; }
+        public Guid UnitDefinitionId { get; init; }
+        public string? UnitDefinitionName { get; init; }
         public int MinUnits { get; init; }
         public int? MaxUnits { get; init; }
         public decimal PricePerUnit { get; init; }
@@ -64,8 +66,8 @@ namespace ProductManager.Shared.Dtos.ProductOperations
     public sealed record CreateSoftwarePricingTierRequestDto
     {
         public required Guid ProductId { get; init; }
-        public int LicenseModel { get; init; } = 4;
-        public string Unit { get; init; } = "user";
+        public required Guid ProductLicenseOfferingId { get; init; }
+        public required Guid UnitDefinitionId { get; init; }
         public int MinUnits { get; init; }
         public int? MaxUnits { get; init; }
         public decimal PricePerUnit { get; init; }
@@ -76,8 +78,8 @@ namespace ProductManager.Shared.Dtos.ProductOperations
 
     public sealed record UpdateSoftwarePricingTierRequestDto
     {
-        public int LicenseModel { get; init; }
-        public string Unit { get; init; } = "user";
+        public required Guid ProductLicenseOfferingId { get; init; }
+        public required Guid UnitDefinitionId { get; init; }
         public int MinUnits { get; init; }
         public int? MaxUnits { get; init; }
         public decimal PricePerUnit { get; init; }

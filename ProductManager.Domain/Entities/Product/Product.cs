@@ -24,7 +24,9 @@ namespace ProductManager.Domain.Entities.Product
         public bool TrackInventory { get; set; } = true;
 
         public string DefaultCurrencyCode { get; set; } = "TRY";
-        public string? UnitOfMeasure { get; set; }
+
+        public Guid? UnitDefinitionId { get; set; }
+        public UnitDefinition? UnitDefinition { get; set; }
 
         public decimal? TaxRate { get; set; }
         public string? TaxCode { get; set; }

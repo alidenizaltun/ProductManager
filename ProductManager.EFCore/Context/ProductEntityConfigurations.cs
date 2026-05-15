@@ -44,6 +44,11 @@ namespace ProductManager.EfCore.Context
                 .WithOne(sp => sp.Product)
                 .HasForeignKey<ProductSubscriptionProfile>(sp => sp.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(p => p.UnitDefinition)
+                .WithMany()
+                .HasForeignKey(p => p.UnitDefinitionId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 
@@ -243,11 +248,18 @@ namespace ProductManager.EfCore.Context
  .HasForeignKey(t => t.ProductId)
  .OnDelete(DeleteBehavior.Cascade);
 
- builder.HasIndex(t => new { t.ProductId, t.LicenseModel, t.Unit, t.MinUnits })
- .HasDatabaseName("IX_SoftwarePricingTiers_ProductId_Model_Unit_Min");
+ builder.HasOne(t => t.ProductLicenseOffering)
+ .WithMany(o => o.PricingTiers)
+ .HasForeignKey(t => t.ProductLicenseOfferingId)
+ .OnDelete(DeleteBehavior.Restrict);
 
- builder.Property(t => t.Unit)
- .HasMaxLength(50);
+ builder.HasOne(t => t.UnitDefinition)
+ .WithMany()
+ .HasForeignKey(t => t.UnitDefinitionId)
+ .OnDelete(DeleteBehavior.Restrict);
+
+ builder.HasIndex(t => new { t.ProductId, t.ProductLicenseOfferingId, t.UnitDefinitionId, t.MinUnits })
+ .HasDatabaseName("IX_SoftwarePricingTiers_Product_Offering_Unit_Min");
 
  builder.Property(t => t.PricePerUnit)
  .HasPrecision(18, 4);
@@ -257,6 +269,22 @@ namespace ProductManager.EfCore.Context
 
  builder.Property(t => t.CurrencyCode)
  .HasMaxLength(3);
+ }
+ }
+
+ public class UnitDefinitionConfiguration : IEntityTypeConfiguration<UnitDefinition>
+ {
+ public void Configure(EntityTypeBuilder<UnitDefinition> builder)
+ {
+ builder.HasIndex(u => u.Code)
+ .IsUnique()
+ .HasDatabaseName("IX_UnitDefinitions_Code");
+
+ builder.Property(u => u.Code)
+ .HasMaxLength(32);
+
+ builder.Property(u => u.Name)
+ .HasMaxLength(100);
  }
  }
 

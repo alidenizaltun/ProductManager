@@ -146,5 +146,12 @@ namespace ProductManager.Service.Shared.Abstract
         Task<ProductLicenseOfferingDto> CreateProductLicenseOfferingAsync(CreateProductLicenseOfferingRequestDto request, CancellationToken cancellationToken = default);
         Task<bool> UpdateProductLicenseOfferingAsync(Guid offeringId, UpdateProductLicenseOfferingRequestDto request, CancellationToken cancellationToken = default);
         Task<bool> DeleteProductLicenseOfferingAsync(Guid offeringId, CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<UnitDefinitionDto>> GetUnitDefinitionsAsync(bool includeInactive = false, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<LookupItemDto>> GetUnitDefinitionLookupsAsync(bool includeInactive = false, CancellationToken cancellationToken = default);
+        Task<UnitDefinitionDto?> GetUnitDefinitionByIdAsync(Guid unitDefinitionId, CancellationToken cancellationToken = default);
+        Task<UnitDefinitionDto> CreateUnitDefinitionAsync(CreateUnitDefinitionRequestDto request, CancellationToken cancellationToken = default);
+        Task<bool> UpdateUnitDefinitionAsync(Guid unitDefinitionId, UpdateUnitDefinitionRequestDto request, CancellationToken cancellationToken = default);
+        Task<bool> DeleteUnitDefinitionAsync(Guid unitDefinitionId, CancellationToken cancellationToken = default);
     }
 }

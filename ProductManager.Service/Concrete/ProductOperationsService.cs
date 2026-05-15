@@ -28,8 +28,9 @@ namespace ProductManager.Service.Concrete
             var warehousesTask = _repository.GetWarehouseLookupsAsync(includeInactive, cancellationToken);
             var suppliersTask = _repository.GetSupplierLookupsAsync(includeInactive, cancellationToken);
             var priceListsTask = _repository.GetPriceListLookupsAsync(includeInactive, cancellationToken);
+            var unitDefinitionsTask = _repository.GetUnitDefinitionLookupsAsync(includeInactive, cancellationToken);
 
-            await Task.WhenAll(productsTask, categoriesTask, warehousesTask, suppliersTask, priceListsTask);
+            await Task.WhenAll(productsTask, categoriesTask, warehousesTask, suppliersTask, priceListsTask, unitDefinitionsTask);
 
             return new ProductReferenceLookupsDto
             {
@@ -37,7 +38,8 @@ namespace ProductManager.Service.Concrete
                 Categories = await categoriesTask,
                 Warehouses = await warehousesTask,
                 Suppliers = await suppliersTask,
-                PriceLists = await priceListsTask
+                PriceLists = await priceListsTask,
+                UnitDefinitions = await unitDefinitionsTask
             };
         }
 
@@ -343,6 +345,24 @@ namespace ProductManager.Service.Concrete
 
         public Task<bool> DeletePriceListItemAsync(Guid priceListItemId, CancellationToken cancellationToken = default)
             => ExecuteWithSqlMapping(() => _repository.DeletePriceListItemAsync(priceListItemId, cancellationToken));
+
+        public Task<IReadOnlyList<UnitDefinitionDto>> GetUnitDefinitionsAsync(bool includeInactive = false, CancellationToken cancellationToken = default)
+            => _repository.GetUnitDefinitionsAsync(includeInactive, cancellationToken);
+
+        public Task<IReadOnlyList<LookupItemDto>> GetUnitDefinitionLookupsAsync(bool includeInactive = false, CancellationToken cancellationToken = default)
+            => _repository.GetUnitDefinitionLookupsAsync(includeInactive, cancellationToken);
+
+        public Task<UnitDefinitionDto?> GetUnitDefinitionByIdAsync(Guid unitDefinitionId, CancellationToken cancellationToken = default)
+            => _repository.GetUnitDefinitionByIdAsync(unitDefinitionId, cancellationToken);
+
+        public Task<UnitDefinitionDto> CreateUnitDefinitionAsync(CreateUnitDefinitionRequestDto request, CancellationToken cancellationToken = default)
+            => ExecuteWithSqlMapping(() => _repository.CreateUnitDefinitionAsync(request, cancellationToken));
+
+        public Task<bool> UpdateUnitDefinitionAsync(Guid unitDefinitionId, UpdateUnitDefinitionRequestDto request, CancellationToken cancellationToken = default)
+            => ExecuteWithSqlMapping(() => _repository.UpdateUnitDefinitionAsync(unitDefinitionId, request, cancellationToken));
+
+        public Task<bool> DeleteUnitDefinitionAsync(Guid unitDefinitionId, CancellationToken cancellationToken = default)
+            => ExecuteWithSqlMapping(() => _repository.DeleteUnitDefinitionAsync(unitDefinitionId, cancellationToken));
 
         private static async Task<T> ExecuteWithSqlMapping<T>(Func<Task<T>> action)
         {

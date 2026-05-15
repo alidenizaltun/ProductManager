@@ -119,11 +119,12 @@
 
                                 <div class="col-lg-4">
                                     <div class="form-group">
-                                        <label asp-for="UnitOfMeasure" class="form-label"></label>
+                                        <label class="form-label">Ölçü Birimi</label>
                                         <div class="form-control-wrap">
-                                            <input asp-for="UnitOfMeasure" class="form-control" placeholder="Örn: Adet" />
+                                            <select asp-for="UnitDefinitionId" class="form-select unit-definition-select">
+                                                <option value="">-- Seçiniz --</option>
+                                            </select>
                                         </div>
-                                        <span asp-validation-for="UnitOfMeasure" class="text-danger"></span>
                                     </div>
                                 </div>
 

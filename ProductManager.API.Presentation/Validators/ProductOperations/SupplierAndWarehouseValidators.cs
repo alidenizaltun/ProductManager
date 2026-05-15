@@ -108,4 +108,32 @@ namespace ProductManager.Presentation.Validators.ProductOperations
                 .MaximumLength(150).WithMessage("Warehouse name max length is 150.");
         }
     }
+
+    public sealed class CreateUnitDefinitionRequestDtoValidator : AbstractValidator<CreateUnitDefinitionRequestDto>
+    {
+        public CreateUnitDefinitionRequestDtoValidator()
+        {
+            RuleFor(x => x.Code)
+                .NotEmpty().WithMessage("Unit code is required.")
+                .MaximumLength(32).WithMessage("Unit code max length is 32.");
+
+            RuleFor(x => x.Name)
+                .NotEmpty().WithMessage("Unit name is required.")
+                .MaximumLength(100).WithMessage("Unit name max length is 100.");
+        }
+    }
+
+    public sealed class UpdateUnitDefinitionRequestDtoValidator : AbstractValidator<UpdateUnitDefinitionRequestDto>
+    {
+        public UpdateUnitDefinitionRequestDtoValidator()
+        {
+            RuleFor(x => x.Code)
+                .NotEmpty().WithMessage("Unit code is required.")
+                .MaximumLength(32).WithMessage("Unit code max length is 32.");
+
+            RuleFor(x => x.Name)
+                .NotEmpty().WithMessage("Unit name is required.")
+                .MaximumLength(100).WithMessage("Unit name max length is 100.");
+        }
+    }
 }

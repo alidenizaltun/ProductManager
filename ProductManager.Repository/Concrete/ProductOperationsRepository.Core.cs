@@ -15,64 +15,66 @@ namespace ProductManager.Repository.Concrete
 
             var sqlBuilder = new StringBuilder(@"
 SELECT TOP (@Take)
-    Id,
-    ProductCode,
-    Name,
-    ShortDescription,
-    Kind,
-    Status,
-    Brand,
-    Manufacturer,
-    Barcode,
-    IsActive,
-    IsSellable,
-    IsPurchasable,
-    TrackInventory,
-    DefaultCurrencyCode,
-    UnitOfMeasure,
-    TaxRate,
-    TaxCode,
-    Tags,
-    CreatedAt,
-    UpdatedAt");
+    p.Id,
+    p.ProductCode,
+    p.Name,
+    p.ShortDescription,
+    p.Kind,
+    p.Status,
+    p.Brand,
+    p.Manufacturer,
+    p.Barcode,
+    p.IsActive,
+    p.IsSellable,
+    p.IsPurchasable,
+    p.TrackInventory,
+    p.DefaultCurrencyCode,
+    p.UnitDefinitionId,
+    u.Name AS UnitDefinitionName,
+    p.TaxRate,
+    p.TaxCode,
+    p.Tags,
+    p.CreatedAt,
+    p.UpdatedAt");
 
-            if (includeLargeFields)
-            {
-                sqlBuilder.Append(",\n    Description,\n    MetadataJson");
-            }
+ if (includeLargeFields)
+ {
+ sqlBuilder.Append(",\n p.Description,\n p.MetadataJson");
+ }
 
             sqlBuilder.Append(@"
-FROM [Product].[Products]
-WHERE IsDeleted = 0");
+FROM [Product].[Products] p
+LEFT JOIN [Product].[UnitDefinitions] u ON u.Id = p.UnitDefinitionId AND u.IsDeleted = 0
+WHERE p.IsDeleted = 0");
 
             var parameters = new DynamicParameters();
             parameters.Add("Take", take);
 
             if (search is not null)
             {
-                sqlBuilder.Append("\n  AND (ProductCode LIKE @SearchPattern OR Name LIKE @SearchPattern)");
+                sqlBuilder.Append("\n  AND (p.ProductCode LIKE @SearchPattern OR p.Name LIKE @SearchPattern)");
                 parameters.Add("SearchPattern", $"%{search}%");
             }
 
             if (filter.Kind.HasValue)
             {
-                sqlBuilder.Append("\n  AND Kind = @Kind");
+                sqlBuilder.Append("\n  AND p.Kind = @Kind");
                 parameters.Add("Kind", filter.Kind);
             }
 
             if (filter.Status.HasValue)
             {
-                sqlBuilder.Append("\n  AND Status = @Status");
+                sqlBuilder.Append("\n  AND p.Status = @Status");
                 parameters.Add("Status", filter.Status);
             }
 
             if (filter.IsActive.HasValue)
             {
-                sqlBuilder.Append("\n  AND IsActive = @IsActive");
+                sqlBuilder.Append("\n  AND p.IsActive = @IsActive");
                 parameters.Add("IsActive", filter.IsActive);
             }
 
-            sqlBuilder.Append("\nORDER BY CreatedAt DESC;");
+            sqlBuilder.Append("\nORDER BY p.CreatedAt DESC;");
 
             using var connection = CreateConnection();
             var products = await connection.QueryAsync<ProductDto>(
@@ -88,31 +90,33 @@ WHERE IsDeleted = 0");
         {
             const string sql = @"
 SELECT
-    Id,
-    ProductCode,
-    Name,
-    ShortDescription,
-    Description,
-    Kind,
-    Status,
-    Brand,
-    Manufacturer,
-    Barcode,
-    IsActive,
-    IsSellable,
-    IsPurchasable,
-    TrackInventory,
-    DefaultCurrencyCode,
-    UnitOfMeasure,
-    TaxRate,
-    TaxCode,
-    Tags,
-    MetadataJson,
-    CreatedAt,
-    UpdatedAt
-FROM [Product].[Products]
-WHERE Id = @ProductId
-  AND IsDeleted = 0;";
+    p.Id,
+    p.ProductCode,
+    p.Name,
+    p.ShortDescription,
+    p.Description,
+    p.Kind,
+    p.Status,
+    p.Brand,
+    p.Manufacturer,
+    p.Barcode,
+    p.IsActive,
+    p.IsSellable,
+    p.IsPurchasable,
+    p.TrackInventory,
+    p.DefaultCurrencyCode,
+    p.UnitDefinitionId,
+    u.Name AS UnitDefinitionName,
+    p.TaxRate,
+    p.TaxCode,
+    p.Tags,
+    p.MetadataJson,
+    p.CreatedAt,
+    p.UpdatedAt
+FROM [Product].[Products] p
+LEFT JOIN [Product].[UnitDefinitions] u ON u.Id = p.UnitDefinitionId AND u.IsDeleted = 0
+WHERE p.Id = @ProductId
+  AND p.IsDeleted = 0;";
 
             using var connection = CreateConnection();
             return await connection.QuerySingleOrDefaultAsync<ProductDto>(
@@ -124,12 +128,13 @@ WHERE Id = @ProductId
             const string sql = @"
 -- 1: Product
 SELECT
-    Id, ProductCode, Name, ShortDescription, Description, Kind, Status,
-    Brand, Manufacturer, Barcode, IsActive, IsSellable, IsPurchasable,
-    TrackInventory, DefaultCurrencyCode, UnitOfMeasure, TaxRate, TaxCode,
-    Tags, MetadataJson, CreatedAt, UpdatedAt
-FROM [Product].[Products]
-WHERE Id = @ProductId AND IsDeleted = 0;
+    p.Id, p.ProductCode, p.Name, p.ShortDescription, p.Description, p.Kind, p.Status,
+    p.Brand, p.Manufacturer, p.Barcode, p.IsActive, p.IsSellable, p.IsPurchasable,
+    p.TrackInventory, p.DefaultCurrencyCode, p.UnitDefinitionId, u.Name AS UnitDefinitionName, p.TaxRate, p.TaxCode,
+    p.Tags, p.MetadataJson, p.CreatedAt, p.UpdatedAt
+FROM [Product].[Products] p
+LEFT JOIN [Product].[UnitDefinitions] u ON u.Id = p.UnitDefinitionId AND u.IsDeleted = 0
+WHERE p.Id = @ProductId AND p.IsDeleted = 0;
 
 -- 2: AttributeValues
 SELECT
@@ -192,7 +197,7 @@ FROM [Product].[ProductPhysicalProfiles]
 WHERE ProductId = @ProductId AND IsDeleted = 0;
 
 -- 11: SoftwareProfile
-SELECT Id, ProductId, Version, LicenseModel, SeatCount, DownloadUrl,
+SELECT Id, ProductId, Version, DownloadUrl,
        SupportedPlatformsJson, SystemRequirementsJson, ReleaseNotes, CreatedAt, UpdatedAt
 FROM [Product].[ProductSoftwareProfiles]
 WHERE ProductId = @ProductId AND IsDeleted = 0;
@@ -276,7 +281,8 @@ ORDER BY SortOrder, LicenseModel;
                 IsPurchasable = product.IsPurchasable,
                 TrackInventory = product.TrackInventory,
                 DefaultCurrencyCode = product.DefaultCurrencyCode,
-                UnitOfMeasure = product.UnitOfMeasure,
+                UnitDefinitionId = product.UnitDefinitionId,
+                UnitDefinitionName = product.UnitDefinitionName,
                 TaxRate = product.TaxRate,
                 TaxCode = product.TaxCode,
                 Tags = product.Tags,
@@ -321,7 +327,7 @@ INSERT INTO [Product].[Products]
     IsPurchasable,
     TrackInventory,
     DefaultCurrencyCode,
-    UnitOfMeasure,
+    UnitDefinitionId,
     TaxRate,
     TaxCode,
     Tags,
@@ -346,7 +352,7 @@ VALUES
     @IsPurchasable,
     @TrackInventory,
     @DefaultCurrencyCode,
-    @UnitOfMeasure,
+    @UnitDefinitionId,
     @TaxRate,
     @TaxCode,
     @Tags,
@@ -378,7 +384,7 @@ VALUES
                         request.IsPurchasable,
                         request.TrackInventory,
                         request.DefaultCurrencyCode,
-                        request.UnitOfMeasure,
+                        request.UnitDefinitionId,
                         request.TaxRate,
                         request.TaxCode,
                         request.Tags,
@@ -425,7 +431,7 @@ INSERT INTO [Product].[Products]
     IsPurchasable,
     TrackInventory,
     DefaultCurrencyCode,
-    UnitOfMeasure,
+    UnitDefinitionId,
     TaxRate,
     TaxCode,
     Tags,
@@ -450,7 +456,7 @@ VALUES
     @IsPurchasable,
     @TrackInventory,
     @DefaultCurrencyCode,
-    @UnitOfMeasure,
+    @UnitDefinitionId,
     @TaxRate,
     @TaxCode,
     @Tags,
@@ -479,7 +485,7 @@ VALUES
                             request.Product.IsPurchasable,
                             request.Product.TrackInventory,
                             request.Product.DefaultCurrencyCode,
-                            request.Product.UnitOfMeasure,
+                            request.Product.UnitDefinitionId,
                             request.Product.TaxRate,
                             request.Product.TaxCode,
                             request.Product.Tags,
@@ -1307,8 +1313,6 @@ VALUES
 UPDATE [Product].[ProductSoftwareProfiles]
 SET
     Version = @Version,
-    LicenseModel = @LicenseModel,
-    SeatCount = @SeatCount,
     DownloadUrl = @DownloadUrl,
     SupportedPlatformsJson = @SupportedPlatformsJson,
     SystemRequirementsJson = @SystemRequirementsJson,
@@ -1325,8 +1329,6 @@ WHERE ProductId = @ProductId;";
                     {
                         ProductId = productId,
                         profile.Version,
-                        profile.LicenseModel,
-                        profile.SeatCount,
                         profile.DownloadUrl,
                         profile.SupportedPlatformsJson,
                         profile.SystemRequirementsJson,
@@ -1347,8 +1349,6 @@ INSERT INTO [Product].[ProductSoftwareProfiles]
     Id,
     ProductId,
     Version,
-    LicenseModel,
-    SeatCount,
     DownloadUrl,
     SupportedPlatformsJson,
     SystemRequirementsJson,
@@ -1361,8 +1361,6 @@ VALUES
     @Id,
     @ProductId,
     @Version,
-    @LicenseModel,
-    @SeatCount,
     @DownloadUrl,
     @SupportedPlatformsJson,
     @SystemRequirementsJson,
@@ -1379,8 +1377,6 @@ VALUES
                         Id = Guid.NewGuid(),
                         ProductId = productId,
                         profile.Version,
-                        profile.LicenseModel,
-                        profile.SeatCount,
                         profile.DownloadUrl,
                         profile.SupportedPlatformsJson,
                         profile.SystemRequirementsJson,
@@ -1607,7 +1603,7 @@ SET
     IsPurchasable = @IsPurchasable,
     TrackInventory = @TrackInventory,
     DefaultCurrencyCode = @DefaultCurrencyCode,
-    UnitOfMeasure = @UnitOfMeasure,
+    UnitDefinitionId = @UnitDefinitionId,
     TaxRate = @TaxRate,
     TaxCode = @TaxCode,
     Tags = @Tags,
@@ -1637,7 +1633,7 @@ WHERE Id = @ProductId
                         request.IsPurchasable,
                         request.TrackInventory,
                         request.DefaultCurrencyCode,
-                        request.UnitOfMeasure,
+                        request.UnitDefinitionId,
                         request.TaxRate,
                         request.TaxCode,
                         request.Tags,
@@ -3328,8 +3324,6 @@ SELECT
     Id,
     ProductId,
     Version,
-    LicenseModel,
-    SeatCount,
     DownloadUrl,
     SupportedPlatformsJson,
     SystemRequirementsJson,
@@ -3351,8 +3345,6 @@ WHERE ProductId = @ProductId
 UPDATE [Product].[ProductSoftwareProfiles]
 SET
     Version = @Version,
-    LicenseModel = @LicenseModel,
-    SeatCount = @SeatCount,
     DownloadUrl = @DownloadUrl,
     SupportedPlatformsJson = @SupportedPlatformsJson,
     SystemRequirementsJson = @SystemRequirementsJson,
@@ -3372,8 +3364,6 @@ WHERE ProductId = @ProductId;";
                     {
                         ProductId = productId,
                         request.Version,
-                        request.LicenseModel,
-                        request.SeatCount,
                         request.DownloadUrl,
                         request.SupportedPlatformsJson,
                         request.SystemRequirementsJson,
@@ -3390,8 +3380,6 @@ INSERT INTO [Product].[ProductSoftwareProfiles]
     Id,
     ProductId,
     Version,
-    LicenseModel,
-    SeatCount,
     DownloadUrl,
     SupportedPlatformsJson,
     SystemRequirementsJson,
@@ -3404,8 +3392,6 @@ VALUES
     @Id,
     @ProductId,
     @Version,
-    @LicenseModel,
-    @SeatCount,
     @DownloadUrl,
     @SupportedPlatformsJson,
     @SystemRequirementsJson,
@@ -3422,8 +3408,6 @@ VALUES
                             Id = Guid.NewGuid(),
                             ProductId = productId,
                             request.Version,
-                            request.LicenseModel,
-                            request.SeatCount,
                             request.DownloadUrl,
                             request.SupportedPlatformsJson,
                             request.SystemRequirementsJson,

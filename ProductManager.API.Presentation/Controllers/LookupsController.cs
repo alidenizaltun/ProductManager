@@ -73,4 +73,14 @@ public sealed class LookupsController : ControllerBase
         var items = await _service.GetPriceListLookupsAsync(includeInactive, cancellationToken);
         return Ok(items);
     }
+
+    [HttpGet("unit-definitions")]
+    [ProducesResponseType(typeof(IReadOnlyList<LookupItemDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<LookupItemDto>>> GetUnitDefinitions(
+        [FromQuery] bool includeInactive = false,
+        CancellationToken cancellationToken = default)
+    {
+        var items = await _service.GetUnitDefinitionLookupsAsync(includeInactive, cancellationToken);
+        return Ok(items);
+    }
 }

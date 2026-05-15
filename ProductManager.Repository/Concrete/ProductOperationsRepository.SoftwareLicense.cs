@@ -112,11 +112,14 @@ WHERE Id = @ModuleId AND IsDeleted = 0;";
         public async Task<IReadOnlyList<SoftwarePricingTierDto>> GetSoftwarePricingTiersAsync(Guid productId, CancellationToken cancellationToken = default)
         {
             const string sql = @"
-SELECT Id, ProductId, LicenseModel, Unit, MinUnits, MaxUnits,
- PricePerUnit, FlatFee, CurrencyCode, IsActive, CreatedAt, UpdatedAt
-FROM [Product].[SoftwarePricingTiers]
-WHERE ProductId = @ProductId AND IsDeleted = 0
-ORDER BY LicenseModel, MinUnits;";
+SELECT t.Id, t.ProductId, t.ProductLicenseOfferingId, o.Name AS LicenseOfferingName,
+ t.UnitDefinitionId, u.Name AS UnitDefinitionName, t.MinUnits, t.MaxUnits,
+ t.PricePerUnit, t.FlatFee, t.CurrencyCode, t.IsActive, t.CreatedAt, t.UpdatedAt
+FROM [Product].[SoftwarePricingTiers] t
+LEFT JOIN [Product].[ProductLicenseOfferings] o ON o.Id = t.ProductLicenseOfferingId AND o.IsDeleted = 0
+LEFT JOIN [Product].[UnitDefinitions] u ON u.Id = t.UnitDefinitionId AND u.IsDeleted = 0
+WHERE t.ProductId = @ProductId AND t.IsDeleted = 0
+ORDER BY o.Name, t.MinUnits;";
 
             using var connection = CreateConnection();
             var items = await connection.QueryAsync<SoftwarePricingTierDto>(
@@ -127,10 +130,13 @@ ORDER BY LicenseModel, MinUnits;";
         public async Task<SoftwarePricingTierDto?> GetSoftwarePricingTierByIdAsync(Guid tierId, CancellationToken cancellationToken = default)
         {
             const string sql = @"
-SELECT Id, ProductId, LicenseModel, Unit, MinUnits, MaxUnits,
- PricePerUnit, FlatFee, CurrencyCode, IsActive, CreatedAt, UpdatedAt
-FROM [Product].[SoftwarePricingTiers]
-WHERE Id = @TierId AND IsDeleted = 0;";
+SELECT t.Id, t.ProductId, t.ProductLicenseOfferingId, o.Name AS LicenseOfferingName,
+ t.UnitDefinitionId, u.Name AS UnitDefinitionName, t.MinUnits, t.MaxUnits,
+ t.PricePerUnit, t.FlatFee, t.CurrencyCode, t.IsActive, t.CreatedAt, t.UpdatedAt
+FROM [Product].[SoftwarePricingTiers] t
+LEFT JOIN [Product].[ProductLicenseOfferings] o ON o.Id = t.ProductLicenseOfferingId AND o.IsDeleted = 0
+LEFT JOIN [Product].[UnitDefinitions] u ON u.Id = t.UnitDefinitionId AND u.IsDeleted = 0
+WHERE t.Id = @TierId AND t.IsDeleted = 0;";
 
             using var connection = CreateConnection();
             return await connection.QuerySingleOrDefaultAsync<SoftwarePricingTierDto>(
@@ -141,10 +147,10 @@ WHERE Id = @TierId AND IsDeleted = 0;";
         {
             const string sql = @"
 INSERT INTO [Product].[SoftwarePricingTiers]
- (Id, ProductId, LicenseModel, Unit, MinUnits, MaxUnits,
+ (Id, ProductId, ProductLicenseOfferingId, UnitDefinitionId, MinUnits, MaxUnits,
  PricePerUnit, FlatFee, CurrencyCode, IsActive, CreatedAt, IsDeleted)
 VALUES
- (@Id, @ProductId, @LicenseModel, @Unit, @MinUnits, @MaxUnits,
+ (@Id, @ProductId, @ProductLicenseOfferingId, @UnitDefinitionId, @MinUnits, @MaxUnits,
  @PricePerUnit, @FlatFee, @CurrencyCode, @IsActive, @Now, 0);";
 
             var id = Guid.NewGuid();
@@ -153,8 +159,8 @@ VALUES
             {
                 Id = id,
                 request.ProductId,
-                request.LicenseModel,
-                request.Unit,
+                request.ProductLicenseOfferingId,
+                request.UnitDefinitionId,
                 request.MinUnits,
                 request.MaxUnits,
                 request.PricePerUnit,
@@ -172,7 +178,7 @@ VALUES
         {
             const string sql = @"
 UPDATE [Product].[SoftwarePricingTiers]
-SET LicenseModel = @LicenseModel, Unit = @Unit, MinUnits = @MinUnits,
+SET ProductLicenseOfferingId = @ProductLicenseOfferingId, UnitDefinitionId = @UnitDefinitionId, MinUnits = @MinUnits,
  MaxUnits = @MaxUnits, PricePerUnit = @PricePerUnit, FlatFee = @FlatFee,
  CurrencyCode = @CurrencyCode, IsActive = @IsActive, UpdatedAt = @Now
 WHERE Id = @TierId AND IsDeleted = 0;";
@@ -181,8 +187,8 @@ WHERE Id = @TierId AND IsDeleted = 0;";
             var rows = await connection.ExecuteAsync(new CommandDefinition(sql, new
             {
                 TierId = tierId,
-                request.LicenseModel,
-                request.Unit,
+                request.ProductLicenseOfferingId,
+                request.UnitDefinitionId,
                 request.MinUnits,
                 request.MaxUnits,
                 request.PricePerUnit,
@@ -385,18 +391,18 @@ VALUES
 
             const string sql = @"
 INSERT INTO [Product].[SoftwarePricingTiers]
- (Id, ProductId, LicenseModel, Unit, MinUnits, MaxUnits,
+ (Id, ProductId, ProductLicenseOfferingId, UnitDefinitionId, MinUnits, MaxUnits,
  PricePerUnit, FlatFee, CurrencyCode, IsActive, CreatedAt, IsDeleted)
 VALUES
- (@Id, @ProductId, @LicenseModel, @Unit, @MinUnits, @MaxUnits,
+ (@Id, @ProductId, @ProductLicenseOfferingId, @UnitDefinitionId, @MinUnits, @MaxUnits,
  @PricePerUnit, @FlatFee, @CurrencyCode, @IsActive, @Now, 0);";
 
             var parameters = tiers.Select(t => new
             {
                 Id = Guid.NewGuid(),
                 ProductId = productId,
-                t.LicenseModel,
-                t.Unit,
+                t.ProductLicenseOfferingId,
+                t.UnitDefinitionId,
                 t.MinUnits,
                 t.MaxUnits,
                 t.PricePerUnit,

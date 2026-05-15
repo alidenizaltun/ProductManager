@@ -113,9 +113,7 @@ namespace ProductManager.Presentation.Validators.ProductOperations
     {
         public UpsertProductSoftwareProfileRequestDtoValidator()
         {
-            RuleFor(x => x.LicenseModel).InclusiveBetween(1, 4);
             RuleFor(x => x.Version).MaximumLength(50).When(x => !string.IsNullOrWhiteSpace(x.Version));
-            RuleFor(x => x.SeatCount).GreaterThan(0).When(x => x.SeatCount.HasValue);
             RuleFor(x => x.DownloadUrl).MaximumLength(500).When(x => !string.IsNullOrWhiteSpace(x.DownloadUrl));
         }
     }

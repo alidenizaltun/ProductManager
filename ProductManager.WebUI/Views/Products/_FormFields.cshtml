@@ -20,9 +20,10 @@
         <span asp-validation-for="ShortDescription" class="text-danger"></span>
     </div>
     <div class="col-md-6">
-        <label asp-for="UnitOfMeasure" class="form-label"></label>
-        <input asp-for="UnitOfMeasure" class="form-control" />
-        <span asp-validation-for="UnitOfMeasure" class="text-danger"></span>
+        <label asp-for="UnitDefinitionId" class="form-label">Ölçü Birimi</label>
+        <select asp-for="UnitDefinitionId" class="form-select unit-definition-select">
+            <option value="">-- Seçiniz --</option>
+        </select>
     </div>
     <div class="col-12">
         <label asp-for="Description" class="form-label"></label>

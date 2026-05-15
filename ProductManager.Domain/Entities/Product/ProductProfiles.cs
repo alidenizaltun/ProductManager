@@ -29,9 +29,6 @@ namespace ProductManager.Domain.Entities.Product
         public Product? Product { get; set; }
 
         public string? Version { get; set; }
-        public SoftwareLicenseModel LicenseModel { get; set; } = SoftwareLicenseModel.Perpetual;
-        public int? SeatCount { get; set; }
-
         public string? DownloadUrl { get; set; }
         public string? SupportedPlatformsJson { get; set; }
         public string? SystemRequirementsJson { get; set; }

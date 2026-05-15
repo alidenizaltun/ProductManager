@@ -35,8 +35,6 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public Guid Id { get; init; }
         public Guid ProductId { get; init; }
         public string? Version { get; init; }
-        public int LicenseModel { get; init; }
-        public int? SeatCount { get; init; }
         public string? DownloadUrl { get; init; }
         public string? SupportedPlatformsJson { get; init; }
         public string? SystemRequirementsJson { get; init; }
@@ -48,8 +46,6 @@ namespace ProductManager.Shared.Dtos.ProductOperations
     public sealed record UpsertProductSoftwareProfileRequestDto
     {
         public string? Version { get; init; }
-        public int LicenseModel { get; init; } = 1;
-        public int? SeatCount { get; init; }
         public string? DownloadUrl { get; init; }
         public string? SupportedPlatformsJson { get; init; }
         public string? SystemRequirementsJson { get; init; }

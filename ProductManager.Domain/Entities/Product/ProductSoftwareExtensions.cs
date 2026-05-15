@@ -30,9 +30,11 @@ namespace ProductManager.Domain.Entities.Product
         public Guid ProductId { get; set; }
         public Product? Product { get; set; }
 
-        public SoftwareLicenseModel LicenseModel { get; set; } = SoftwareLicenseModel.SeatBased;
+        public Guid ProductLicenseOfferingId { get; set; }
+        public ProductLicenseOffering? ProductLicenseOffering { get; set; }
 
-        public string Unit { get; set; } = "user";
+        public Guid UnitDefinitionId { get; set; }
+        public UnitDefinition? UnitDefinition { get; set; }
 
         public int MinUnits { get; set; }
 
