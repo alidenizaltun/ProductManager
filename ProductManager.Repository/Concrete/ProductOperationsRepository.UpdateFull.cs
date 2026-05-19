@@ -145,23 +145,24 @@ WHERE Id = @ProductId
                     await InsertModulesAsync(connection, transaction, productId, now, request.Modules, cancellationToken);
                 }
 
- // LicenseOfferings önce işlenmeli; SoftwarePricingTiers bunlara FK ile bağlı
- if (request.LicenseOfferings is not null)
- {
- await HardDeleteByProductIdAsync(connection, transaction, "[Product].[SoftwarePricingTiers]", productId, cancellationToken);
- await HardDeleteByProductIdAsync(connection, transaction, "[Product].[ProductLicenseOfferings]", productId, cancellationToken);
- await InsertLicenseOfferingsAsync(connection, transaction, productId, now, request.LicenseOfferings, cancellationToken);
- }
+                // LicenseOfferings önce işlenmeli; SoftwarePricingTiers bunlara FK ile bağlı
+                IReadOnlyDictionary<string, Guid>? licenseOfferingTempIdMap = null;
+                if (request.LicenseOfferings is not null)
+                {
+                    await HardDeleteByProductIdAsync(connection, transaction, "[Product].[SoftwarePricingTiers]", productId, cancellationToken);
+                    await HardDeleteByProductIdAsync(connection, transaction, "[Product].[ProductLicenseOfferings]", productId, cancellationToken);
+                    licenseOfferingTempIdMap = await InsertLicenseOfferingsAsync(connection, transaction, productId, now, request.LicenseOfferings, cancellationToken);
+                }
 
- if (request.SoftwarePricingTiers is not null)
- {
- if (request.LicenseOfferings is null)
- {
- // LicenseOfferings güncellenmiyorsa sadece tier'ları yeniden yaz
- await HardDeleteByProductIdAsync(connection, transaction, "[Product].[SoftwarePricingTiers]", productId, cancellationToken);
- }
- await InsertSoftwarePricingTiersAsync(connection, transaction, productId, now, request.SoftwarePricingTiers, cancellationToken);
- }
+                if (request.SoftwarePricingTiers is not null)
+                {
+                    if (request.LicenseOfferings is null)
+                    {
+                        // LicenseOfferings güncellenmiyorsa sadece tier'ları yeniden yaz
+                        await HardDeleteByProductIdAsync(connection, transaction, "[Product].[SoftwarePricingTiers]", productId, cancellationToken);
+                    }
+                    await InsertSoftwarePricingTiersAsync(connection, transaction, productId, now, request.SoftwarePricingTiers, licenseOfferingTempIdMap, cancellationToken);
+                }
 
                 // Yeni işlemler/rezervasyonlar sadece eklenir, silinmez (audit trail korunur)
                 if (request.InventoryTransactions is not null && request.InventoryTransactions.Count > 0)

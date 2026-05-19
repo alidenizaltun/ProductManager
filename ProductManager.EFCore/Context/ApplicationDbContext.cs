@@ -35,6 +35,7 @@ namespace ProductManager.EfCore.Context
  public DbSet<SoftwarePricingTier> SoftwarePricingTiers => Set<SoftwarePricingTier>();
  public DbSet<ProductLicenseOffering> ProductLicenseOfferings => Set<ProductLicenseOffering>();
  public DbSet<UnitDefinition> UnitDefinitions => Set<UnitDefinition>();
+ public DbSet<ProductUnitConversion> ProductUnitConversions => Set<ProductUnitConversion>();
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 

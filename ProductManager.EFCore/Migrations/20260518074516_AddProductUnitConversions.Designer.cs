@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ProductManager.EfCore.Context;
 
@@ -11,9 +12,11 @@ using ProductManager.EfCore.Context;
 namespace ProductManager.EFCore.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260518074516_AddProductUnitConversions")]
+    partial class AddProductUnitConversions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -461,9 +464,7 @@ namespace ProductManager.EFCore.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ProductCode")
-                        .IsUnique()
-                        .HasDatabaseName("IX_Products_ProductCode")
-                        .HasFilter("[IsDeleted] = 0");
+                        .IsUnique();
 
                     b.HasIndex("UnitDefinitionId");
 
@@ -1416,56 +1417,6 @@ namespace ProductManager.EFCore.Migrations
                     b.ToTable("ProductSupplierMaps", "Product");
                 });
 
-            modelBuilder.Entity("ProductManager.Domain.Entities.Product.ProductUnitConversion", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("ConversionFactor")
-                        .HasPrecision(18, 6)
-                        .HasColumnType("decimal(18,6)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("FromUnitDefinitionId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("FromUnitRole")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("ToUnitDefinitionId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FromUnitDefinitionId");
-
-                    b.HasIndex("ToUnitDefinitionId");
-
-                    b.HasIndex("ProductId", "FromUnitDefinitionId", "ToUnitDefinitionId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_ProductUnitConversions_Product_From_To");
-
-                    b.ToTable("ProductUnitConversions", "Product");
-                });
-
             modelBuilder.Entity("ProductManager.Domain.Entities.Product.ProductVariant", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2028,33 +1979,6 @@ namespace ProductManager.EFCore.Migrations
                     b.Navigation("ProductSupplier");
                 });
 
-            modelBuilder.Entity("ProductManager.Domain.Entities.Product.ProductUnitConversion", b =>
-                {
-                    b.HasOne("ProductManager.Domain.Entities.Product.UnitDefinition", "FromUnitDefinition")
-                        .WithMany()
-                        .HasForeignKey("FromUnitDefinitionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("ProductManager.Domain.Entities.Product.Product", "Product")
-                        .WithMany("UnitConversions")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ProductManager.Domain.Entities.Product.UnitDefinition", "ToUnitDefinition")
-                        .WithMany()
-                        .HasForeignKey("ToUnitDefinitionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("FromUnitDefinition");
-
-                    b.Navigation("Product");
-
-                    b.Navigation("ToUnitDefinition");
-                });
-
             modelBuilder.Entity("ProductManager.Domain.Entities.Product.ProductVariant", b =>
                 {
                     b.HasOne("ProductManager.Domain.Entities.Product.Product", "Product")
@@ -2128,8 +2052,6 @@ namespace ProductManager.EFCore.Migrations
                     b.Navigation("SubscriptionProfile");
 
                     b.Navigation("SupplierMaps");
-
-                    b.Navigation("UnitConversions");
 
                     b.Navigation("Variants");
                 });

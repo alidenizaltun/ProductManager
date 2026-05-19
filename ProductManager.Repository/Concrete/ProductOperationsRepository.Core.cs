@@ -239,6 +239,29 @@ SELECT Id, ProductId, LicenseModel, Name, Description, BasePrice, CurrencyCode,
 FROM [Product].[ProductLicenseOfferings]
 WHERE ProductId = @ProductId AND IsDeleted = 0
 ORDER BY SortOrder, LicenseModel;
+
+-- 17: InventoryTransactions
+SELECT Id, ProductId, ProductVariantId, WarehouseId,
+ TransactionType, Quantity, UnitCost,
+ ReferenceType, ReferenceNumber, Note, OccurredAt, CreatedAt
+FROM [Product].[InventoryTransactions]
+WHERE ProductId = @ProductId AND IsDeleted = 0
+ORDER BY OccurredAt DESC, CreatedAt DESC;
+
+-- 18: InventoryReservations
+SELECT Id, ProductId, ProductVariantId, WarehouseId,
+ Quantity, ReservationCode, ReservedUntil, Status,
+ SourceType, SourceId, CreatedAt, UpdatedAt
+FROM [Product].[InventoryReservations]
+WHERE ProductId = @ProductId AND IsDeleted = 0
+ORDER BY CreatedAt DESC;
+
+-- 19: PriceListItems
+SELECT Id, ProductPriceListId, ProductId, ProductVariantId,
+ Amount, CompareAtAmount, MinQuantity, MaxQuantity, CreatedAt, UpdatedAt
+FROM [Product].[ProductPriceListItems]
+WHERE ProductId = @ProductId AND IsDeleted = 0
+ORDER BY CreatedAt DESC;
 ";
 
             using var connection = CreateConnection();
@@ -266,6 +289,9 @@ ORDER BY SortOrder, LicenseModel;
             var modules = (await multi.ReadAsync<ProductModuleDto>()).AsList();
             var pricingTiers = (await multi.ReadAsync<SoftwarePricingTierDto>()).AsList();
             var licenseOfferings = (await multi.ReadAsync<ProductLicenseOfferingDto>()).AsList();
+            var inventoryTransactions = (await multi.ReadAsync<InventoryTransactionDto>()).AsList();
+            var inventoryReservations = (await multi.ReadAsync<InventoryReservationDto>()).AsList();
+            var priceListItems = (await multi.ReadAsync<ProductPriceListItemDto>()).AsList();
 
             return new ProductDetailDto
             {
@@ -307,6 +333,9 @@ ORDER BY SortOrder, LicenseModel;
                 Modules = modules,
                 SoftwarePricingTiers = pricingTiers,
                 LicenseOfferings = licenseOfferings,
+                InventoryTransactions = inventoryTransactions,
+                InventoryReservations = inventoryReservations,
+                PriceListItems = priceListItems,
             };
         }
 
@@ -510,8 +539,8 @@ VALUES
                 await InsertInventoryReservationsAsync(connection, transaction, productId, now, request.InventoryReservations, cancellationToken);
                 await InsertPriceListItemsAsync(connection, transaction, productId, now, request.PriceListItems, cancellationToken);
                 await InsertModulesAsync(connection, transaction, productId, now, request.Modules, cancellationToken);
-                await InsertLicenseOfferingsAsync(connection, transaction, productId, now, request.LicenseOfferings, cancellationToken);
-                await InsertSoftwarePricingTiersAsync(connection, transaction, productId, now, request.SoftwarePricingTiers, cancellationToken);
+                var licenseOfferingTempIdMap = await InsertLicenseOfferingsAsync(connection, transaction, productId, now, request.LicenseOfferings, cancellationToken);
+                await InsertSoftwarePricingTiersAsync(connection, transaction, productId, now, request.SoftwarePricingTiers, licenseOfferingTempIdMap, cancellationToken);
                 await UpsertPhysicalProfileAsync(connection, transaction, productId, now, request.PhysicalProfile, cancellationToken);
                 await UpsertSoftwareProfileAsync(connection, transaction, productId, now, request.SoftwareProfile, cancellationToken);
                 await UpsertServiceProfileAsync(connection, transaction, productId, now, request.ServiceProfile, cancellationToken);

@@ -70,11 +70,8 @@ namespace ProductManager.Presentation.Validators.ProductOperations
     {
         public CreateProductVariantRequestDtoValidator()
         {
-            RuleFor(x => x.ProductId)
-                .NotEmpty().WithMessage("Product id is required.");
-
             RuleFor(x => x.Sku)
-                .NotEmpty().WithMessage("SKU is required.");
+                           .NotEmpty().WithMessage("SKU is required.");
 
             RuleFor(x => x.AdditionalPrice)
                 .GreaterThanOrEqualTo(0).When(x => x.AdditionalPrice.HasValue)
@@ -107,12 +104,9 @@ namespace ProductManager.Presentation.Validators.ProductOperations
     {
         public CreateProductPriceRequestDtoValidator()
         {
-            RuleFor(x => x.ProductId)
-                .NotEmpty().WithMessage("Product id is required.");
-
             RuleFor(x => x.PriceType)
-                .Must(value => value is >= 1 and <= 5)
-                .WithMessage("Invalid price type.");
+                           .Must(value => value is >= 1 and <= 5)
+                           .WithMessage("Invalid price type.");
 
             RuleFor(x => x.Amount)
                 .GreaterThanOrEqualTo(0).WithMessage("Amount cannot be negative.");
@@ -162,11 +156,8 @@ namespace ProductManager.Presentation.Validators.ProductOperations
     {
         public CreateProductInventoryRequestDtoValidator()
         {
-            RuleFor(x => x.ProductId)
-                .NotEmpty().WithMessage("Product id is required.");
-
             RuleFor(x => x.WarehouseCode)
-                .NotEmpty().WithMessage("Warehouse code is required.");
+                           .NotEmpty().WithMessage("Warehouse code is required.");
 
             RuleFor(x => x.QuantityOnHand)
                 .GreaterThanOrEqualTo(0).WithMessage("Quantity on hand cannot be negative.");

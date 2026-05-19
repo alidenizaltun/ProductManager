@@ -7,7 +7,6 @@ namespace ProductManager.Presentation.Validators.ProductOperations
     {
         public CreateInventoryTransactionRequestDtoValidator()
         {
-            RuleFor(x => x.ProductId).NotEmpty().WithMessage("Product id is required.");
             RuleFor(x => x.TransactionType).InclusiveBetween(1, 8).WithMessage("Invalid transaction type.");
             RuleFor(x => x.Quantity).GreaterThan(0).WithMessage("Quantity must be greater than 0.");
             RuleFor(x => x.UnitCost).GreaterThanOrEqualTo(0).When(x => x.UnitCost.HasValue)
@@ -22,7 +21,6 @@ namespace ProductManager.Presentation.Validators.ProductOperations
     {
         public CreateInventoryReservationRequestDtoValidator()
         {
-            RuleFor(x => x.ProductId).NotEmpty().WithMessage("Product id is required.");
             RuleFor(x => x.ReservationCode).NotEmpty().MaximumLength(64);
             RuleFor(x => x.Quantity).GreaterThan(0).WithMessage("Quantity must be greater than 0.");
             RuleFor(x => x.Status).InclusiveBetween(1, 4).WithMessage("Invalid reservation status.");
@@ -74,7 +72,6 @@ namespace ProductManager.Presentation.Validators.ProductOperations
         public CreateProductPriceListItemRequestDtoValidator()
         {
             RuleFor(x => x.ProductPriceListId).NotEmpty();
-            RuleFor(x => x.ProductId).NotEmpty();
             RuleFor(x => x.Amount).GreaterThanOrEqualTo(0);
             RuleFor(x => x.CompareAtAmount).GreaterThanOrEqualTo(0).When(x => x.CompareAtAmount.HasValue);
             RuleFor(x => x.MinQuantity).GreaterThan(0).When(x => x.MinQuantity.HasValue);

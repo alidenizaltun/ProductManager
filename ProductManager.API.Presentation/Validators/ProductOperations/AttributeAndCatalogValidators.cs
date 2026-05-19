@@ -39,11 +39,8 @@ namespace ProductManager.Presentation.Validators.ProductOperations
     {
         public CreateProductAttributeValueRequestDtoValidator()
         {
-            RuleFor(x => x.ProductId)
-                .NotEmpty().WithMessage("Product id is required.");
-
             RuleFor(x => x.AttributeDefinitionId)
-                .NotEmpty().WithMessage("Attribute definition id is required.");
+                           .NotEmpty().WithMessage("Attribute definition id is required.");
 
             RuleFor(x => x)
                 .Must(HasAtLeastOneValue)
@@ -103,11 +100,8 @@ namespace ProductManager.Presentation.Validators.ProductOperations
     {
         public CreateProductCategoryMapRequestDtoValidator()
         {
-            RuleFor(x => x.ProductId)
-                .NotEmpty().WithMessage("Product id is required.");
-
             RuleFor(x => x.ProductCategoryId)
-                .NotEmpty().WithMessage("Product category id is required.");
+                           .NotEmpty().WithMessage("Product category id is required.");
 
             RuleFor(x => x.SortOrder)
                 .GreaterThanOrEqualTo(0).WithMessage("Sort order cannot be negative.");
@@ -127,12 +121,9 @@ namespace ProductManager.Presentation.Validators.ProductOperations
     {
         public CreateProductMediaRequestDtoValidator()
         {
-            RuleFor(x => x.ProductId)
-                .NotEmpty().WithMessage("Product id is required.");
-
             RuleFor(x => x.MediaType)
-                .Must(value => value is >= 1 and <= 4)
-                .WithMessage("Invalid media type.");
+                           .Must(value => value is >= 1 and <= 4)
+                           .WithMessage("Invalid media type.");
 
             RuleFor(x => x.Url)
                 .NotEmpty().WithMessage("Media URL is required.");

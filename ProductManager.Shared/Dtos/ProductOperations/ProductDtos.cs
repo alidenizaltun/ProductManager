@@ -124,6 +124,9 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public IReadOnlyList<ProductModuleDto> Modules { get; init; } = [];
         public IReadOnlyList<SoftwarePricingTierDto> SoftwarePricingTiers { get; init; } = [];
         public IReadOnlyList<ProductLicenseOfferingDto> LicenseOfferings { get; init; } = [];
+        public IReadOnlyList<InventoryTransactionDto> InventoryTransactions { get; init; } = [];
+        public IReadOnlyList<InventoryReservationDto> InventoryReservations { get; init; } = [];
+        public IReadOnlyList<ProductPriceListItemDto> PriceListItems { get; init; } = [];
     }
 
     public sealed record UpdateProductFullRequestDto

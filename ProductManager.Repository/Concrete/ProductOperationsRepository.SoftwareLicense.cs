@@ -158,8 +158,8 @@ VALUES
             await connection.ExecuteAsync(new CommandDefinition(sql, new
             {
                 Id = id,
-                request.ProductId,
-                request.ProductLicenseOfferingId,
+                ProductId = request.ProductId ?? Guid.Empty,
+                ProductLicenseOfferingId = (Guid?)null,
                 request.UnitDefinitionId,
                 request.MinUnits,
                 request.MaxUnits,
@@ -385,6 +385,7 @@ VALUES
         Guid productId,
         DateTime now,
         IReadOnlyList<CreateSoftwarePricingTierRequestDto>? tiers,
+        IReadOnlyDictionary<string, Guid>? tempIdMap,
         CancellationToken cancellationToken)
         {
             if (tiers is null || tiers.Count == 0) return;
@@ -397,25 +398,36 @@ VALUES
  (@Id, @ProductId, @ProductLicenseOfferingId, @UnitDefinitionId, @MinUnits, @MaxUnits,
  @PricePerUnit, @FlatFee, @CurrencyCode, @IsActive, @Now, 0);";
 
-            var parameters = tiers.Select(t => new
+            var parameters = tiers.Select(t =>
             {
-                Id = Guid.NewGuid(),
-                ProductId = productId,
-                t.ProductLicenseOfferingId,
-                t.UnitDefinitionId,
-                t.MinUnits,
-                t.MaxUnits,
-                t.PricePerUnit,
-                t.FlatFee,
-                t.CurrencyCode,
-                t.IsActive,
-                Now = now
-            });
+                // Resolve the real offering id from tempId map
+                Guid? resolvedOfferingId = null;
+                if (t.LicenseOfferingTempId is not null && tempIdMap is not null)
+                {
+                    if (tempIdMap.TryGetValue(t.LicenseOfferingTempId, out var mappedId))
+                        resolvedOfferingId = mappedId;
+                }
+
+                return new
+                {
+                    Id = Guid.NewGuid(),
+                    ProductId = productId,
+                    ProductLicenseOfferingId = resolvedOfferingId,
+                    UnitDefinitionId = t.UnitDefinitionId,
+                    t.MinUnits,
+                    t.MaxUnits,
+                    t.PricePerUnit,
+                    t.FlatFee,
+                    t.CurrencyCode,
+                    t.IsActive,
+                    Now = now
+                };
+            }).ToList();
 
             await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
         }
 
-        private static async Task InsertLicenseOfferingsAsync(
+        private static async Task<IReadOnlyDictionary<string, Guid>> InsertLicenseOfferingsAsync(
         IDbConnection connection,
         IDbTransaction transaction,
         Guid productId,
@@ -423,7 +435,7 @@ VALUES
         IReadOnlyList<CreateProductLicenseOfferingRequestDto>? offerings,
         CancellationToken cancellationToken)
         {
-            if (offerings is null || offerings.Count == 0) return;
+            if (offerings is null || offerings.Count == 0) return new Dictionary<string, Guid>();
 
             const string sql = @"
 INSERT INTO [Product].[ProductLicenseOfferings]
@@ -437,30 +449,39 @@ VALUES
  @TrialDays, @ConvertToOfferingId, @MaxSeats, @ValidFrom, @ValidTo,
  @IsActive, @SortOrder, @Now, 0);";
 
- var parameters = offerings.Select(o => new
- {
- Id = o.Id ?? Guid.NewGuid(),
- ProductId = productId,
-                o.LicenseModel,
-                o.Name,
-                o.Description,
-                o.BasePrice,
-                o.CurrencyCode,
-                o.BillingPeriodUnit,
-                o.BillingPeriodValue,
-                o.AutoRenew,
-                o.GracePeriodDays,
-                o.TrialDays,
-                o.ConvertToOfferingId,
-                o.MaxSeats,
-                o.ValidFrom,
-                o.ValidTo,
-                o.IsActive,
-                o.SortOrder,
-                Now = now
-            });
+            // Build the params and track tempId → realId
+            var tempIdMap = new Dictionary<string, Guid>();
+            var parameters = offerings.Select(o =>
+            {
+                var realId = Guid.NewGuid();
+                if (!string.IsNullOrEmpty(o.TempId))
+                    tempIdMap[o.TempId] = realId;
+                return new
+                {
+                    Id = realId,
+                    ProductId = productId,
+                    o.LicenseModel,
+                    o.Name,
+                    o.Description,
+                    o.BasePrice,
+                    o.CurrencyCode,
+                    o.BillingPeriodUnit,
+                    o.BillingPeriodValue,
+                    o.AutoRenew,
+                    o.GracePeriodDays,
+                    o.TrialDays,
+                    o.ConvertToOfferingId,
+                    o.MaxSeats,
+                    o.ValidFrom,
+                    o.ValidTo,
+                    o.IsActive,
+                    o.SortOrder,
+                    Now = now
+                };
+            }).ToList();
 
             await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
+            return tempIdMap;
         }
     }
 }

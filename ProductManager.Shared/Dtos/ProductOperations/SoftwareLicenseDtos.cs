@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace ProductManager.Shared.Dtos.ProductOperations
 {
     // ─── ProductModule ───────────────────────────────────────────────
@@ -20,7 +22,7 @@ namespace ProductManager.Shared.Dtos.ProductOperations
 
     public sealed record CreateProductModuleRequestDto
     {
-        public required Guid ProductId { get; init; }
+        public Guid ProductId { get; init; }
         public required string ModuleCode { get; init; }
         public required string Name { get; init; }
         public string? Description { get; init; }
@@ -66,9 +68,9 @@ namespace ProductManager.Shared.Dtos.ProductOperations
 
     public sealed record CreateSoftwarePricingTierRequestDto
     {
-        public required Guid ProductId { get; init; }
-        public required Guid ProductLicenseOfferingId { get; init; }
-        public required Guid UnitDefinitionId { get; init; }
+        public Guid? ProductId { get; init; }
+        public string? LicenseOfferingTempId { get; init; }
+        public Guid? UnitDefinitionId { get; init; }
         public int MinUnits { get; init; }
         public int? MaxUnits { get; init; }
         public decimal PricePerUnit { get; init; }
@@ -117,8 +119,9 @@ namespace ProductManager.Shared.Dtos.ProductOperations
 
     public sealed record CreateProductLicenseOfferingRequestDto
     {
-        public Guid? Id { get; init; }
-        public required Guid ProductId { get; init; }
+        [JsonPropertyName("_tempId")]
+        public string? TempId { get; init; }
+        public Guid ProductId { get; init; }
         public int LicenseModel { get; init; } = 1;
         public required string Name { get; init; }
         public string? Description { get; init; }

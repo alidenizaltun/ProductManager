@@ -48,6 +48,7 @@ namespace ProductManager.Domain.Entities.Product
  public ICollection<ProductModule> Modules { get; set; } = new List<ProductModule>();
  public ICollection<SoftwarePricingTier> SoftwarePricingTiers { get; set; } = new List<SoftwarePricingTier>();
  public ICollection<ProductLicenseOffering> LicenseOfferings { get; set; } = new List<ProductLicenseOffering>();
+ public ICollection<ProductUnitConversion> UnitConversions { get; set; } = new List<ProductUnitConversion>();
 
  public ProductPhysicalProfile? PhysicalProfile { get; set; }
         public ProductSoftwareProfile? SoftwareProfile { get; set; }

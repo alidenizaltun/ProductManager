@@ -378,9 +378,31 @@ namespace ProductManager.Service.Concrete
 
         private static BaseException MapSqlException(SqlException ex)
         {
+            if (ex.Number is 2601 or 2627)
+            {
+                var message = ex.Message;
+                if (message.Contains("IX_Products_ProductCode"))
+                    return new ConflictException("Bu koda sahip ürün zaten mevcut.");
+                if (message.Contains("IX_Products_Barcode") || message.Contains("Barcode"))
+                    return new ConflictException("Bu barkoda sahip ürün zaten mevcut.");
+                if (message.Contains("IX_ProductSuppliers_SupplierCode") || message.Contains("SupplierCode"))
+                    return new ConflictException("Bu tedarikçi koduna sahip kayıt zaten mevcut.");
+                if (message.Contains("IX_Warehouses_Code") || message.Contains("IX_Product_Warehouses"))
+                    return new ConflictException("Bu koda sahip depo zaten mevcut.");
+                if (message.Contains("IX_UnitDefinitions_Code"))
+                    return new ConflictException("Bu koda sahip birim tanımı zaten mevcut.");
+                if (message.Contains("IX_ProductPriceLists_Code") || message.Contains("PriceList"))
+                    return new ConflictException("Bu koda sahip fiyat listesi zaten mevcut.");
+                if (message.Contains("IX_ProductModules_ProductId_ModuleCode"))
+                    return new ConflictException("Bu ürüne ait aynı kodda modül zaten mevcut.");
+                if (message.Contains("IX_ProductLicenseOfferings_ProductId_Name"))
+                    return new ConflictException("Bu ürüne ait aynı isimde lisans teklifi zaten mevcut.");
+
+                return new ConflictException("Bu kayıt zaten mevcut.");
+            }
+
             return ex.Number switch
             {
-                2601 or 2627 => new ConflictException("Aynı benzersiz alana sahip kayıt zaten mevcut."),
                 547 => new ValidationException("request", "İlişkili veri kuralı ihlal edildi."),
                 515 => new ValidationException("request", "Zorunlu bir alan boş bırakılamaz."),
                 8115 => new ValidationException("request", "Sayısal alan değeri izin verilen aralığın dışında."),
