@@ -155,12 +155,12 @@ VALUES
 
             var id = Guid.NewGuid();
             using var connection = CreateConnection();
-            await connection.ExecuteAsync(new CommandDefinition(sql, new
-            {
-                Id = id,
-                ProductId = request.ProductId ?? Guid.Empty,
-                ProductLicenseOfferingId = (Guid?)null,
-                request.UnitDefinitionId,
+ await connection.ExecuteAsync(new CommandDefinition(sql, new
+ {
+ Id = id,
+ ProductId = request.ProductId ?? Guid.Empty,
+ request.ProductLicenseOfferingId,
+ request.UnitDefinitionId,
                 request.MinUnits,
                 request.MaxUnits,
                 request.PricePerUnit,
@@ -398,21 +398,21 @@ VALUES
  (@Id, @ProductId, @ProductLicenseOfferingId, @UnitDefinitionId, @MinUnits, @MaxUnits,
  @PricePerUnit, @FlatFee, @CurrencyCode, @IsActive, @Now, 0);";
 
-            var parameters = tiers.Select(t =>
-            {
-                // Resolve the real offering id from tempId map
-                Guid? resolvedOfferingId = null;
-                if (t.LicenseOfferingTempId is not null && tempIdMap is not null)
-                {
-                    if (tempIdMap.TryGetValue(t.LicenseOfferingTempId, out var mappedId))
-                        resolvedOfferingId = mappedId;
-                }
+ var parameters = tiers.Select(t =>
+ {
+ // TempId varsa map'ten çözümle, yoksa direkt ProductLicenseOfferingId'yi kullan
+ Guid? resolvedOfferingId = t.ProductLicenseOfferingId;
+ if (t.LicenseOfferingTempId is not null && tempIdMap is not null)
+ {
+ if (tempIdMap.TryGetValue(t.LicenseOfferingTempId, out var mappedId))
+ resolvedOfferingId = mappedId;
+ }
 
-                return new
-                {
-                    Id = Guid.NewGuid(),
-                    ProductId = productId,
-                    ProductLicenseOfferingId = resolvedOfferingId,
+ return new
+ {
+ Id = Guid.NewGuid(),
+ ProductId = productId,
+ ProductLicenseOfferingId = resolvedOfferingId,
                     UnitDefinitionId = t.UnitDefinitionId,
                     t.MinUnits,
                     t.MaxUnits,

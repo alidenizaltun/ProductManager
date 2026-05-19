@@ -66,11 +66,12 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public DateTime? UpdatedAt { get; init; }
     }
 
-    public sealed record CreateSoftwarePricingTierRequestDto
-    {
-        public Guid? ProductId { get; init; }
-        public string? LicenseOfferingTempId { get; init; }
-        public Guid? UnitDefinitionId { get; init; }
+ public sealed record CreateSoftwarePricingTierRequestDto
+ {
+ public Guid? ProductId { get; init; }
+ public Guid? ProductLicenseOfferingId { get; init; }
+ public string? LicenseOfferingTempId { get; init; }
+ public Guid? UnitDefinitionId { get; init; }
         public int MinUnits { get; init; }
         public int? MaxUnits { get; init; }
         public decimal PricePerUnit { get; init; }

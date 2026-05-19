@@ -404,11 +404,19 @@ namespace ProductManager.Service.Concrete
             return ex.Number switch
             {
                 547 => new ValidationException("request", "İlişkili veri kuralı ihlal edildi."),
-                515 => new ValidationException("request", "Zorunlu bir alan boş bırakılamaz."),
+                515 => MapNullColumnException(ex.Message),
                 8115 => new ValidationException("request", "Sayısal alan değeri izin verilen aralığın dışında."),
                 245 => new ValidationException("request", "Alan tipi geçersiz."),
                 _ => new BaseException("Veritabanı işlemi sırasında hata oluştu.", 500, ex)
             };
+        }
+
+        private static ValidationException MapNullColumnException(string message)
+        {
+            // SQL 515 mesaj formatı: Cannot insert the value NULL into column 'ColumnName', table '...'; column does not allow nulls.
+            var match = System.Text.RegularExpressions.Regex.Match(message, @"column '([^']+)'");
+            var field = match.Success ? match.Groups[1].Value : "unknown";
+            return new ValidationException(field, $"'{field}' alanı boş bırakılamaz.");
         }
     }
 }
