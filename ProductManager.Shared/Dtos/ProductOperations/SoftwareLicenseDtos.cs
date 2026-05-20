@@ -66,12 +66,12 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public DateTime? UpdatedAt { get; init; }
     }
 
- public sealed record CreateSoftwarePricingTierRequestDto
- {
- public Guid? ProductId { get; init; }
- public Guid? ProductLicenseOfferingId { get; init; }
- public string? LicenseOfferingTempId { get; init; }
- public Guid? UnitDefinitionId { get; init; }
+    public sealed record CreateSoftwarePricingTierRequestDto
+    {
+        public Guid? ProductId { get; init; }
+        public Guid? ProductLicenseOfferingId { get; init; }
+        public string? LicenseOfferingTempId { get; init; }
+        public Guid? UnitDefinitionId { get; init; }
         public int MinUnits { get; init; }
         public int? MaxUnits { get; init; }
         public decimal PricePerUnit { get; init; }
@@ -120,6 +120,7 @@ namespace ProductManager.Shared.Dtos.ProductOperations
 
     public sealed record CreateProductLicenseOfferingRequestDto
     {
+        public Guid? Id { get; init; }
         [JsonPropertyName("_tempId")]
         public string? TempId { get; init; }
         public Guid ProductId { get; init; }
