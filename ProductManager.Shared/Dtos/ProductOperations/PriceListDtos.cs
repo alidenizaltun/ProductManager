@@ -46,8 +46,12 @@ namespace ProductManager.Shared.Dtos.ProductOperations
     {
         public Guid Id { get; init; }
         public Guid ProductPriceListId { get; init; }
+        public string? PriceListCode { get; init; }
+        public string? PriceListName { get; init; }
         public Guid ProductId { get; init; }
         public Guid? ProductVariantId { get; init; }
+        public string? VariantSku { get; init; }
+        public string? VariantName { get; init; }
         public decimal Amount { get; init; }
         public decimal? CompareAtAmount { get; init; }
         public int? MinQuantity { get; init; }

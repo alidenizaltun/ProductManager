@@ -5,7 +5,10 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public Guid Id { get; init; }
         public Guid ProductId { get; init; }
         public Guid? ProductVariantId { get; init; }
+        public string? VariantSku { get; init; }
+        public string? VariantName { get; init; }
         public Guid? WarehouseId { get; init; }
+        public string? WarehouseName { get; init; }
         public int TransactionType { get; init; }
         public decimal Quantity { get; init; }
         public decimal? UnitCost { get; init; }
@@ -46,7 +49,10 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public Guid Id { get; init; }
         public Guid ProductId { get; init; }
         public Guid? ProductVariantId { get; init; }
+        public string? VariantSku { get; init; }
+        public string? VariantName { get; init; }
         public Guid? WarehouseId { get; init; }
+        public string? WarehouseName { get; init; }
         public decimal Quantity { get; init; }
         public string ReservationCode { get; init; } = string.Empty;
         public DateTime? ReservedUntil { get; init; }

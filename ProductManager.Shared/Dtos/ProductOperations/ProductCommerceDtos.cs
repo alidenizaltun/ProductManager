@@ -43,6 +43,8 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public Guid Id { get; init; }
         public Guid ProductId { get; init; }
         public Guid? ProductVariantId { get; init; }
+        public string? VariantSku { get; init; }
+        public string? VariantName { get; init; }
         public int PriceType { get; init; }
         public decimal Amount { get; init; }
         public decimal? CompareAtAmount { get; init; }
@@ -93,8 +95,11 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public Guid Id { get; init; }
         public Guid ProductId { get; init; }
         public Guid? ProductVariantId { get; init; }
+        public string? VariantSku { get; init; }
+        public string? VariantName { get; init; }
         public Guid? WarehouseId { get; init; }
         public string WarehouseCode { get; init; } = string.Empty;
+        public string? WarehouseName { get; init; }
         public decimal QuantityOnHand { get; init; }
         public decimal QuantityReserved { get; init; }
         public decimal QuantityAvailable { get; init; }

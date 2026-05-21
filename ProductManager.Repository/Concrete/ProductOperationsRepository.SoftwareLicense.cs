@@ -113,7 +113,7 @@ WHERE Id = @ModuleId AND IsDeleted = 0;";
         {
             const string sql = @"
 SELECT t.Id, t.ProductId, t.ProductLicenseOfferingId, o.Name AS LicenseOfferingName,
- t.UnitDefinitionId, u.Name AS UnitDefinitionName, t.MinUnits, t.MaxUnits,
+ t.UnitDefinitionId, u.Code AS UnitDefinitionCode, u.Name AS UnitDefinitionName, t.MinUnits, t.MaxUnits,
  t.PricePerUnit, t.FlatFee, t.CurrencyCode, t.IsActive, t.CreatedAt, t.UpdatedAt
 FROM [Product].[SoftwarePricingTiers] t
 LEFT JOIN [Product].[ProductLicenseOfferings] o ON o.Id = t.ProductLicenseOfferingId AND o.IsDeleted = 0
@@ -131,7 +131,7 @@ ORDER BY o.Name, t.MinUnits;";
         {
             const string sql = @"
 SELECT t.Id, t.ProductId, t.ProductLicenseOfferingId, o.Name AS LicenseOfferingName,
- t.UnitDefinitionId, u.Name AS UnitDefinitionName, t.MinUnits, t.MaxUnits,
+ t.UnitDefinitionId, u.Code AS UnitDefinitionCode, u.Name AS UnitDefinitionName, t.MinUnits, t.MaxUnits,
  t.PricePerUnit, t.FlatFee, t.CurrencyCode, t.IsActive, t.CreatedAt, t.UpdatedAt
 FROM [Product].[SoftwarePricingTiers] t
 LEFT JOIN [Product].[ProductLicenseOfferings] o ON o.Id = t.ProductLicenseOfferingId AND o.IsDeleted = 0
@@ -218,13 +218,14 @@ WHERE Id = @TierId AND IsDeleted = 0;";
         public async Task<IReadOnlyList<ProductLicenseOfferingDto>> GetProductLicenseOfferingsAsync(Guid productId, CancellationToken cancellationToken = default)
         {
             const string sql = @"
-SELECT Id, ProductId, LicenseModel, Name, Description, BasePrice, CurrencyCode,
- BillingPeriodUnit, BillingPeriodValue, AutoRenew, GracePeriodDays,
- TrialDays, ConvertToOfferingId, MaxSeats, ValidFrom, ValidTo,
- IsActive, SortOrder, CreatedAt, UpdatedAt
-FROM [Product].[ProductLicenseOfferings]
-WHERE ProductId = @ProductId AND IsDeleted = 0
-ORDER BY SortOrder, LicenseModel;";
+SELECT o.Id, o.ProductId, o.LicenseModel, o.Name, o.Description, o.BasePrice, o.CurrencyCode,
+ o.BillingPeriodUnit, o.BillingPeriodValue, o.AutoRenew, o.GracePeriodDays,
+ o.TrialDays, o.ConvertToOfferingId, cto.Name AS ConvertToOfferingName, o.MaxSeats, o.ValidFrom, o.ValidTo,
+ o.IsActive, o.SortOrder, o.CreatedAt, o.UpdatedAt
+FROM [Product].[ProductLicenseOfferings] o
+LEFT JOIN [Product].[ProductLicenseOfferings] cto ON cto.Id = o.ConvertToOfferingId AND cto.IsDeleted = 0
+WHERE o.ProductId = @ProductId AND o.IsDeleted = 0
+ORDER BY o.SortOrder, o.LicenseModel;";
 
             using var connection = CreateConnection();
             var items = await connection.QueryAsync<ProductLicenseOfferingDto>(
@@ -235,12 +236,13 @@ ORDER BY SortOrder, LicenseModel;";
         public async Task<ProductLicenseOfferingDto?> GetProductLicenseOfferingByIdAsync(Guid offeringId, CancellationToken cancellationToken = default)
         {
             const string sql = @"
-SELECT Id, ProductId, LicenseModel, Name, Description, BasePrice, CurrencyCode,
- BillingPeriodUnit, BillingPeriodValue, AutoRenew, GracePeriodDays,
- TrialDays, ConvertToOfferingId, MaxSeats, ValidFrom, ValidTo,
- IsActive, SortOrder, CreatedAt, UpdatedAt
-FROM [Product].[ProductLicenseOfferings]
-WHERE Id = @OfferingId AND IsDeleted = 0;";
+SELECT o.Id, o.ProductId, o.LicenseModel, o.Name, o.Description, o.BasePrice, o.CurrencyCode,
+ o.BillingPeriodUnit, o.BillingPeriodValue, o.AutoRenew, o.GracePeriodDays,
+ o.TrialDays, o.ConvertToOfferingId, cto.Name AS ConvertToOfferingName, o.MaxSeats, o.ValidFrom, o.ValidTo,
+ o.IsActive, o.SortOrder, o.CreatedAt, o.UpdatedAt
+FROM [Product].[ProductLicenseOfferings] o
+LEFT JOIN [Product].[ProductLicenseOfferings] cto ON cto.Id = o.ConvertToOfferingId AND cto.IsDeleted = 0
+WHERE o.Id = @OfferingId AND o.IsDeleted = 0;";
 
             using var connection = CreateConnection();
             return await connection.QuerySingleOrDefaultAsync<ProductLicenseOfferingDto>(

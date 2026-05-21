@@ -109,6 +109,7 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public int? GracePeriodDays { get; init; }
         public int? TrialDays { get; init; }
         public Guid? ConvertToOfferingId { get; init; }
+        public string? ConvertToOfferingName { get; init; }
         public int? MaxSeats { get; init; }
         public DateTime? ValidFrom { get; init; }
         public DateTime? ValidTo { get; init; }

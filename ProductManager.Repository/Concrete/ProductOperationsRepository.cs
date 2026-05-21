@@ -235,20 +235,23 @@ WHERE Id = @SupplierId
         {
             const string sql = @"
 SELECT
-    Id,
-    ProductId,
-    ProductSupplierId,
-    SupplierProductCode,
-    SupplierCost,
-    LeadTimeInDays,
-    MinOrderQuantity,
-    IsPreferred,
-    CreatedAt,
-    UpdatedAt
-FROM [Product].[ProductSupplierMaps]
-WHERE ProductId = @ProductId
-  AND IsDeleted = 0
-ORDER BY IsPreferred DESC, CreatedAt DESC;";
+    m.Id,
+    m.ProductId,
+    m.ProductSupplierId,
+    s.SupplierCode,
+    s.Name AS SupplierName,
+    m.SupplierProductCode,
+    m.SupplierCost,
+    m.LeadTimeInDays,
+    m.MinOrderQuantity,
+    m.IsPreferred,
+    m.CreatedAt,
+    m.UpdatedAt
+FROM [Product].[ProductSupplierMaps] m
+LEFT JOIN [Product].[ProductSuppliers] s ON s.Id = m.ProductSupplierId AND s.IsDeleted = 0
+WHERE m.ProductId = @ProductId
+  AND m.IsDeleted = 0
+ORDER BY m.IsPreferred DESC, m.CreatedAt DESC;";
 
             using var connection = CreateConnection();
             var maps = await connection.QueryAsync<ProductSupplierMapDto>(
@@ -261,19 +264,22 @@ ORDER BY IsPreferred DESC, CreatedAt DESC;";
         {
             const string sql = @"
 SELECT
-    Id,
-    ProductId,
-    ProductSupplierId,
-    SupplierProductCode,
-    SupplierCost,
-    LeadTimeInDays,
-    MinOrderQuantity,
-    IsPreferred,
-    CreatedAt,
-    UpdatedAt
-FROM [Product].[ProductSupplierMaps]
-WHERE Id = @SupplierMapId
-  AND IsDeleted = 0;";
+    m.Id,
+    m.ProductId,
+    m.ProductSupplierId,
+    s.SupplierCode,
+    s.Name AS SupplierName,
+    m.SupplierProductCode,
+    m.SupplierCost,
+    m.LeadTimeInDays,
+    m.MinOrderQuantity,
+    m.IsPreferred,
+    m.CreatedAt,
+    m.UpdatedAt
+FROM [Product].[ProductSupplierMaps] m
+LEFT JOIN [Product].[ProductSuppliers] s ON s.Id = m.ProductSupplierId AND s.IsDeleted = 0
+WHERE m.Id = @SupplierMapId
+  AND m.IsDeleted = 0;";
 
             using var connection = CreateConnection();
             return await connection.QuerySingleOrDefaultAsync<ProductSupplierMapDto>(
@@ -567,27 +573,32 @@ WHERE Id = @WarehouseId
 
             const string sql = @"
 SELECT TOP (@Take)
-    Id,
-    ProductId,
-    ProductVariantId,
-    WarehouseId,
-    TransactionType,
-    Quantity,
-    UnitCost,
-    ReferenceType,
-    ReferenceNumber,
-    Note,
-    OccurredAt,
-    CreatedAt
-FROM [Product].[InventoryTransactions]
-WHERE IsDeleted = 0
-  AND (@ProductId IS NULL OR ProductId = @ProductId)
-  AND (@ProductVariantId IS NULL OR ProductVariantId = @ProductVariantId)
-  AND (@WarehouseId IS NULL OR WarehouseId = @WarehouseId)
-  AND (@TransactionType IS NULL OR TransactionType = @TransactionType)
-  AND (@DateFrom IS NULL OR OccurredAt >= @DateFrom)
-  AND (@DateTo IS NULL OR OccurredAt <= @DateTo)
-ORDER BY OccurredAt DESC, CreatedAt DESC;";
+    t.Id,
+    t.ProductId,
+    t.ProductVariantId,
+    v.Sku AS VariantSku,
+    v.Name AS VariantName,
+    t.WarehouseId,
+    w.Name AS WarehouseName,
+    t.TransactionType,
+    t.Quantity,
+    t.UnitCost,
+    t.ReferenceType,
+    t.ReferenceNumber,
+    t.Note,
+    t.OccurredAt,
+    t.CreatedAt
+FROM [Product].[InventoryTransactions] t
+LEFT JOIN [Product].[ProductVariants] v ON v.Id = t.ProductVariantId AND v.IsDeleted = 0
+LEFT JOIN [Product].[Warehouses] w ON w.Id = t.WarehouseId AND w.IsDeleted = 0
+WHERE t.IsDeleted = 0
+  AND (@ProductId IS NULL OR t.ProductId = @ProductId)
+  AND (@ProductVariantId IS NULL OR t.ProductVariantId = @ProductVariantId)
+  AND (@WarehouseId IS NULL OR t.WarehouseId = @WarehouseId)
+  AND (@TransactionType IS NULL OR t.TransactionType = @TransactionType)
+  AND (@DateFrom IS NULL OR t.OccurredAt >= @DateFrom)
+  AND (@DateTo IS NULL OR t.OccurredAt <= @DateTo)
+ORDER BY t.OccurredAt DESC, t.CreatedAt DESC;";
 
             using var connection = CreateConnection();
             var transactions = await connection.QueryAsync<InventoryTransactionDto>(
@@ -612,21 +623,26 @@ ORDER BY OccurredAt DESC, CreatedAt DESC;";
         {
             const string sql = @"
 SELECT
-    Id,
-    ProductId,
-    ProductVariantId,
-    WarehouseId,
-    TransactionType,
-    Quantity,
-    UnitCost,
-    ReferenceType,
-    ReferenceNumber,
-    Note,
-    OccurredAt,
-    CreatedAt
-FROM [Product].[InventoryTransactions]
-WHERE Id = @TransactionId
-  AND IsDeleted = 0;";
+    t.Id,
+    t.ProductId,
+    t.ProductVariantId,
+    v.Sku AS VariantSku,
+    v.Name AS VariantName,
+    t.WarehouseId,
+    w.Name AS WarehouseName,
+    t.TransactionType,
+    t.Quantity,
+    t.UnitCost,
+    t.ReferenceType,
+    t.ReferenceNumber,
+    t.Note,
+    t.OccurredAt,
+    t.CreatedAt
+FROM [Product].[InventoryTransactions] t
+LEFT JOIN [Product].[ProductVariants] v ON v.Id = t.ProductVariantId AND v.IsDeleted = 0
+LEFT JOIN [Product].[Warehouses] w ON w.Id = t.WarehouseId AND w.IsDeleted = 0
+WHERE t.Id = @TransactionId
+  AND t.IsDeleted = 0;";
 
             using var connection = CreateConnection();
             return await connection.QuerySingleOrDefaultAsync<InventoryTransactionDto>(
@@ -704,27 +720,32 @@ VALUES
 
             const string sql = @"
 SELECT TOP (@Take)
-    Id,
-    ProductId,
-    ProductVariantId,
-    WarehouseId,
-    Quantity,
-    ReservationCode,
-    ReservedUntil,
-    Status,
-    SourceType,
-    SourceId,
-    CreatedAt,
-    UpdatedAt
-FROM [Product].[InventoryReservations]
-WHERE IsDeleted = 0
-  AND (@ProductId IS NULL OR ProductId = @ProductId)
-  AND (@ProductVariantId IS NULL OR ProductVariantId = @ProductVariantId)
-  AND (@WarehouseId IS NULL OR WarehouseId = @WarehouseId)
-  AND (@Status IS NULL OR Status = @Status)
-  AND (@ReservedUntilMin IS NULL OR ReservedUntil >= @ReservedUntilMin)
-  AND (@ReservedUntilMax IS NULL OR ReservedUntil <= @ReservedUntilMax)
-ORDER BY CreatedAt DESC;";
+    r.Id,
+    r.ProductId,
+    r.ProductVariantId,
+    v.Sku AS VariantSku,
+    v.Name AS VariantName,
+    r.WarehouseId,
+    w.Name AS WarehouseName,
+    r.Quantity,
+    r.ReservationCode,
+    r.ReservedUntil,
+    r.Status,
+    r.SourceType,
+    r.SourceId,
+    r.CreatedAt,
+    r.UpdatedAt
+FROM [Product].[InventoryReservations] r
+LEFT JOIN [Product].[ProductVariants] v ON v.Id = r.ProductVariantId AND v.IsDeleted = 0
+LEFT JOIN [Product].[Warehouses] w ON w.Id = r.WarehouseId AND w.IsDeleted = 0
+WHERE r.IsDeleted = 0
+  AND (@ProductId IS NULL OR r.ProductId = @ProductId)
+  AND (@ProductVariantId IS NULL OR r.ProductVariantId = @ProductVariantId)
+  AND (@WarehouseId IS NULL OR r.WarehouseId = @WarehouseId)
+  AND (@Status IS NULL OR r.Status = @Status)
+  AND (@ReservedUntilMin IS NULL OR r.ReservedUntil >= @ReservedUntilMin)
+  AND (@ReservedUntilMax IS NULL OR r.ReservedUntil <= @ReservedUntilMax)
+ORDER BY r.CreatedAt DESC;";
 
             using var connection = CreateConnection();
             var reservations = await connection.QueryAsync<InventoryReservationDto>(
@@ -749,21 +770,26 @@ ORDER BY CreatedAt DESC;";
         {
             const string sql = @"
 SELECT
-    Id,
-    ProductId,
-    ProductVariantId,
-    WarehouseId,
-    Quantity,
-    ReservationCode,
-    ReservedUntil,
-    Status,
-    SourceType,
-    SourceId,
-    CreatedAt,
-    UpdatedAt
-FROM [Product].[InventoryReservations]
-WHERE Id = @ReservationId
-  AND IsDeleted = 0;";
+    r.Id,
+    r.ProductId,
+    r.ProductVariantId,
+    v.Sku AS VariantSku,
+    v.Name AS VariantName,
+    r.WarehouseId,
+    w.Name AS WarehouseName,
+    r.Quantity,
+    r.ReservationCode,
+    r.ReservedUntil,
+    r.Status,
+    r.SourceType,
+    r.SourceId,
+    r.CreatedAt,
+    r.UpdatedAt
+FROM [Product].[InventoryReservations] r
+LEFT JOIN [Product].[ProductVariants] v ON v.Id = r.ProductVariantId AND v.IsDeleted = 0
+LEFT JOIN [Product].[Warehouses] w ON w.Id = r.WarehouseId AND w.IsDeleted = 0
+WHERE r.Id = @ReservationId
+  AND r.IsDeleted = 0;";
 
             using var connection = CreateConnection();
             return await connection.QuerySingleOrDefaultAsync<InventoryReservationDto>(
@@ -1069,20 +1095,26 @@ WHERE Id = @PriceListId
         {
             const string sql = @"
 SELECT
-    Id,
-    ProductPriceListId,
-    ProductId,
-    ProductVariantId,
-    Amount,
-    CompareAtAmount,
-    MinQuantity,
-    MaxQuantity,
-    CreatedAt,
-    UpdatedAt
-FROM [Product].[ProductPriceListItems]
-WHERE ProductPriceListId = @PriceListId
-  AND IsDeleted = 0
-ORDER BY MinQuantity, MaxQuantity, CreatedAt DESC;";
+    pli.Id,
+    pli.ProductPriceListId,
+    pl.Code AS PriceListCode,
+    pl.Name AS PriceListName,
+    pli.ProductId,
+    pli.ProductVariantId,
+    v.Sku AS VariantSku,
+    v.Name AS VariantName,
+    pli.Amount,
+    pli.CompareAtAmount,
+    pli.MinQuantity,
+    pli.MaxQuantity,
+    pli.CreatedAt,
+    pli.UpdatedAt
+FROM [Product].[ProductPriceListItems] pli
+LEFT JOIN [Product].[ProductPriceLists] pl ON pl.Id = pli.ProductPriceListId AND pl.IsDeleted = 0
+LEFT JOIN [Product].[ProductVariants] v ON v.Id = pli.ProductVariantId AND v.IsDeleted = 0
+WHERE pli.ProductPriceListId = @PriceListId
+  AND pli.IsDeleted = 0
+ORDER BY pli.MinQuantity, pli.MaxQuantity, pli.CreatedAt DESC;";
 
             using var connection = CreateConnection();
             var items = await connection.QueryAsync<ProductPriceListItemDto>(
@@ -1095,19 +1127,25 @@ ORDER BY MinQuantity, MaxQuantity, CreatedAt DESC;";
         {
             const string sql = @"
 SELECT
-    Id,
-    ProductPriceListId,
-    ProductId,
-    ProductVariantId,
-    Amount,
-    CompareAtAmount,
-    MinQuantity,
-    MaxQuantity,
-    CreatedAt,
-    UpdatedAt
-FROM [Product].[ProductPriceListItems]
-WHERE Id = @PriceListItemId
-  AND IsDeleted = 0;";
+    pli.Id,
+    pli.ProductPriceListId,
+    pl.Code AS PriceListCode,
+    pl.Name AS PriceListName,
+    pli.ProductId,
+    pli.ProductVariantId,
+    v.Sku AS VariantSku,
+    v.Name AS VariantName,
+    pli.Amount,
+    pli.CompareAtAmount,
+    pli.MinQuantity,
+    pli.MaxQuantity,
+    pli.CreatedAt,
+    pli.UpdatedAt
+FROM [Product].[ProductPriceListItems] pli
+LEFT JOIN [Product].[ProductPriceLists] pl ON pl.Id = pli.ProductPriceListId AND pl.IsDeleted = 0
+LEFT JOIN [Product].[ProductVariants] v ON v.Id = pli.ProductVariantId AND v.IsDeleted = 0
+WHERE pli.Id = @PriceListItemId
+  AND pli.IsDeleted = 0;";
 
             using var connection = CreateConnection();
             return await connection.QuerySingleOrDefaultAsync<ProductPriceListItemDto>(

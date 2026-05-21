@@ -23,6 +23,9 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public string? TaxCode { get; init; }
         public string? Tags { get; init; }
         public string? MetadataJson { get; init; }
+        public string? PrimaryImageUrl { get; init; }
+        public string? PrimaryThumbnailUrl { get; init; }
+        public IReadOnlyList<string>? ImageUrls { get; init; }
         public DateTime CreatedAt { get; init; }
         public DateTime? UpdatedAt { get; init; }
     }

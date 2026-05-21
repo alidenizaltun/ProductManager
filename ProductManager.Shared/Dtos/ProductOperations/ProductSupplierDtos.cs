@@ -41,6 +41,8 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public Guid Id { get; init; }
         public Guid ProductId { get; init; }
         public Guid ProductSupplierId { get; init; }
+        public string? SupplierCode { get; init; }
+        public string? SupplierName { get; init; }
         public string? SupplierProductCode { get; init; }
         public decimal? SupplierCost { get; init; }
         public int? LeadTimeInDays { get; init; }

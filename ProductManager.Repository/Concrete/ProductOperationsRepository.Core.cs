@@ -77,13 +77,74 @@ WHERE p.IsDeleted = 0");
             sqlBuilder.Append("\nORDER BY p.CreatedAt DESC;");
 
             using var connection = CreateConnection();
-            var products = await connection.QueryAsync<ProductDto>(
+            var products = (await connection.QueryAsync<ProductDto>(
                 new CommandDefinition(
                     sqlBuilder.ToString(),
                     parameters,
+                    cancellationToken: cancellationToken))).AsList();
+
+            return await EnrichProductsWithMediaAsync(connection, products, cancellationToken);
+        }
+
+        private static async Task<IReadOnlyList<ProductDto>> EnrichProductsWithMediaAsync(
+            IDbConnection connection,
+            IReadOnlyList<ProductDto> products,
+            CancellationToken cancellationToken)
+        {
+            if (products.Count == 0)
+            {
+                return products;
+            }
+
+            const string mediaSql = @"
+SELECT
+    ProductId,
+    Url,
+    ThumbnailUrl
+FROM [Product].[ProductMediaItems]
+WHERE ProductId IN @ProductIds
+  AND IsDeleted = 0
+  AND MediaType = 1
+ORDER BY IsPrimary DESC, SortOrder, CreatedAt;";
+
+            var mediaRows = await connection.QueryAsync<(Guid ProductId, string Url, string? ThumbnailUrl)>(
+                new CommandDefinition(
+                    mediaSql,
+                    new { ProductIds = products.Select(p => p.Id).ToArray() },
                     cancellationToken: cancellationToken));
 
-            return products.AsList();
+            var mediaByProduct = mediaRows
+                .Where(m => !string.IsNullOrWhiteSpace(m.Url))
+                .GroupBy(m => m.ProductId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            if (mediaByProduct.Count == 0)
+            {
+                return products;
+            }
+
+            return products
+                .Select(product =>
+                {
+                    if (!mediaByProduct.TryGetValue(product.Id, out var mediaItems))
+                    {
+                        return product;
+                    }
+
+                    var imageUrls = mediaItems
+                        .Select(m => m.Url)
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+
+                    var primary = mediaItems[0];
+                    return product with
+                    {
+                        PrimaryImageUrl = primary.Url,
+                        PrimaryThumbnailUrl = primary.ThumbnailUrl ?? primary.Url,
+                        ImageUrls = imageUrls
+                    };
+                })
+                .ToList();
         }
 
         public async Task<ProductDto?> GetProductByIdAsync(Guid productId, CancellationToken cancellationToken = default)
@@ -139,9 +200,11 @@ WHERE p.Id = @ProductId AND p.IsDeleted = 0;
 -- 2: AttributeValues
 SELECT
     av.Id, av.ProductId, av.AttributeDefinitionId,
+    ad.[Key] AS AttributeKey, ad.DisplayName AS AttributeDisplayName, ad.DataType AS AttributeDataType,
     av.ValueText, av.ValueNumber, av.ValueBool, av.ValueDate, av.ValueJson,
     av.CreatedAt, av.UpdatedAt
 FROM [Product].[ProductAttributeValues] av
+LEFT JOIN [Product].[ProductAttributeDefinitions] ad ON ad.Id = av.AttributeDefinitionId AND ad.IsDeleted = 0
 WHERE av.ProductId = @ProductId AND av.IsDeleted = 0;
 
 -- 3: Variants
@@ -151,19 +214,24 @@ FROM [Product].[ProductVariants]
 WHERE ProductId = @ProductId AND IsDeleted = 0;
 
 -- 4: Prices
-SELECT Id, ProductId, ProductVariantId, PriceType, Amount, CompareAtAmount,
-       CurrencyCode, MinQuantity, MaxQuantity, ValidFrom, ValidTo,
-       SalesChannel, CustomerGroupCode, CreatedAt, UpdatedAt
-FROM [Product].[ProductPrices]
-WHERE ProductId = @ProductId AND IsDeleted = 0;
+SELECT p.Id, p.ProductId, p.ProductVariantId, v.Sku AS VariantSku, v.Name AS VariantName,
+       p.PriceType, p.Amount, p.CompareAtAmount,
+       p.CurrencyCode, p.MinQuantity, p.MaxQuantity, p.ValidFrom, p.ValidTo,
+       p.SalesChannel, p.CustomerGroupCode, p.CreatedAt, p.UpdatedAt
+FROM [Product].[ProductPrices] p
+LEFT JOIN [Product].[ProductVariants] v ON v.Id = p.ProductVariantId AND v.IsDeleted = 0
+WHERE p.ProductId = @ProductId AND p.IsDeleted = 0;
 
 -- 5: Inventories
-SELECT Id, ProductId, ProductVariantId, WarehouseId, WarehouseCode,
-       QuantityOnHand, QuantityReserved,
-       QuantityOnHand - QuantityReserved AS QuantityAvailable,
-       ReorderPoint, ReorderQuantity, InventoryPolicy, CreatedAt, UpdatedAt
-FROM [Product].[ProductInventories]
-WHERE ProductId = @ProductId AND IsDeleted = 0;
+SELECT i.Id, i.ProductId, i.ProductVariantId, v.Sku AS VariantSku, v.Name AS VariantName,
+       i.WarehouseId, i.WarehouseCode, w.Name AS WarehouseName,
+       i.QuantityOnHand, i.QuantityReserved,
+       i.QuantityOnHand - i.QuantityReserved AS QuantityAvailable,
+       i.ReorderPoint, i.ReorderQuantity, i.InventoryPolicy, i.CreatedAt, i.UpdatedAt
+FROM [Product].[ProductInventories] i
+LEFT JOIN [Product].[ProductVariants] v ON v.Id = i.ProductVariantId AND v.IsDeleted = 0
+LEFT JOIN [Product].[Warehouses] w ON w.Id = i.WarehouseId AND w.IsDeleted = 0
+WHERE i.ProductId = @ProductId AND i.IsDeleted = 0;
 
 -- 6: MediaItems
 SELECT Id, ProductId, MediaType, Url, ThumbnailUrl, MimeType, AltText,
@@ -173,21 +241,28 @@ WHERE ProductId = @ProductId AND IsDeleted = 0
 ORDER BY SortOrder;
 
 -- 7: CategoryMaps
-SELECT Id, ProductId, ProductCategoryId, IsPrimary, SortOrder, CreatedAt, UpdatedAt
-FROM [Product].[ProductCategoryMaps]
-WHERE ProductId = @ProductId AND IsDeleted = 0;
+SELECT m.Id, m.ProductId, m.ProductCategoryId, c.Code AS CategoryCode, c.Name AS CategoryName,
+       m.IsPrimary, m.SortOrder, m.CreatedAt, m.UpdatedAt
+FROM [Product].[ProductCategoryMaps] m
+LEFT JOIN [Product].[ProductCategories] c ON c.Id = m.ProductCategoryId AND c.IsDeleted = 0
+WHERE m.ProductId = @ProductId AND m.IsDeleted = 0;
 
 -- 8: BundleItems
-SELECT Id, BundleProductId, ChildProductId, ChildVariantId, Quantity,
-       IsOptional, RuleJson, CreatedAt, UpdatedAt
-FROM [Product].[ProductBundleItems]
-WHERE BundleProductId = @ProductId AND IsDeleted = 0;
+SELECT b.Id, b.BundleProductId, b.ChildProductId, cp.ProductCode AS ChildProductCode, cp.Name AS ChildProductName,
+       b.ChildVariantId, cv.Sku AS ChildVariantSku, cv.Name AS ChildVariantName,
+       b.Quantity, b.IsOptional, b.RuleJson, b.CreatedAt, b.UpdatedAt
+FROM [Product].[ProductBundleItems] b
+LEFT JOIN [Product].[Products] cp ON cp.Id = b.ChildProductId AND cp.IsDeleted = 0
+LEFT JOIN [Product].[ProductVariants] cv ON cv.Id = b.ChildVariantId AND cv.IsDeleted = 0
+WHERE b.BundleProductId = @ProductId AND b.IsDeleted = 0;
 
 -- 9: SupplierMaps
-SELECT Id, ProductId, ProductSupplierId, SupplierProductCode, SupplierCost,
-       LeadTimeInDays, MinOrderQuantity, IsPreferred, CreatedAt, UpdatedAt
-FROM [Product].[ProductSupplierMaps]
-WHERE ProductId = @ProductId AND IsDeleted = 0;
+SELECT m.Id, m.ProductId, m.ProductSupplierId, s.SupplierCode, s.Name AS SupplierName,
+       m.SupplierProductCode, m.SupplierCost,
+       m.LeadTimeInDays, m.MinOrderQuantity, m.IsPreferred, m.CreatedAt, m.UpdatedAt
+FROM [Product].[ProductSupplierMaps] m
+LEFT JOIN [Product].[ProductSuppliers] s ON s.Id = m.ProductSupplierId AND s.IsDeleted = 0
+WHERE m.ProductId = @ProductId AND m.IsDeleted = 0;
 
 -- 10: PhysicalProfile
 SELECT Id, ProductId, Weight, Width, Height, Length,
@@ -232,36 +307,46 @@ WHERE t.ProductId = @ProductId AND t.IsDeleted = 0
 ORDER BY t.MinUnits;
 
 -- 16: LicenseOfferings
-SELECT Id, ProductId, LicenseModel, Name, Description, BasePrice, CurrencyCode,
- BillingPeriodUnit, BillingPeriodValue, AutoRenew, GracePeriodDays,
- TrialDays, ConvertToOfferingId, MaxSeats, ValidFrom, ValidTo,
- IsActive, SortOrder, CreatedAt, UpdatedAt
-FROM [Product].[ProductLicenseOfferings]
-WHERE ProductId = @ProductId AND IsDeleted = 0
-ORDER BY SortOrder, LicenseModel;
+SELECT o.Id, o.ProductId, o.LicenseModel, o.Name, o.Description, o.BasePrice, o.CurrencyCode,
+ o.BillingPeriodUnit, o.BillingPeriodValue, o.AutoRenew, o.GracePeriodDays,
+ o.TrialDays, o.ConvertToOfferingId, cto.Name AS ConvertToOfferingName, o.MaxSeats, o.ValidFrom, o.ValidTo,
+ o.IsActive, o.SortOrder, o.CreatedAt, o.UpdatedAt
+FROM [Product].[ProductLicenseOfferings] o
+LEFT JOIN [Product].[ProductLicenseOfferings] cto ON cto.Id = o.ConvertToOfferingId AND cto.IsDeleted = 0
+WHERE o.ProductId = @ProductId AND o.IsDeleted = 0
+ORDER BY o.SortOrder, o.LicenseModel;
 
 -- 17: InventoryTransactions
-SELECT Id, ProductId, ProductVariantId, WarehouseId,
- TransactionType, Quantity, UnitCost,
- ReferenceType, ReferenceNumber, Note, OccurredAt, CreatedAt
-FROM [Product].[InventoryTransactions]
-WHERE ProductId = @ProductId AND IsDeleted = 0
-ORDER BY OccurredAt DESC, CreatedAt DESC;
+SELECT t.Id, t.ProductId, t.ProductVariantId, v.Sku AS VariantSku, v.Name AS VariantName,
+ t.WarehouseId, w.Name AS WarehouseName,
+ t.TransactionType, t.Quantity, t.UnitCost,
+ t.ReferenceType, t.ReferenceNumber, t.Note, t.OccurredAt, t.CreatedAt
+FROM [Product].[InventoryTransactions] t
+LEFT JOIN [Product].[ProductVariants] v ON v.Id = t.ProductVariantId AND v.IsDeleted = 0
+LEFT JOIN [Product].[Warehouses] w ON w.Id = t.WarehouseId AND w.IsDeleted = 0
+WHERE t.ProductId = @ProductId AND t.IsDeleted = 0
+ORDER BY t.OccurredAt DESC, t.CreatedAt DESC;
 
 -- 18: InventoryReservations
-SELECT Id, ProductId, ProductVariantId, WarehouseId,
- Quantity, ReservationCode, ReservedUntil, Status,
- SourceType, SourceId, CreatedAt, UpdatedAt
-FROM [Product].[InventoryReservations]
-WHERE ProductId = @ProductId AND IsDeleted = 0
-ORDER BY CreatedAt DESC;
+SELECT r.Id, r.ProductId, r.ProductVariantId, v.Sku AS VariantSku, v.Name AS VariantName,
+ r.WarehouseId, w.Name AS WarehouseName,
+ r.Quantity, r.ReservationCode, r.ReservedUntil, r.Status,
+ r.SourceType, r.SourceId, r.CreatedAt, r.UpdatedAt
+FROM [Product].[InventoryReservations] r
+LEFT JOIN [Product].[ProductVariants] v ON v.Id = r.ProductVariantId AND v.IsDeleted = 0
+LEFT JOIN [Product].[Warehouses] w ON w.Id = r.WarehouseId AND w.IsDeleted = 0
+WHERE r.ProductId = @ProductId AND r.IsDeleted = 0
+ORDER BY r.CreatedAt DESC;
 
 -- 19: PriceListItems
-SELECT Id, ProductPriceListId, ProductId, ProductVariantId,
- Amount, CompareAtAmount, MinQuantity, MaxQuantity, CreatedAt, UpdatedAt
-FROM [Product].[ProductPriceListItems]
-WHERE ProductId = @ProductId AND IsDeleted = 0
-ORDER BY CreatedAt DESC;
+SELECT pli.Id, pli.ProductPriceListId, pl.Code AS PriceListCode, pl.Name AS PriceListName,
+ pli.ProductId, pli.ProductVariantId, v.Sku AS VariantSku, v.Name AS VariantName,
+ pli.Amount, pli.CompareAtAmount, pli.MinQuantity, pli.MaxQuantity, pli.CreatedAt, pli.UpdatedAt
+FROM [Product].[ProductPriceListItems] pli
+LEFT JOIN [Product].[ProductPriceLists] pl ON pl.Id = pli.ProductPriceListId AND pl.IsDeleted = 0
+LEFT JOIN [Product].[ProductVariants] v ON v.Id = pli.ProductVariantId AND v.IsDeleted = 0
+WHERE pli.ProductId = @ProductId AND pli.IsDeleted = 0
+ORDER BY pli.CreatedAt DESC;
 ";
 
             using var connection = CreateConnection();
@@ -1933,20 +2018,24 @@ WHERE Id = @AttributeDefinitionId
         {
             const string sql = @"
 SELECT
-    Id,
-    ProductId,
-    AttributeDefinitionId,
-    ValueText,
-    ValueNumber,
-    ValueBool,
-    ValueDate,
-    ValueJson,
-    CreatedAt,
-    UpdatedAt
-FROM [Product].[ProductAttributeValues]
-WHERE ProductId = @ProductId
-  AND IsDeleted = 0
-ORDER BY CreatedAt DESC;";
+    av.Id,
+    av.ProductId,
+    av.AttributeDefinitionId,
+    ad.[Key] AS AttributeKey,
+    ad.DisplayName AS AttributeDisplayName,
+    ad.DataType AS AttributeDataType,
+    av.ValueText,
+    av.ValueNumber,
+    av.ValueBool,
+    av.ValueDate,
+    av.ValueJson,
+    av.CreatedAt,
+    av.UpdatedAt
+FROM [Product].[ProductAttributeValues] av
+LEFT JOIN [Product].[ProductAttributeDefinitions] ad ON ad.Id = av.AttributeDefinitionId AND ad.IsDeleted = 0
+WHERE av.ProductId = @ProductId
+  AND av.IsDeleted = 0
+ORDER BY av.CreatedAt DESC;";
 
             using var connection = CreateConnection();
             var values = await connection.QueryAsync<ProductAttributeValueDto>(
@@ -1959,19 +2048,23 @@ ORDER BY CreatedAt DESC;";
         {
             const string sql = @"
 SELECT
-    Id,
-    ProductId,
-    AttributeDefinitionId,
-    ValueText,
-    ValueNumber,
-    ValueBool,
-    ValueDate,
-    ValueJson,
-    CreatedAt,
-    UpdatedAt
-FROM [Product].[ProductAttributeValues]
-WHERE Id = @AttributeValueId
-  AND IsDeleted = 0;";
+    av.Id,
+    av.ProductId,
+    av.AttributeDefinitionId,
+    ad.[Key] AS AttributeKey,
+    ad.DisplayName AS AttributeDisplayName,
+    ad.DataType AS AttributeDataType,
+    av.ValueText,
+    av.ValueNumber,
+    av.ValueBool,
+    av.ValueDate,
+    av.ValueJson,
+    av.CreatedAt,
+    av.UpdatedAt
+FROM [Product].[ProductAttributeValues] av
+LEFT JOIN [Product].[ProductAttributeDefinitions] ad ON ad.Id = av.AttributeDefinitionId AND ad.IsDeleted = 0
+WHERE av.Id = @AttributeValueId
+  AND av.IsDeleted = 0;";
 
             using var connection = CreateConnection();
             return await connection.QuerySingleOrDefaultAsync<ProductAttributeValueDto>(
@@ -2223,17 +2316,20 @@ WHERE Id = @CategoryId
         {
             const string sql = @"
 SELECT
-    Id,
-    ProductId,
-    ProductCategoryId,
-    IsPrimary,
-    SortOrder,
-    CreatedAt,
-    UpdatedAt
-FROM [Product].[ProductCategoryMaps]
-WHERE ProductId = @ProductId
-  AND IsDeleted = 0
-ORDER BY IsPrimary DESC, SortOrder, CreatedAt DESC;";
+    m.Id,
+    m.ProductId,
+    m.ProductCategoryId,
+    c.Code AS CategoryCode,
+    c.Name AS CategoryName,
+    m.IsPrimary,
+    m.SortOrder,
+    m.CreatedAt,
+    m.UpdatedAt
+FROM [Product].[ProductCategoryMaps] m
+LEFT JOIN [Product].[ProductCategories] c ON c.Id = m.ProductCategoryId AND c.IsDeleted = 0
+WHERE m.ProductId = @ProductId
+  AND m.IsDeleted = 0
+ORDER BY m.IsPrimary DESC, m.SortOrder, m.CreatedAt DESC;";
 
             using var connection = CreateConnection();
             var maps = await connection.QueryAsync<ProductCategoryMapDto>(
@@ -2246,16 +2342,19 @@ ORDER BY IsPrimary DESC, SortOrder, CreatedAt DESC;";
         {
             const string sql = @"
 SELECT
-    Id,
-    ProductId,
-    ProductCategoryId,
-    IsPrimary,
-    SortOrder,
-    CreatedAt,
-    UpdatedAt
-FROM [Product].[ProductCategoryMaps]
-WHERE Id = @CategoryMapId
-  AND IsDeleted = 0;";
+    m.Id,
+    m.ProductId,
+    m.ProductCategoryId,
+    c.Code AS CategoryCode,
+    c.Name AS CategoryName,
+    m.IsPrimary,
+    m.SortOrder,
+    m.CreatedAt,
+    m.UpdatedAt
+FROM [Product].[ProductCategoryMaps] m
+LEFT JOIN [Product].[ProductCategories] c ON c.Id = m.ProductCategoryId AND c.IsDeleted = 0
+WHERE m.Id = @CategoryMapId
+  AND m.IsDeleted = 0;";
 
             using var connection = CreateConnection();
             return await connection.QuerySingleOrDefaultAsync<ProductCategoryMapDto>(
@@ -2519,19 +2618,25 @@ WHERE Id = @MediaId
         {
             const string sql = @"
 SELECT
-    Id,
-    BundleProductId,
-    ChildProductId,
-    ChildVariantId,
-    Quantity,
-    IsOptional,
-    RuleJson,
-    CreatedAt,
-    UpdatedAt
-FROM [Product].[ProductBundleItems]
-WHERE BundleProductId = @BundleProductId
-  AND IsDeleted = 0
-ORDER BY CreatedAt DESC;";
+    b.Id,
+    b.BundleProductId,
+    b.ChildProductId,
+    cp.ProductCode AS ChildProductCode,
+    cp.Name AS ChildProductName,
+    b.ChildVariantId,
+    cv.Sku AS ChildVariantSku,
+    cv.Name AS ChildVariantName,
+    b.Quantity,
+    b.IsOptional,
+    b.RuleJson,
+    b.CreatedAt,
+    b.UpdatedAt
+FROM [Product].[ProductBundleItems] b
+LEFT JOIN [Product].[Products] cp ON cp.Id = b.ChildProductId AND cp.IsDeleted = 0
+LEFT JOIN [Product].[ProductVariants] cv ON cv.Id = b.ChildVariantId AND cv.IsDeleted = 0
+WHERE b.BundleProductId = @BundleProductId
+  AND b.IsDeleted = 0
+ORDER BY b.CreatedAt DESC;";
 
             using var connection = CreateConnection();
             var items = await connection.QueryAsync<ProductBundleItemDto>(
@@ -2544,18 +2649,24 @@ ORDER BY CreatedAt DESC;";
         {
             const string sql = @"
 SELECT
-    Id,
-    BundleProductId,
-    ChildProductId,
-    ChildVariantId,
-    Quantity,
-    IsOptional,
-    RuleJson,
-    CreatedAt,
-    UpdatedAt
-FROM [Product].[ProductBundleItems]
-WHERE Id = @BundleItemId
-  AND IsDeleted = 0;";
+    b.Id,
+    b.BundleProductId,
+    b.ChildProductId,
+    cp.ProductCode AS ChildProductCode,
+    cp.Name AS ChildProductName,
+    b.ChildVariantId,
+    cv.Sku AS ChildVariantSku,
+    cv.Name AS ChildVariantName,
+    b.Quantity,
+    b.IsOptional,
+    b.RuleJson,
+    b.CreatedAt,
+    b.UpdatedAt
+FROM [Product].[ProductBundleItems] b
+LEFT JOIN [Product].[Products] cp ON cp.Id = b.ChildProductId AND cp.IsDeleted = 0
+LEFT JOIN [Product].[ProductVariants] cv ON cv.Id = b.ChildVariantId AND cv.IsDeleted = 0
+WHERE b.Id = @BundleItemId
+  AND b.IsDeleted = 0;";
 
             using var connection = CreateConnection();
             return await connection.QuerySingleOrDefaultAsync<ProductBundleItemDto>(
@@ -2831,25 +2942,28 @@ WHERE Id = @VariantId
         {
             const string sql = @"
 SELECT
-    Id,
-    ProductId,
-    ProductVariantId,
-    PriceType,
-    Amount,
-    CompareAtAmount,
-    CurrencyCode,
-    MinQuantity,
-    MaxQuantity,
-    ValidFrom,
-    ValidTo,
-    SalesChannel,
-    CustomerGroupCode,
-    CreatedAt,
-    UpdatedAt
-FROM [Product].[ProductPrices]
-WHERE ProductId = @ProductId
-  AND IsDeleted = 0
-ORDER BY CreatedAt DESC;";
+    p.Id,
+    p.ProductId,
+    p.ProductVariantId,
+    v.Sku AS VariantSku,
+    v.Name AS VariantName,
+    p.PriceType,
+    p.Amount,
+    p.CompareAtAmount,
+    p.CurrencyCode,
+    p.MinQuantity,
+    p.MaxQuantity,
+    p.ValidFrom,
+    p.ValidTo,
+    p.SalesChannel,
+    p.CustomerGroupCode,
+    p.CreatedAt,
+    p.UpdatedAt
+FROM [Product].[ProductPrices] p
+LEFT JOIN [Product].[ProductVariants] v ON v.Id = p.ProductVariantId AND v.IsDeleted = 0
+WHERE p.ProductId = @ProductId
+  AND p.IsDeleted = 0
+ORDER BY p.CreatedAt DESC;";
 
             using var connection = CreateConnection();
             var prices = await connection.QueryAsync<ProductPriceDto>(
@@ -2862,24 +2976,27 @@ ORDER BY CreatedAt DESC;";
         {
             const string sql = @"
 SELECT
-    Id,
-    ProductId,
-    ProductVariantId,
-    PriceType,
-    Amount,
-    CompareAtAmount,
-    CurrencyCode,
-    MinQuantity,
-    MaxQuantity,
-    ValidFrom,
-    ValidTo,
-    SalesChannel,
-    CustomerGroupCode,
-    CreatedAt,
-    UpdatedAt
-FROM [Product].[ProductPrices]
-WHERE Id = @PriceId
-  AND IsDeleted = 0;";
+    p.Id,
+    p.ProductId,
+    p.ProductVariantId,
+    v.Sku AS VariantSku,
+    v.Name AS VariantName,
+    p.PriceType,
+    p.Amount,
+    p.CompareAtAmount,
+    p.CurrencyCode,
+    p.MinQuantity,
+    p.MaxQuantity,
+    p.ValidFrom,
+    p.ValidTo,
+    p.SalesChannel,
+    p.CustomerGroupCode,
+    p.CreatedAt,
+    p.UpdatedAt
+FROM [Product].[ProductPrices] p
+LEFT JOIN [Product].[ProductVariants] v ON v.Id = p.ProductVariantId AND v.IsDeleted = 0
+WHERE p.Id = @PriceId
+  AND p.IsDeleted = 0;";
 
             using var connection = CreateConnection();
             return await connection.QuerySingleOrDefaultAsync<ProductPriceDto>(
@@ -3024,25 +3141,30 @@ WHERE Id = @PriceId
 
             const string sql = @"
 SELECT TOP (@Take)
-    Id,
-    ProductId,
-    ProductVariantId,
-    WarehouseId,
-    WarehouseCode,
-    QuantityOnHand,
-    QuantityReserved,
-    QuantityOnHand - QuantityReserved AS QuantityAvailable,
-    ReorderPoint,
-    ReorderQuantity,
-    InventoryPolicy,
-    CreatedAt,
-    UpdatedAt
-FROM [Product].[ProductInventories]
-WHERE IsDeleted = 0
-  AND (@ProductId IS NULL OR ProductId = @ProductId)
-  AND (@ProductVariantId IS NULL OR ProductVariantId = @ProductVariantId)
-  AND (@WarehouseId IS NULL OR WarehouseId = @WarehouseId)
-ORDER BY UpdatedAt DESC, CreatedAt DESC;";
+    i.Id,
+    i.ProductId,
+    i.ProductVariantId,
+    v.Sku AS VariantSku,
+    v.Name AS VariantName,
+    i.WarehouseId,
+    i.WarehouseCode,
+    w.Name AS WarehouseName,
+    i.QuantityOnHand,
+    i.QuantityReserved,
+    i.QuantityOnHand - i.QuantityReserved AS QuantityAvailable,
+    i.ReorderPoint,
+    i.ReorderQuantity,
+    i.InventoryPolicy,
+    i.CreatedAt,
+    i.UpdatedAt
+FROM [Product].[ProductInventories] i
+LEFT JOIN [Product].[ProductVariants] v ON v.Id = i.ProductVariantId AND v.IsDeleted = 0
+LEFT JOIN [Product].[Warehouses] w ON w.Id = i.WarehouseId AND w.IsDeleted = 0
+WHERE i.IsDeleted = 0
+  AND (@ProductId IS NULL OR i.ProductId = @ProductId)
+  AND (@ProductVariantId IS NULL OR i.ProductVariantId = @ProductVariantId)
+  AND (@WarehouseId IS NULL OR i.WarehouseId = @WarehouseId)
+ORDER BY i.UpdatedAt DESC, i.CreatedAt DESC;";
 
             using var connection = CreateConnection();
             var inventories = await connection.QueryAsync<ProductInventoryDto>(
@@ -3064,22 +3186,27 @@ ORDER BY UpdatedAt DESC, CreatedAt DESC;";
         {
             const string sql = @"
 SELECT
-    Id,
-    ProductId,
-    ProductVariantId,
-    WarehouseId,
-    WarehouseCode,
-    QuantityOnHand,
-    QuantityReserved,
-    QuantityOnHand - QuantityReserved AS QuantityAvailable,
-    ReorderPoint,
-    ReorderQuantity,
-    InventoryPolicy,
-    CreatedAt,
-    UpdatedAt
-FROM [Product].[ProductInventories]
-WHERE Id = @InventoryId
-  AND IsDeleted = 0;";
+    i.Id,
+    i.ProductId,
+    i.ProductVariantId,
+    v.Sku AS VariantSku,
+    v.Name AS VariantName,
+    i.WarehouseId,
+    i.WarehouseCode,
+    w.Name AS WarehouseName,
+    i.QuantityOnHand,
+    i.QuantityReserved,
+    i.QuantityOnHand - i.QuantityReserved AS QuantityAvailable,
+    i.ReorderPoint,
+    i.ReorderQuantity,
+    i.InventoryPolicy,
+    i.CreatedAt,
+    i.UpdatedAt
+FROM [Product].[ProductInventories] i
+LEFT JOIN [Product].[ProductVariants] v ON v.Id = i.ProductVariantId AND v.IsDeleted = 0
+LEFT JOIN [Product].[Warehouses] w ON w.Id = i.WarehouseId AND w.IsDeleted = 0
+WHERE i.Id = @InventoryId
+  AND i.IsDeleted = 0;";
 
             using var connection = CreateConnection();
             return await connection.QuerySingleOrDefaultAsync<ProductInventoryDto>(

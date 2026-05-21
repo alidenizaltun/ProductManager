@@ -44,6 +44,9 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public Guid Id { get; init; }
         public Guid ProductId { get; init; }
         public Guid AttributeDefinitionId { get; init; }
+        public string? AttributeKey { get; init; }
+        public string? AttributeDisplayName { get; init; }
+        public int? AttributeDataType { get; init; }
         public string? ValueText { get; init; }
         public decimal? ValueNumber { get; init; }
         public bool? ValueBool { get; init; }

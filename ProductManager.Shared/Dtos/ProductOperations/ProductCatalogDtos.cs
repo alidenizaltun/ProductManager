@@ -32,6 +32,8 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public Guid Id { get; init; }
         public Guid ProductId { get; init; }
         public Guid ProductCategoryId { get; init; }
+        public string? CategoryCode { get; init; }
+        public string? CategoryName { get; init; }
         public bool IsPrimary { get; init; }
         public int SortOrder { get; init; }
         public DateTime CreatedAt { get; init; }
@@ -95,7 +97,11 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public Guid Id { get; init; }
         public Guid BundleProductId { get; init; }
         public Guid ChildProductId { get; init; }
+        public string? ChildProductCode { get; init; }
+        public string? ChildProductName { get; init; }
         public Guid? ChildVariantId { get; init; }
+        public string? ChildVariantSku { get; init; }
+        public string? ChildVariantName { get; init; }
         public decimal Quantity { get; init; }
         public bool IsOptional { get; init; }
         public string? RuleJson { get; init; }
