@@ -8,23 +8,27 @@ namespace ProductManager.Service.Concrete
         private readonly Lazy<IAuthenticationService> _authenticationService;
         private readonly Lazy<ICurrentUserService> _currentUserService;
         private readonly Lazy<IProductOperationsService> _productOperationsService;
+        private readonly Lazy<IOrderService> _orderService;
         private readonly Lazy<ITokenService> _tokenService;
 
         public ServiceManager(
             Lazy<IAuthenticationService> authenticationService, 
             Lazy<ICurrentUserService> currentUserService, 
             Lazy<IProductOperationsService> productOperationsService,
+            Lazy<IOrderService> orderService,
             Lazy<ITokenService> tokenService)
         {
             _authenticationService = authenticationService;
             _currentUserService = currentUserService;
             _productOperationsService = productOperationsService;
+            _orderService = orderService;
             _tokenService = tokenService;
         }
 
         public IAuthenticationService AuthenticationService => _authenticationService.Value;
         public ICurrentUserService CurrentUserService => _currentUserService.Value;
         public IProductOperationsService ProductOperationsService => _productOperationsService.Value;
+        public IOrderService OrderService => _orderService.Value;
         public ITokenService TokenService => _tokenService.Value;
     }
 }

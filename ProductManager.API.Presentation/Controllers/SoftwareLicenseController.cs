@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProductManager.Service.Shared.Abstract;
+using ProductManager.Shared.Dtos.PriceEngine;
 using ProductManager.Shared.Dtos.ProductOperations;
 
 namespace ProductManager.Presentation.Controllers;
@@ -10,10 +11,31 @@ namespace ProductManager.Presentation.Controllers;
 public sealed class SoftwareLicenseController : ControllerBase
 {
     private readonly IProductOperationsService _service;
+    private readonly IPriceEngineService _priceEngineService;
 
-    public SoftwareLicenseController(IProductOperationsService service)
+    public SoftwareLicenseController(
+        IProductOperationsService service,
+        IPriceEngineService priceEngineService)
     {
         _service = service;
+        _priceEngineService = priceEngineService;
+    }
+
+    /// <summary>
+    /// Seçilen lisans teklifi için UI'da gösterilecek birim parametrelerini döner (Kullanıcı, API istek vb.).
+    /// </summary>
+    [HttpGet("license-offerings/{offeringId:guid}/pricing-parameters")]
+    [ProducesResponseType(typeof(LicenseOfferingPricingParametersDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<LicenseOfferingPricingParametersDto>> GetLicenseOfferingPricingParameters(
+        Guid productId,
+        Guid offeringId,
+        CancellationToken cancellationToken)
+    {
+        var parameters = await _priceEngineService.GetLicenseOfferingPricingParametersAsync(
+            productId, offeringId, cancellationToken);
+
+        return parameters is null ? NotFound() : Ok(parameters);
     }
 
     // ─── Modules ─────────────────────────────────────────────────────────────────
