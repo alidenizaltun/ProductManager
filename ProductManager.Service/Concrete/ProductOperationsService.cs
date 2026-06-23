@@ -187,6 +187,21 @@ namespace ProductManager.Service.Concrete
         public Task<bool> DeletePriceAsync(Guid priceId, CancellationToken cancellationToken = default)
             => ExecuteWithSqlMapping(() => _repository.DeletePriceAsync(priceId, cancellationToken));
 
+        public Task<IReadOnlyList<ProductPricingRuleDto>> GetProductPricingRulesAsync(Guid productId, CancellationToken cancellationToken = default)
+            => _repository.GetProductPricingRulesAsync(productId, cancellationToken);
+
+        public Task<ProductPricingRuleDto?> GetPricingRuleByIdAsync(Guid pricingRuleId, CancellationToken cancellationToken = default)
+            => _repository.GetPricingRuleByIdAsync(pricingRuleId, cancellationToken);
+
+        public Task<ProductPricingRuleDto> CreatePricingRuleAsync(CreateProductPricingRuleRequestDto request, CancellationToken cancellationToken = default)
+            => ExecuteWithSqlMapping(() => _repository.CreatePricingRuleAsync(request, cancellationToken));
+
+        public Task<bool> UpdatePricingRuleAsync(Guid pricingRuleId, UpdateProductPricingRuleRequestDto request, CancellationToken cancellationToken = default)
+            => ExecuteWithSqlMapping(() => _repository.UpdatePricingRuleAsync(pricingRuleId, request, cancellationToken));
+
+        public Task<bool> DeletePricingRuleAsync(Guid pricingRuleId, CancellationToken cancellationToken = default)
+            => ExecuteWithSqlMapping(() => _repository.DeletePricingRuleAsync(pricingRuleId, cancellationToken));
+
         public Task<IReadOnlyList<ProductInventoryDto>> GetProductInventoriesAsync(ProductInventoryFilterDto filter, CancellationToken cancellationToken = default)
             => _repository.GetProductInventoriesAsync(filter, cancellationToken);
 

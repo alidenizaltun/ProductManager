@@ -222,6 +222,14 @@ FROM [Product].[ProductPrices] p
 LEFT JOIN [Product].[ProductVariants] v ON v.Id = p.ProductVariantId AND v.IsDeleted = 0
 WHERE p.ProductId = @ProductId AND p.IsDeleted = 0;
 
+-- 4b: PricingRules
+SELECT Id, ProductId, Code, Name, Description, PriceAdjustmentJson, ConditionsJson,
+       Priority, IsActive, ValidFrom, ValidTo, SalesChannel, CustomerGroupCode,
+       ProductVariantId, ProductLicenseOfferingId, CreatedAt, UpdatedAt
+FROM [Product].[ProductPricingRules]
+WHERE ProductId = @ProductId AND IsDeleted = 0
+ORDER BY Priority, CreatedAt;
+
 -- 5: Inventories
 SELECT i.Id, i.ProductId, i.ProductVariantId, v.Sku AS VariantSku, v.Name AS VariantName,
        i.WarehouseId, i.WarehouseCode, w.Name AS WarehouseName,
@@ -372,6 +380,7 @@ ORDER BY m.SortOrder, m.Name, o.Name;
             var attributeValues = (await multi.ReadAsync<ProductAttributeValueDto>()).AsList();
             var variants = (await multi.ReadAsync<ProductVariantDto>()).AsList();
             var prices = (await multi.ReadAsync<ProductPriceDto>()).AsList();
+            var pricingRules = (await multi.ReadAsync<ProductPricingRuleDto>()).AsList();
             var inventories = (await multi.ReadAsync<ProductInventoryDto>()).AsList();
             var mediaItems = (await multi.ReadAsync<ProductMediaDto>()).AsList();
             var categoryMaps = (await multi.ReadAsync<ProductCategoryMapDto>()).AsList();
@@ -428,6 +437,7 @@ ORDER BY m.SortOrder, m.Name, o.Name;
                 AttributeValues = attributeValues,
                 Variants = variants,
                 Prices = prices,
+                PricingRules = pricingRules,
                 Inventories = inventories,
                 MediaItems = mediaItems,
                 CategoryMaps = categoryMaps,
@@ -647,6 +657,7 @@ VALUES
                 await InsertPriceListItemsAsync(connection, transaction, productId, now, request.PriceListItems, cancellationToken);
                 var moduleCodeMap = await InsertModulesAsync(connection, transaction, productId, now, request.Modules, cancellationToken);
                 var licenseOfferingTempIdMap = await InsertLicenseOfferingsAsync(connection, transaction, productId, now, request.LicenseOfferings, cancellationToken);
+                await InsertPricingRulesAsync(connection, transaction, productId, now, request.PricingRules, licenseOfferingTempIdMap, cancellationToken);
                 await InsertSoftwarePricingTiersAsync(connection, transaction, productId, now, request.SoftwarePricingTiers, licenseOfferingTempIdMap, cancellationToken);
                 await InsertModuleOfferingPricesAsync(connection, transaction, now, request.Modules, moduleCodeMap, licenseOfferingTempIdMap, cancellationToken);
                 await UpsertPhysicalProfileAsync(connection, transaction, productId, now, request.PhysicalProfile, cancellationToken);
@@ -1802,6 +1813,10 @@ SET IsDeleted = 1, DeletedAt = @Now, UpdatedAt = @Now
 WHERE ProductId = @ProductId AND IsDeleted = 0;
 
 UPDATE [Product].[ProductPrices]
+SET IsDeleted = 1, DeletedAt = @Now, UpdatedAt = @Now
+WHERE ProductId = @ProductId AND IsDeleted = 0;
+
+UPDATE [Product].[ProductPricingRules]
 SET IsDeleted = 1, DeletedAt = @Now, UpdatedAt = @Now
 WHERE ProductId = @ProductId AND IsDeleted = 0;
 

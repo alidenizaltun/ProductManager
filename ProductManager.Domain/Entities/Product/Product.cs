@@ -37,6 +37,7 @@ namespace ProductManager.Domain.Entities.Product
         public ICollection<ProductAttributeValue> AttributeValues { get; set; } = new List<ProductAttributeValue>();
         public ICollection<ProductVariant> Variants { get; set; } = new List<ProductVariant>();
         public ICollection<ProductPrice> Prices { get; set; } = new List<ProductPrice>();
+        public ICollection<ProductPricingRule> PricingRules { get; set; } = new List<ProductPricingRule>();
         public ICollection<ProductInventory> Inventories { get; set; } = new List<ProductInventory>();
         public ICollection<ProductMedia> MediaItems { get; set; } = new List<ProductMedia>();
         public ICollection<ProductCategoryMap> CategoryMaps { get; set; } = new List<ProductCategoryMap>();

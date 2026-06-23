@@ -1103,6 +1103,90 @@ namespace ProductManager.EFCore.Migrations
                     b.ToTable("ProductPrices", "Product");
                 });
 
+            modelBuilder.Entity("ProductManager.Domain.Entities.Product.ProductPricingRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("ConditionsJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CustomerGroupCode")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("PriceAdjustmentJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("ProductLicenseOfferingId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ProductVariantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("SalesChannel")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ValidFrom")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ValidTo")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductLicenseOfferingId");
+
+                    b.HasIndex("ProductVariantId");
+
+                    b.HasIndex("ProductId", "Code")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0")
+                        .HasDatabaseName("IX_ProductPricingRules_ProductId_Code");
+
+                    b.HasIndex("ProductId", "IsActive", "Priority")
+                        .HasDatabaseName("IX_ProductPricingRules_Product_Active_Priority");
+
+                    b.ToTable("ProductPricingRules", "Product");
+                });
+
             modelBuilder.Entity("ProductManager.Domain.Entities.Product.ProductPriceList", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2007,6 +2091,31 @@ namespace ProductManager.EFCore.Migrations
                     b.Navigation("ProductVariant");
                 });
 
+            modelBuilder.Entity("ProductManager.Domain.Entities.Product.ProductPricingRule", b =>
+                {
+                    b.HasOne("ProductManager.Domain.Entities.Product.Product", "Product")
+                        .WithMany("PricingRules")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ProductManager.Domain.Entities.Product.ProductLicenseOffering", "ProductLicenseOffering")
+                        .WithMany()
+                        .HasForeignKey("ProductLicenseOfferingId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ProductManager.Domain.Entities.Product.ProductVariant", "ProductVariant")
+                        .WithMany()
+                        .HasForeignKey("ProductVariantId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Product");
+
+                    b.Navigation("ProductLicenseOffering");
+
+                    b.Navigation("ProductVariant");
+                });
+
             modelBuilder.Entity("ProductManager.Domain.Entities.Product.ProductPriceListItem", b =>
                 {
                     b.HasOne("ProductManager.Domain.Entities.Product.Product", "Product")
@@ -2175,6 +2284,8 @@ namespace ProductManager.EFCore.Migrations
                     b.Navigation("PriceListItems");
 
                     b.Navigation("Prices");
+
+                    b.Navigation("PricingRules");
 
                     b.Navigation("ServiceProfile");
 

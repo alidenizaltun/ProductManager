@@ -4,6 +4,8 @@ using ProductManager.Shared.Dtos.Orders;
 using ProductManager.Shared.Dtos.PriceEngine;
 using ProductManager.Shared.Dtos.ProductOperations;
 using ProductManager.Shared.Infrastructure.Exceptions;
+using System.Globalization;
+using System.Text.Json;
 
 namespace ProductManager.Service.Concrete;
 
@@ -120,8 +122,59 @@ public sealed class OrderService : IOrderService
             LicenseOfferingId = item.ProductPricingPlanId,
             Quantity = Math.Max(1, item.Quantity),
             OfferingUnits = offeringUnits,
+            FeatureValues = BuildFeatureValues(item.Features),
             TaxRateOverride = taxRatePercent
         };
+    }
+
+    private static IReadOnlyDictionary<string, JsonElement>? BuildFeatureValues(
+        IReadOnlyList<OrderPriceFeatureInputDto>? features)
+    {
+        if (features is null || features.Count == 0)
+        {
+            return null;
+        }
+
+        var values = new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
+        foreach (var feature in features)
+        {
+            if (string.IsNullOrWhiteSpace(feature.FeatureName))
+            {
+                continue;
+            }
+
+            values[feature.FeatureName.Trim()] = ToJsonElement(feature.Value);
+        }
+
+        return values.Count == 0 ? null : values;
+    }
+
+    private static JsonElement ToJsonElement(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return JsonSerializer.SerializeToElement((string?)null);
+        }
+
+        if (decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var decimalValue))
+        {
+            return JsonSerializer.SerializeToElement(decimalValue);
+        }
+
+        if (bool.TryParse(value, out var boolValue))
+        {
+            return JsonSerializer.SerializeToElement(boolValue);
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(value);
+            return document.RootElement.Clone();
+        }
+        catch (JsonException)
+        {
+            return JsonSerializer.SerializeToElement(value);
+        }
     }
 
     private static ProductLicenseOfferingDto? ResolveOffering(
@@ -181,6 +234,7 @@ public sealed class OrderService : IOrderService
         var adjustmentLineTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             PriceCalculationLineTypes.PricingTier,
+            PriceCalculationLineTypes.PricingRule,
             PriceCalculationLineTypes.Module,
             PriceCalculationLineTypes.VariantSurcharge
         };
@@ -200,6 +254,7 @@ public sealed class OrderService : IOrderService
         var adjustmentLineTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             PriceCalculationLineTypes.PricingTier,
+            PriceCalculationLineTypes.PricingRule,
             PriceCalculationLineTypes.Module,
             PriceCalculationLineTypes.VariantSurcharge
         };

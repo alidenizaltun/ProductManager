@@ -64,6 +64,12 @@ namespace ProductManager.Service.Shared.Abstract
         Task<bool> UpdatePriceAsync(Guid priceId, UpdateProductPriceRequestDto request, CancellationToken cancellationToken = default);
         Task<bool> DeletePriceAsync(Guid priceId, CancellationToken cancellationToken = default);
 
+        Task<IReadOnlyList<ProductPricingRuleDto>> GetProductPricingRulesAsync(Guid productId, CancellationToken cancellationToken = default);
+        Task<ProductPricingRuleDto?> GetPricingRuleByIdAsync(Guid pricingRuleId, CancellationToken cancellationToken = default);
+        Task<ProductPricingRuleDto> CreatePricingRuleAsync(CreateProductPricingRuleRequestDto request, CancellationToken cancellationToken = default);
+        Task<bool> UpdatePricingRuleAsync(Guid pricingRuleId, UpdateProductPricingRuleRequestDto request, CancellationToken cancellationToken = default);
+        Task<bool> DeletePricingRuleAsync(Guid pricingRuleId, CancellationToken cancellationToken = default);
+
         Task<IReadOnlyList<ProductInventoryDto>> GetProductInventoriesAsync(ProductInventoryFilterDto filter, CancellationToken cancellationToken = default);
         Task<ProductInventoryDto?> GetInventoryByIdAsync(Guid inventoryId, CancellationToken cancellationToken = default);
         Task<ProductInventoryDto> CreateInventoryAsync(CreateProductInventoryRequestDto request, CancellationToken cancellationToken = default);

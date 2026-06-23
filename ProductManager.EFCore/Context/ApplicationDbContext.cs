@@ -13,6 +13,7 @@ namespace ProductManager.EfCore.Context
         public DbSet<Product> Products => Set<Product>();
         public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
         public DbSet<ProductPrice> ProductPrices => Set<ProductPrice>();
+        public DbSet<ProductPricingRule> ProductPricingRules => Set<ProductPricingRule>();
         public DbSet<ProductInventory> ProductInventories => Set<ProductInventory>();
         public DbSet<ProductAttributeDefinition> ProductAttributeDefinitions => Set<ProductAttributeDefinition>();
         public DbSet<ProductAttributeValue> ProductAttributeValues => Set<ProductAttributeValue>();

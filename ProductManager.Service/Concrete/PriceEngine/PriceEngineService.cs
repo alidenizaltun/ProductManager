@@ -83,6 +83,7 @@ namespace ProductManager.Service.Concrete.PriceEngine
                     PriceListCode = request.PriceListCode,
                     SalesChannel = request.SalesChannel,
                     CustomerGroupCode = request.CustomerGroupCode,
+                    FeatureValues = request.FeatureValues,
                     TaxRateOverride = request.TaxRateOverride,
                     PricesIncludeTax = request.PricesIncludeTax
                 };

@@ -48,6 +48,35 @@ namespace ProductManager.Domain.Entities.Product
         public string? CustomerGroupCode { get; set; }
     }
 
+    [Table("ProductPricingRules", Schema = "Product")]
+    public class ProductPricingRule : BaseEntity
+    {
+        public Guid ProductId { get; set; }
+        public Product? Product { get; set; }
+
+        public string Code { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+
+        public string PriceAdjustmentJson { get; set; } = string.Empty;
+        public string? ConditionsJson { get; set; }
+
+        public int Priority { get; set; }
+        public bool IsActive { get; set; } = true;
+
+        public DateTime? ValidFrom { get; set; }
+        public DateTime? ValidTo { get; set; }
+
+        public string? SalesChannel { get; set; }
+        public string? CustomerGroupCode { get; set; }
+
+        public Guid? ProductVariantId { get; set; }
+        public ProductVariant? ProductVariant { get; set; }
+
+        public Guid? ProductLicenseOfferingId { get; set; }
+        public ProductLicenseOffering? ProductLicenseOffering { get; set; }
+    }
+
     [Table("ProductInventories", Schema = "Product")]
     public class ProductInventory : BaseEntity
     {

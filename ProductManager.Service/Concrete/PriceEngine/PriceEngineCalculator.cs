@@ -1,6 +1,7 @@
 using ProductManager.Shared.Dtos.PriceEngine;
 using ProductManager.Shared.Dtos.ProductOperations;
 using ProductManager.Shared.Infrastructure.Exceptions;
+using System.Text.Json;
 
 namespace ProductManager.Service.Concrete.PriceEngine
 {
@@ -32,14 +33,16 @@ namespace ProductManager.Service.Concrete.PriceEngine
             }
 
             var unitParameters = BuildUnitParameters(product, offering);
+            var ruleParameters = BuildRuleParameters(product, offering.Id);
             return new LicenseOfferingPricingParametersDto
             {
                 ProductId = product.Id,
                 LicenseOfferingId = offering.Id,
                 LicenseOfferingName = offering.Name,
                 LicenseModel = offering.LicenseModel,
-                RequiresUnitInput = unitParameters.Count > 0,
-                UnitParameters = unitParameters
+                RequiresUnitInput = unitParameters.Count > 0 || ruleParameters.Count > 0,
+                UnitParameters = unitParameters,
+                RuleParameters = ruleParameters
             };
         }
 
@@ -66,6 +69,8 @@ namespace ProductManager.Service.Concrete.PriceEngine
             {
                 subtotalNet = CalculateStandardSubtotal(product, request, quantity, lines);
             }
+
+            subtotalNet = PricingRuleAdjustmentEvaluator.ApplyPricingRules(product, request, subtotalNet, lines);
 
             var (discountAmount, discountLines) = ApplyDiscount(subtotalNet, request);
             lines.AddRange(discountLines);
@@ -323,6 +328,133 @@ namespace ProductManager.Service.Concrete.PriceEngine
             }
 
             return [];
+        }
+
+        private static IReadOnlyList<PricingRuleParameterDto> BuildRuleParameters(
+            ProductDetailDto product,
+            Guid licenseOfferingId)
+        {
+            var now = DateTime.UtcNow;
+            var parameters = new Dictionary<string, PricingRuleParameterDto>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var rule in product.PricingRules.Where(rule =>
+                rule.IsActive
+                && (rule.ProductLicenseOfferingId is null || rule.ProductLicenseOfferingId == licenseOfferingId)
+                && (rule.ValidFrom is null || rule.ValidFrom <= now)
+                && (rule.ValidTo is null || rule.ValidTo >= now)))
+            {
+                if (!TryBuildRuleParameter(rule, out var parameter))
+                {
+                    continue;
+                }
+
+                parameters.TryAdd(parameter.Field, parameter);
+            }
+
+            return parameters.Values
+                .OrderBy(parameter => parameter.DisplayLabel)
+                .ToList();
+        }
+
+        private static bool TryBuildRuleParameter(ProductPricingRuleDto rule, out PricingRuleParameterDto parameter)
+        {
+            parameter = new PricingRuleParameterDto();
+            if (string.IsNullOrWhiteSpace(rule.PriceAdjustmentJson))
+            {
+                return false;
+            }
+
+            try
+            {
+                using var document = JsonDocument.Parse(rule.PriceAdjustmentJson);
+                var root = document.RootElement;
+                if (!root.TryGetProperty("unit", out var unit)
+                    || unit.ValueKind != JsonValueKind.Object
+                    || !unit.TryGetProperty("field", out var fieldElement))
+                {
+                    return false;
+                }
+
+                var field = fieldElement.GetString();
+                if (string.IsNullOrWhiteSpace(field))
+                {
+                    return false;
+                }
+
+                var displayLabel = field.StartsWith("feature.", StringComparison.OrdinalIgnoreCase)
+                    ? field["feature.".Length..]
+                    : field;
+
+                parameter = new PricingRuleParameterDto
+                {
+                    Field = field,
+                    DisplayLabel = displayLabel,
+                    IsRequired = true,
+                    MinValue = ResolveRuleMinValue(root),
+                    MaxValue = ResolveRuleMaxValue(root),
+                    Rounding = unit.TryGetProperty("rounding", out var rounding) ? rounding.GetString() : null
+                };
+                return true;
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
+        }
+
+        private static decimal ResolveRuleMinValue(JsonElement adjustment)
+        {
+            if (adjustment.TryGetProperty("tiers", out var tiers) && tiers.ValueKind == JsonValueKind.Array)
+            {
+                var tierMinimums = tiers.EnumerateArray()
+                    .Select(tier => tier.TryGetProperty("from", out var from) && from.TryGetDecimal(out var value) ? value : (decimal?)null)
+                    .Where(value => value.HasValue)
+                    .Select(value => value!.Value)
+                    .ToList();
+
+                if (tierMinimums.Count > 0)
+                {
+                    return tierMinimums.Min();
+                }
+            }
+
+            if (adjustment.TryGetProperty("unit", out var unit)
+                && unit.TryGetProperty("freeUnits", out var freeUnits)
+                && freeUnits.TryGetDecimal(out var freeUnitValue))
+            {
+                return Math.Max(0, freeUnitValue);
+            }
+
+            return 0;
+        }
+
+        private static decimal? ResolveRuleMaxValue(JsonElement adjustment)
+        {
+            if (!adjustment.TryGetProperty("tiers", out var tiers) || tiers.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+
+            decimal? maxValue = null;
+            foreach (var tier in tiers.EnumerateArray())
+            {
+                if (!tier.TryGetProperty("to", out var to))
+                {
+                    continue;
+                }
+
+                if (to.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+                {
+                    return null;
+                }
+
+                if (to.TryGetDecimal(out var value))
+                {
+                    maxValue = !maxValue.HasValue || value > maxValue.Value ? value : maxValue;
+                }
+            }
+
+            return maxValue;
         }
 
         private static int? ResolveMaxValue(

@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace ProductManager.Shared.Dtos.PriceEngine
 {
     /// <summary>
@@ -30,6 +32,7 @@ namespace ProductManager.Shared.Dtos.PriceEngine
         public string? PriceListCode { get; init; }
         public string? SalesChannel { get; init; }
         public string? CustomerGroupCode { get; init; }
+        public IReadOnlyDictionary<string, JsonElement>? FeatureValues { get; init; }
         public decimal? TaxRateOverride { get; init; }
         public decimal? DiscountPercent { get; init; }
         public decimal? DiscountAmount { get; init; }
@@ -47,6 +50,7 @@ namespace ProductManager.Shared.Dtos.PriceEngine
         public int LicenseModel { get; init; }
         public bool RequiresUnitInput { get; init; }
         public IReadOnlyList<LicenseOfferingUnitParameterDto> UnitParameters { get; init; } = [];
+        public IReadOnlyList<PricingRuleParameterDto> RuleParameters { get; init; } = [];
     }
 
     public sealed record LicenseOfferingUnitParameterDto
@@ -59,6 +63,16 @@ namespace ProductManager.Shared.Dtos.PriceEngine
         public bool IsRequired { get; init; } = true;
         public int MinValue { get; init; } = 1;
         public int? MaxValue { get; init; }
+    }
+
+    public sealed record PricingRuleParameterDto
+    {
+        public string Field { get; init; } = string.Empty;
+        public string DisplayLabel { get; init; } = string.Empty;
+        public bool IsRequired { get; init; } = true;
+        public decimal MinValue { get; init; }
+        public decimal? MaxValue { get; init; }
+        public string? Rounding { get; init; }
     }
 
     public sealed record ProductPriceCalculationResultDto
@@ -115,6 +129,7 @@ namespace ProductManager.Shared.Dtos.PriceEngine
         public const string Module = "Module";
         public const string UnitPrice = "UnitPrice";
         public const string PriceList = "PriceList";
+        public const string PricingRule = "PricingRule";
         public const string VariantSurcharge = "VariantSurcharge";
         public const string BundleComponent = "BundleComponent";
         public const string Discount = "Discount";

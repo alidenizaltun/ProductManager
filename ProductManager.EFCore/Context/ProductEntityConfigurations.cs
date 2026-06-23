@@ -130,6 +130,47 @@ namespace ProductManager.EfCore.Context
         }
     }
 
+    public class ProductPricingRuleConfiguration : IEntityTypeConfiguration<ProductPricingRule>
+    {
+        public void Configure(EntityTypeBuilder<ProductPricingRule> builder)
+        {
+            builder.HasOne(r => r.Product)
+            .WithMany(p => p.PricingRules)
+            .HasForeignKey(r => r.ProductId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(r => r.ProductVariant)
+            .WithMany()
+            .HasForeignKey(r => r.ProductVariantId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(r => r.ProductLicenseOffering)
+            .WithMany()
+            .HasForeignKey(r => r.ProductLicenseOfferingId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasIndex(r => new { r.ProductId, r.Code })
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0")
+            .HasDatabaseName("IX_ProductPricingRules_ProductId_Code");
+
+            builder.HasIndex(r => new { r.ProductId, r.IsActive, r.Priority })
+            .HasDatabaseName("IX_ProductPricingRules_Product_Active_Priority");
+
+            builder.Property(r => r.Code)
+            .HasMaxLength(64);
+
+            builder.Property(r => r.Name)
+            .HasMaxLength(200);
+
+            builder.Property(r => r.SalesChannel)
+            .HasMaxLength(64);
+
+            builder.Property(r => r.CustomerGroupCode)
+            .HasMaxLength(64);
+        }
+    }
+
     public class InventoryTransactionConfiguration : IEntityTypeConfiguration<InventoryTransaction>
     {
         public void Configure(EntityTypeBuilder<InventoryTransaction> builder)

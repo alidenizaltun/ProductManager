@@ -149,4 +149,75 @@ public sealed class ProductCommerceController : ControllerBase
 
         return NoContent();
     }
+
+    [HttpGet("{productId:guid}/pricing-rules")]
+    [ProducesResponseType(typeof(IReadOnlyList<ProductPricingRuleDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<ProductPricingRuleDto>>> GetPricingRules(
+        Guid productId,
+        CancellationToken cancellationToken)
+    {
+        var rules = await _service.GetProductPricingRulesAsync(productId, cancellationToken);
+        return Ok(rules);
+    }
+
+    [HttpGet("pricing-rules/{pricingRuleId:guid}")]
+    [ProducesResponseType(typeof(ProductPricingRuleDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ProductPricingRuleDto>> GetPricingRuleById(
+        Guid pricingRuleId,
+        CancellationToken cancellationToken)
+    {
+        var rule = await _service.GetPricingRuleByIdAsync(pricingRuleId, cancellationToken);
+        if (rule is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(rule);
+    }
+
+    [HttpPost("{productId:guid}/pricing-rules")]
+    [ProducesResponseType(typeof(ProductPricingRuleDto), StatusCodes.Status201Created)]
+    public async Task<ActionResult<ProductPricingRuleDto>> CreatePricingRule(
+        Guid productId,
+        [FromBody] CreateProductPricingRuleRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var normalizedRequest = request with { ProductId = productId };
+        var createdRule = await _service.CreatePricingRuleAsync(normalizedRequest, cancellationToken);
+        return CreatedAtAction(nameof(GetPricingRuleById), new { pricingRuleId = createdRule.Id }, createdRule);
+    }
+
+    [HttpPut("pricing-rules/{pricingRuleId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdatePricingRule(
+        Guid pricingRuleId,
+        [FromBody] UpdateProductPricingRuleRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var updated = await _service.UpdatePricingRuleAsync(pricingRuleId, request, cancellationToken);
+        if (!updated)
+        {
+            return NotFound();
+        }
+
+        return NoContent();
+    }
+
+    [HttpDelete("pricing-rules/{pricingRuleId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeletePricingRule(
+        Guid pricingRuleId,
+        CancellationToken cancellationToken)
+    {
+        var deleted = await _service.DeletePricingRuleAsync(pricingRuleId, cancellationToken);
+        if (!deleted)
+        {
+            return NotFound();
+        }
+
+        return NoContent();
+    }
 }
