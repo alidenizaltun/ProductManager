@@ -472,19 +472,26 @@ namespace ProductManager.Service.Concrete.PriceEngine
 
             decimal moduleTotal = 0;
             var moduleIds = request.SelectedModuleIds.ToHashSet();
+
+            var offeringPriceLookup = product.Modules
+                .SelectMany(m => m.OfferingPrices)
+                .Where(p => p.IsActive && request.LicenseOfferingId.HasValue && p.ProductLicenseOfferingId == request.LicenseOfferingId.Value)
+                .ToDictionary(p => p.ProductModuleId, p => p.Price);
+
             foreach (var module in product.Modules.Where(m => m.IsActive && moduleIds.Contains(m.Id)))
             {
+                var modulePrice = offeringPriceLookup.TryGetValue(module.Id, out var price) ? price : 0;
                 lines.Add(new PriceCalculationLineDto
                 {
                     LineType = PriceCalculationLineTypes.Module,
                     Description = module.Name,
                     Quantity = 1,
-                    UnitAmount = module.AdditionalPrice,
-                    Amount = module.AdditionalPrice,
+                    UnitAmount = modulePrice,
+                    Amount = modulePrice,
                     ReferenceId = module.Id.ToString(),
                     Metadata = module.ModuleCode
                 });
-                moduleTotal += module.AdditionalPrice;
+                moduleTotal += modulePrice;
             }
 
             var missing = moduleIds.Except(product.Modules.Select(m => m.Id)).ToList();

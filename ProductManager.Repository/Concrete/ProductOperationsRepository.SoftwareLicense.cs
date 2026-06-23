@@ -11,8 +11,8 @@ namespace ProductManager.Repository.Concrete
         public async Task<IReadOnlyList<ProductModuleDto>> GetProductModulesAsync(Guid productId, CancellationToken cancellationToken = default)
         {
             const string sql = @"
-SELECT Id, ProductId, ModuleCode, Name, Description, AdditionalPrice,
- CurrencyCode, IsOptional, IsActive, SortOrder, CreatedAt, UpdatedAt
+SELECT Id, ProductId, ModuleCode, Name, Description,
+ IsOptional, IsActive, SortOrder, CreatedAt, UpdatedAt
 FROM [Product].[ProductModules]
 WHERE ProductId = @ProductId AND IsDeleted = 0
 ORDER BY SortOrder, Name;";
@@ -26,8 +26,8 @@ ORDER BY SortOrder, Name;";
         public async Task<ProductModuleDto?> GetProductModuleByIdAsync(Guid moduleId, CancellationToken cancellationToken = default)
         {
             const string sql = @"
-SELECT Id, ProductId, ModuleCode, Name, Description, AdditionalPrice,
- CurrencyCode, IsOptional, IsActive, SortOrder, CreatedAt, UpdatedAt
+SELECT Id, ProductId, ModuleCode, Name, Description,
+ IsOptional, IsActive, SortOrder, CreatedAt, UpdatedAt
 FROM [Product].[ProductModules]
 WHERE Id = @ModuleId AND IsDeleted = 0;";
 
@@ -40,11 +40,11 @@ WHERE Id = @ModuleId AND IsDeleted = 0;";
         {
             const string sql = @"
 INSERT INTO [Product].[ProductModules]
- (Id, ProductId, ModuleCode, Name, Description, AdditionalPrice,
- CurrencyCode, IsOptional, IsActive, SortOrder, CreatedAt, IsDeleted)
+ (Id, ProductId, ModuleCode, Name, Description,
+ IsOptional, IsActive, SortOrder, CreatedAt, IsDeleted)
 VALUES
- (@Id, @ProductId, @ModuleCode, @Name, @Description, @AdditionalPrice,
- @CurrencyCode, @IsOptional, @IsActive, @SortOrder, @Now, 0);";
+ (@Id, @ProductId, @ModuleCode, @Name, @Description,
+ @IsOptional, @IsActive, @SortOrder, @Now, 0);";
 
             var id = Guid.NewGuid();
             using var connection = CreateConnection();
@@ -55,8 +55,6 @@ VALUES
                 request.ModuleCode,
                 request.Name,
                 request.Description,
-                request.AdditionalPrice,
-                request.CurrencyCode,
                 request.IsOptional,
                 request.IsActive,
                 request.SortOrder,
@@ -72,7 +70,6 @@ VALUES
             const string sql = @"
 UPDATE [Product].[ProductModules]
 SET ModuleCode = @ModuleCode, Name = @Name, Description = @Description,
- AdditionalPrice = @AdditionalPrice, CurrencyCode = @CurrencyCode,
  IsOptional = @IsOptional, IsActive = @IsActive, SortOrder = @SortOrder,
  UpdatedAt = @Now
 WHERE Id = @ModuleId AND IsDeleted = 0;";
@@ -84,8 +81,6 @@ WHERE Id = @ModuleId AND IsDeleted = 0;";
                 request.ModuleCode,
                 request.Name,
                 request.Description,
-                request.AdditionalPrice,
-                request.CurrencyCode,
                 request.IsOptional,
                 request.IsActive,
                 request.SortOrder,
@@ -104,6 +99,99 @@ WHERE Id = @ModuleId AND IsDeleted = 0;";
             using var connection = CreateConnection();
             var rows = await connection.ExecuteAsync(
             new CommandDefinition(sql, new { ModuleId = moduleId, Now = DateTime.UtcNow }, cancellationToken: cancellationToken));
+            return rows > 0;
+        }
+
+        // ─── ProductModuleOfferingPrice ──────────────────────────────────────────────
+
+        public async Task<IReadOnlyList<ProductModuleOfferingPriceDto>> GetModuleOfferingPricesAsync(Guid moduleId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT p.Id, p.ProductModuleId, m.ModuleCode, m.Name AS ModuleName,
+ p.ProductLicenseOfferingId, o.Name AS LicenseOfferingName,
+ p.Price, p.CurrencyCode, p.IsActive, p.CreatedAt, p.UpdatedAt
+FROM [Product].[ProductModuleOfferingPrices] p
+JOIN [Product].[ProductModules] m ON m.Id = p.ProductModuleId AND m.IsDeleted = 0
+JOIN [Product].[ProductLicenseOfferings] o ON o.Id = p.ProductLicenseOfferingId AND o.IsDeleted = 0
+WHERE p.ProductModuleId = @ModuleId AND p.IsDeleted = 0
+ORDER BY o.Name;";
+
+            using var connection = CreateConnection();
+            var items = await connection.QueryAsync<ProductModuleOfferingPriceDto>(
+            new CommandDefinition(sql, new { ModuleId = moduleId }, cancellationToken: cancellationToken));
+            return items.AsList();
+        }
+
+        public async Task<ProductModuleOfferingPriceDto?> GetModuleOfferingPriceByIdAsync(Guid priceId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+SELECT p.Id, p.ProductModuleId, m.ModuleCode, m.Name AS ModuleName,
+ p.ProductLicenseOfferingId, o.Name AS LicenseOfferingName,
+ p.Price, p.CurrencyCode, p.IsActive, p.CreatedAt, p.UpdatedAt
+FROM [Product].[ProductModuleOfferingPrices] p
+JOIN [Product].[ProductModules] m ON m.Id = p.ProductModuleId AND m.IsDeleted = 0
+JOIN [Product].[ProductLicenseOfferings] o ON o.Id = p.ProductLicenseOfferingId AND o.IsDeleted = 0
+WHERE p.Id = @PriceId AND p.IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            return await connection.QuerySingleOrDefaultAsync<ProductModuleOfferingPriceDto>(
+            new CommandDefinition(sql, new { PriceId = priceId }, cancellationToken: cancellationToken));
+        }
+
+        public async Task<ProductModuleOfferingPriceDto> CreateModuleOfferingPriceAsync(CreateProductModuleOfferingPriceRequestDto request, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+INSERT INTO [Product].[ProductModuleOfferingPrices]
+ (Id, ProductModuleId, ProductLicenseOfferingId, Price, CurrencyCode, IsActive, CreatedAt, IsDeleted)
+VALUES
+ (@Id, @ProductModuleId, @ProductLicenseOfferingId, @Price, @CurrencyCode, @IsActive, @Now, 0);";
+
+            var id = Guid.NewGuid();
+            using var connection = CreateConnection();
+            await connection.ExecuteAsync(new CommandDefinition(sql, new
+            {
+                Id = id,
+                request.ProductModuleId,
+                request.ProductLicenseOfferingId,
+                request.Price,
+                request.CurrencyCode,
+                request.IsActive,
+                Now = DateTime.UtcNow
+            }, cancellationToken: cancellationToken));
+
+            return await GetModuleOfferingPriceByIdAsync(id, cancellationToken)
+            ?? throw new InvalidOperationException("ProductModuleOfferingPrice could not be loaded after insert.");
+        }
+
+        public async Task<bool> UpdateModuleOfferingPriceAsync(Guid priceId, UpdateProductModuleOfferingPriceRequestDto request, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+UPDATE [Product].[ProductModuleOfferingPrices]
+SET Price = @Price, CurrencyCode = @CurrencyCode, IsActive = @IsActive, UpdatedAt = @Now
+WHERE Id = @PriceId AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            var rows = await connection.ExecuteAsync(new CommandDefinition(sql, new
+            {
+                PriceId = priceId,
+                request.Price,
+                request.CurrencyCode,
+                request.IsActive,
+                Now = DateTime.UtcNow
+            }, cancellationToken: cancellationToken));
+            return rows > 0;
+        }
+
+        public async Task<bool> DeleteModuleOfferingPriceAsync(Guid priceId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+UPDATE [Product].[ProductModuleOfferingPrices]
+SET IsDeleted = 1, DeletedAt = @Now, UpdatedAt = @Now
+WHERE Id = @PriceId AND IsDeleted = 0;";
+
+            using var connection = CreateConnection();
+            var rows = await connection.ExecuteAsync(
+            new CommandDefinition(sql, new { PriceId = priceId, Now = DateTime.UtcNow }, cancellationToken: cancellationToken));
             return rows > 0;
         }
 
@@ -345,7 +433,7 @@ WHERE Id = @OfferingId AND IsDeleted = 0;";
 
         // ─── CreateProductFull insert helpers ───────────────────────────────────────
 
-        private static async Task InsertModulesAsync(
+        private static async Task<IReadOnlyDictionary<string, Guid>> InsertModulesAsync(
         IDbConnection connection,
         IDbTransaction transaction,
         Guid productId,
@@ -353,31 +441,84 @@ WHERE Id = @OfferingId AND IsDeleted = 0;";
         IReadOnlyList<CreateProductModuleRequestDto>? modules,
         CancellationToken cancellationToken)
         {
-            if (modules is null || modules.Count == 0) return;
+            if (modules is null || modules.Count == 0) return new Dictionary<string, Guid>();
 
             const string sql = @"
 INSERT INTO [Product].[ProductModules]
- (Id, ProductId, ModuleCode, Name, Description, AdditionalPrice,
- CurrencyCode, IsOptional, IsActive, SortOrder, CreatedAt, IsDeleted)
+ (Id, ProductId, ModuleCode, Name, Description,
+ IsOptional, IsActive, SortOrder, CreatedAt, IsDeleted)
 VALUES
- (@Id, @ProductId, @ModuleCode, @Name, @Description, @AdditionalPrice,
- @CurrencyCode, @IsOptional, @IsActive, @SortOrder, @Now, 0);";
+ (@Id, @ProductId, @ModuleCode, @Name, @Description,
+ @IsOptional, @IsActive, @SortOrder, @Now, 0);";
 
-            var parameters = modules.Select(m => new
+            var moduleCodeMap = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
+            var parameters = modules.Select(m =>
             {
-                Id = Guid.NewGuid(),
-                ProductId = productId,
-                m.ModuleCode,
-                m.Name,
-                m.Description,
-                m.AdditionalPrice,
-                m.CurrencyCode,
-                m.IsOptional,
-                m.IsActive,
-                m.SortOrder,
-                Now = now
-            });
+                var id = Guid.NewGuid();
+                moduleCodeMap[m.ModuleCode] = id;
+                return new
+                {
+                    Id = id,
+                    ProductId = productId,
+                    m.ModuleCode,
+                    m.Name,
+                    m.Description,
+                    m.IsOptional,
+                    m.IsActive,
+                    m.SortOrder,
+                    Now = now
+                };
+            }).ToList();
 
+            await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
+            return moduleCodeMap;
+        }
+
+        private static async Task InsertModuleOfferingPricesAsync(
+        IDbConnection connection,
+        IDbTransaction transaction,
+        DateTime now,
+        IReadOnlyList<CreateProductModuleRequestDto>? modules,
+        IReadOnlyDictionary<string, Guid> moduleCodeMap,
+        IReadOnlyDictionary<string, Guid> tempIdMap,
+        CancellationToken cancellationToken)
+        {
+            if (modules is null || modules.Count == 0) return;
+
+            const string sql = @"
+INSERT INTO [Product].[ProductModuleOfferingPrices]
+ (Id, ProductModuleId, ProductLicenseOfferingId, Price, CurrencyCode, IsActive, CreatedAt, IsDeleted)
+VALUES
+ (@Id, @ProductModuleId, @ProductLicenseOfferingId, @Price, @CurrencyCode, @IsActive, @Now, 0);";
+
+            var parameters = new List<object>();
+            foreach (var module in modules)
+            {
+                if (module.OfferingPrices is null || module.OfferingPrices.Count == 0) continue;
+                if (!moduleCodeMap.TryGetValue(module.ModuleCode, out var moduleId)) continue;
+
+                foreach (var op in module.OfferingPrices)
+                {
+                    Guid? resolvedOfferingId = op.ProductLicenseOfferingId;
+                    if (op.LicenseOfferingTempId is not null && tempIdMap.TryGetValue(op.LicenseOfferingTempId, out var mappedId))
+                        resolvedOfferingId = mappedId;
+
+                    if (resolvedOfferingId is null || resolvedOfferingId == Guid.Empty) continue;
+
+                    parameters.Add(new
+                    {
+                        Id = Guid.NewGuid(),
+                        ProductModuleId = moduleId,
+                        ProductLicenseOfferingId = resolvedOfferingId.Value,
+                        op.Price,
+                        op.CurrencyCode,
+                        op.IsActive,
+                        Now = now
+                    });
+                }
+            }
+
+            if (parameters.Count == 0) return;
             await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
         }
 

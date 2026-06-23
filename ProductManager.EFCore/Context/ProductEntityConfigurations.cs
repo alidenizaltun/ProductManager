@@ -232,11 +232,31 @@ namespace ProductManager.EfCore.Context
 
             builder.Property(m => m.Name)
             .HasMaxLength(200);
+        }
+    }
 
-            builder.Property(m => m.AdditionalPrice)
+    public class ProductModuleOfferingPriceConfiguration : IEntityTypeConfiguration<ProductModuleOfferingPrice>
+    {
+        public void Configure(EntityTypeBuilder<ProductModuleOfferingPrice> builder)
+        {
+            builder.HasOne(p => p.ProductModule)
+            .WithMany(m => m.OfferingPrices)
+            .HasForeignKey(p => p.ProductModuleId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(p => p.ProductLicenseOffering)
+            .WithMany()
+            .HasForeignKey(p => p.ProductLicenseOfferingId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasIndex(p => new { p.ProductModuleId, p.ProductLicenseOfferingId })
+            .IsUnique()
+            .HasDatabaseName("IX_ProductModuleOfferingPrices_Module_Offering");
+
+            builder.Property(p => p.Price)
             .HasPrecision(18, 4);
 
-            builder.Property(m => m.CurrencyCode)
+            builder.Property(p => p.CurrencyCode)
             .HasMaxLength(3);
         }
     }

@@ -139,10 +139,12 @@ WHERE Id = @ProductId
                     await InsertSupplierMapsAsync(connection, transaction, productId, now, request.SupplierMaps, cancellationToken);
                 }
 
+                IReadOnlyDictionary<string, Guid>? moduleCodeMap = null;
                 if (request.Modules is not null)
                 {
+                    await HardDeleteModuleOfferingPricesByProductIdAsync(connection, transaction, productId, cancellationToken);
                     await HardDeleteByProductIdAsync(connection, transaction, "[Product].[ProductModules]", productId, cancellationToken);
-                    await InsertModulesAsync(connection, transaction, productId, now, request.Modules, cancellationToken);
+                    moduleCodeMap = await InsertModulesAsync(connection, transaction, productId, now, request.Modules, cancellationToken);
                 }
 
                 // LicenseOfferings önce işlenmeli; SoftwarePricingTiers bunlara FK ile bağlı
@@ -152,6 +154,11 @@ WHERE Id = @ProductId
                     await HardDeleteByProductIdAsync(connection, transaction, "[Product].[SoftwarePricingTiers]", productId, cancellationToken);
                     await HardDeleteByProductIdAsync(connection, transaction, "[Product].[ProductLicenseOfferings]", productId, cancellationToken);
                     licenseOfferingTempIdMap = await InsertLicenseOfferingsAsync(connection, transaction, productId, now, request.LicenseOfferings, cancellationToken);
+                }
+
+                if (moduleCodeMap is not null && licenseOfferingTempIdMap is not null)
+                {
+                    await InsertModuleOfferingPricesAsync(connection, transaction, now, request.Modules, moduleCodeMap, licenseOfferingTempIdMap, cancellationToken);
                 }
 
                 if (request.SoftwarePricingTiers is not null)
@@ -217,6 +224,20 @@ WHERE Id = @ProductId
         CancellationToken cancellationToken)
         {
             const string sql = "DELETE FROM [Product].[ProductBundleItems] WHERE BundleProductId = @ProductId;";
+            await connection.ExecuteAsync(
+            new CommandDefinition(sql, new { ProductId = productId }, transaction, cancellationToken: cancellationToken));
+        }
+
+        private static async Task HardDeleteModuleOfferingPricesByProductIdAsync(
+        System.Data.IDbConnection connection,
+        System.Data.IDbTransaction transaction,
+        Guid productId,
+        CancellationToken cancellationToken)
+        {
+            const string sql = @"
+DELETE p FROM [Product].[ProductModuleOfferingPrices] p
+JOIN [Product].[ProductModules] m ON m.Id = p.ProductModuleId
+WHERE m.ProductId = @ProductId;";
             await connection.ExecuteAsync(
             new CommandDefinition(sql, new { ProductId = productId }, transaction, cancellationToken: cancellationToken));
         }

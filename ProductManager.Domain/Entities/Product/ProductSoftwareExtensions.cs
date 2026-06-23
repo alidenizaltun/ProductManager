@@ -13,15 +13,29 @@ namespace ProductManager.Domain.Entities.Product
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
 
-        public decimal AdditionalPrice { get; set; }
-
-        public string CurrencyCode { get; set; } = "TRY";
-
         public bool IsOptional { get; set; } = true;
 
         public bool IsActive { get; set; } = true;
 
         public int SortOrder { get; set; }
+
+        public ICollection<ProductModuleOfferingPrice> OfferingPrices { get; set; } = new List<ProductModuleOfferingPrice>();
+    }
+
+    [Table("ProductModuleOfferingPrices", Schema = "Product")]
+    public class ProductModuleOfferingPrice : BaseEntity
+    {
+        public Guid ProductModuleId { get; set; }
+        public ProductModule? ProductModule { get; set; }
+
+        public Guid ProductLicenseOfferingId { get; set; }
+        public ProductLicenseOffering? ProductLicenseOffering { get; set; }
+
+        public decimal Price { get; set; }
+
+        public string CurrencyCode { get; set; } = "TRY";
+
+        public bool IsActive { get; set; } = true;
     }
 
     [Table("SoftwarePricingTiers", Schema = "Product")]

@@ -134,6 +134,12 @@ namespace ProductManager.Repository.Shared.Abstract
         Task<bool> UpdateProductModuleAsync(Guid moduleId, UpdateProductModuleRequestDto request, CancellationToken cancellationToken = default);
         Task<bool> DeleteProductModuleAsync(Guid moduleId, CancellationToken cancellationToken = default);
 
+        Task<IReadOnlyList<ProductModuleOfferingPriceDto>> GetModuleOfferingPricesAsync(Guid moduleId, CancellationToken cancellationToken = default);
+        Task<ProductModuleOfferingPriceDto?> GetModuleOfferingPriceByIdAsync(Guid priceId, CancellationToken cancellationToken = default);
+        Task<ProductModuleOfferingPriceDto> CreateModuleOfferingPriceAsync(CreateProductModuleOfferingPriceRequestDto request, CancellationToken cancellationToken = default);
+        Task<bool> UpdateModuleOfferingPriceAsync(Guid priceId, UpdateProductModuleOfferingPriceRequestDto request, CancellationToken cancellationToken = default);
+        Task<bool> DeleteModuleOfferingPriceAsync(Guid priceId, CancellationToken cancellationToken = default);
+
         Task<IReadOnlyList<SoftwarePricingTierDto>> GetSoftwarePricingTiersAsync(Guid productId, CancellationToken cancellationToken = default);
         Task<SoftwarePricingTierDto?> GetSoftwarePricingTierByIdAsync(Guid tierId, CancellationToken cancellationToken = default);
         Task<SoftwarePricingTierDto> CreateSoftwarePricingTierAsync(CreateSoftwarePricingTierRequestDto request, CancellationToken cancellationToken = default);

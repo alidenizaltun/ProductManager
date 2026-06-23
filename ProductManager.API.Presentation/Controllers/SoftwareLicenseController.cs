@@ -90,6 +90,62 @@ public sealed class SoftwareLicenseController : ControllerBase
         return deleted ? NoContent() : NotFound();
     }
 
+    // ─── Module Offering Prices ───────────────────────────────────────────────────
+
+    [HttpGet("modules/{moduleId:guid}/offering-prices")]
+    [ProducesResponseType(typeof(IReadOnlyList<ProductModuleOfferingPriceDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<ProductModuleOfferingPriceDto>>> GetModuleOfferingPrices(
+        Guid productId, Guid moduleId, CancellationToken cancellationToken)
+    {
+        var items = await _service.GetModuleOfferingPricesAsync(moduleId, cancellationToken);
+        return Ok(items);
+    }
+
+    [HttpGet("modules/{moduleId:guid}/offering-prices/{priceId:guid}")]
+    [ProducesResponseType(typeof(ProductModuleOfferingPriceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ProductModuleOfferingPriceDto>> GetModuleOfferingPriceById(
+        Guid productId, Guid moduleId, Guid priceId, CancellationToken cancellationToken)
+    {
+        var item = await _service.GetModuleOfferingPriceByIdAsync(priceId, cancellationToken);
+        return item is null ? NotFound() : Ok(item);
+    }
+
+    [HttpPost("modules/{moduleId:guid}/offering-prices")]
+    [ProducesResponseType(typeof(ProductModuleOfferingPriceDto), StatusCodes.Status201Created)]
+    public async Task<ActionResult<ProductModuleOfferingPriceDto>> CreateModuleOfferingPrice(
+        Guid productId, Guid moduleId,
+        [FromBody] CreateProductModuleOfferingPriceRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var created = await _service.CreateModuleOfferingPriceAsync(
+            request with { ProductModuleId = moduleId }, cancellationToken);
+        return CreatedAtAction(nameof(GetModuleOfferingPriceById),
+            new { productId, moduleId, priceId = created.Id }, created);
+    }
+
+    [HttpPut("modules/{moduleId:guid}/offering-prices/{priceId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateModuleOfferingPrice(
+        Guid productId, Guid moduleId, Guid priceId,
+        [FromBody] UpdateProductModuleOfferingPriceRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var updated = await _service.UpdateModuleOfferingPriceAsync(priceId, request, cancellationToken);
+        return updated ? NoContent() : NotFound();
+    }
+
+    [HttpDelete("modules/{moduleId:guid}/offering-prices/{priceId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteModuleOfferingPrice(
+        Guid productId, Guid moduleId, Guid priceId, CancellationToken cancellationToken)
+    {
+        var deleted = await _service.DeleteModuleOfferingPriceAsync(priceId, cancellationToken);
+        return deleted ? NoContent() : NotFound();
+    }
+
     // ─── SoftwarePricingTiers ─────────────────────────────────────────────────────
 
     [HttpGet("pricing-tiers")]

@@ -290,8 +290,8 @@ FROM [Product].[ProductSubscriptionProfiles]
 WHERE ProductId = @ProductId AND IsDeleted = 0;
 
 -- 14: Modules
-SELECT Id, ProductId, ModuleCode, Name, Description, AdditionalPrice,
- CurrencyCode, IsOptional, IsActive, SortOrder, CreatedAt, UpdatedAt
+SELECT Id, ProductId, ModuleCode, Name, Description,
+ IsOptional, IsActive, SortOrder, CreatedAt, UpdatedAt
 FROM [Product].[ProductModules]
 WHERE ProductId = @ProductId AND IsDeleted = 0
 ORDER BY SortOrder, Name;
@@ -347,6 +347,16 @@ LEFT JOIN [Product].[ProductPriceLists] pl ON pl.Id = pli.ProductPriceListId AND
 LEFT JOIN [Product].[ProductVariants] v ON v.Id = pli.ProductVariantId AND v.IsDeleted = 0
 WHERE pli.ProductId = @ProductId AND pli.IsDeleted = 0
 ORDER BY pli.CreatedAt DESC;
+
+-- 20: ModuleOfferingPrices
+SELECT p.Id, p.ProductModuleId, m.ModuleCode, m.Name AS ModuleName,
+ p.ProductLicenseOfferingId, o.Name AS LicenseOfferingName,
+ p.Price, p.CurrencyCode, p.IsActive, p.CreatedAt, p.UpdatedAt
+FROM [Product].[ProductModuleOfferingPrices] p
+JOIN [Product].[ProductModules] m ON m.Id = p.ProductModuleId AND m.IsDeleted = 0
+JOIN [Product].[ProductLicenseOfferings] o ON o.Id = p.ProductLicenseOfferingId AND o.IsDeleted = 0
+WHERE m.ProductId = @ProductId AND p.IsDeleted = 0
+ORDER BY m.SortOrder, m.Name, o.Name;
 ";
 
             using var connection = CreateConnection();
@@ -371,12 +381,24 @@ ORDER BY pli.CreatedAt DESC;
             var softwareProfile = await multi.ReadSingleOrDefaultAsync<ProductSoftwareProfileDto>();
             var serviceProfile = await multi.ReadSingleOrDefaultAsync<ProductServiceProfileDto>();
             var subscriptionProfile = await multi.ReadSingleOrDefaultAsync<ProductSubscriptionProfileDto>();
-            var modules = (await multi.ReadAsync<ProductModuleDto>()).AsList();
+            var modulesRaw = (await multi.ReadAsync<ProductModuleDto>()).AsList();
             var pricingTiers = (await multi.ReadAsync<SoftwarePricingTierDto>()).AsList();
             var licenseOfferings = (await multi.ReadAsync<ProductLicenseOfferingDto>()).AsList();
             var inventoryTransactions = (await multi.ReadAsync<InventoryTransactionDto>()).AsList();
             var inventoryReservations = (await multi.ReadAsync<InventoryReservationDto>()).AsList();
             var priceListItems = (await multi.ReadAsync<ProductPriceListItemDto>()).AsList();
+            var moduleOfferingPrices = (await multi.ReadAsync<ProductModuleOfferingPriceDto>()).AsList();
+
+            var offeringPricesByModule = moduleOfferingPrices
+                .GroupBy(p => p.ProductModuleId)
+                .ToDictionary(g => g.Key, g => (IReadOnlyList<ProductModuleOfferingPriceDto>)g.ToList());
+
+            var modules = modulesRaw
+                .Select(m => m with
+                {
+                    OfferingPrices = offeringPricesByModule.TryGetValue(m.Id, out var prices) ? prices : []
+                })
+                .ToList();
 
             return new ProductDetailDto
             {
@@ -623,9 +645,10 @@ VALUES
                 await InsertInventoryTransactionsAsync(connection, transaction, productId, now, request.InventoryTransactions, cancellationToken);
                 await InsertInventoryReservationsAsync(connection, transaction, productId, now, request.InventoryReservations, cancellationToken);
                 await InsertPriceListItemsAsync(connection, transaction, productId, now, request.PriceListItems, cancellationToken);
-                await InsertModulesAsync(connection, transaction, productId, now, request.Modules, cancellationToken);
+                var moduleCodeMap = await InsertModulesAsync(connection, transaction, productId, now, request.Modules, cancellationToken);
                 var licenseOfferingTempIdMap = await InsertLicenseOfferingsAsync(connection, transaction, productId, now, request.LicenseOfferings, cancellationToken);
                 await InsertSoftwarePricingTiersAsync(connection, transaction, productId, now, request.SoftwarePricingTiers, licenseOfferingTempIdMap, cancellationToken);
+                await InsertModuleOfferingPricesAsync(connection, transaction, now, request.Modules, moduleCodeMap, licenseOfferingTempIdMap, cancellationToken);
                 await UpsertPhysicalProfileAsync(connection, transaction, productId, now, request.PhysicalProfile, cancellationToken);
                 await UpsertSoftwareProfileAsync(connection, transaction, productId, now, request.SoftwareProfile, cancellationToken);
                 await UpsertServiceProfileAsync(connection, transaction, productId, now, request.ServiceProfile, cancellationToken);
