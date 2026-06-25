@@ -5,10 +5,6 @@ using ProductManager.Shared.Dtos.ProductOperations;
 
 namespace ProductManager.Presentation.Controllers;
 
-/// <summary>
-/// Harici projelerin (dış istemciler) tüketmesi için tasarlanmış salt okunur ürün endpointleri.
-/// Kimlik doğrulama gerektirmez; yalnızca listeleme ve detay sorgularını destekler.
-/// </summary>
 [ApiController]
 [Route("api/public/products")]
 public sealed class PublicProductsController : ControllerBase
