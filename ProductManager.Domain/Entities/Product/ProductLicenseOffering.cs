@@ -45,6 +45,5 @@ namespace ProductManager.Domain.Entities.Product
 
         public int SortOrder { get; set; }
 
-        public ICollection<SoftwarePricingTier> PricingTiers { get; set; } = new List<SoftwarePricingTier>();
     }
 }

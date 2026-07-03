@@ -33,6 +33,7 @@ try
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     })
     .AddApplicationPart(typeof(ProductManager.Presentation.AssemblyReference).Assembly);
+    builder.Services.ConfigureUserFriendlyValidationErrors();
 
     builder.Services.AddHsts(options =>
     {

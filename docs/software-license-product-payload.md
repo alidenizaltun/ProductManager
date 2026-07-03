@@ -43,7 +43,6 @@ Bu doküman, yazılım ürünleri için eklenen lisans, modül ve fiyatlandırma
 ```json
 {
  "modules": [],
- "softwarePricingTiers": [],
  "licenseOfferings": []
 }
 ```
@@ -57,7 +56,6 @@ Bunlar `CreateProductFullRequestDto`'nun yeni opsiyonel alanlarıdır. Mevcut al
 | Tablo | Endpoint | Açıklama |
 |---|---|---|
 | `Product.ProductModules` | `GET/POST/PUT/DELETE /api/products/{id}/modules` | Ürün modülleri ve ek fiyatları |
-| `Product.SoftwarePricingTiers` | `GET/POST/PUT/DELETE /api/products/{id}/pricing-tiers` | Birim bazlı kademeli fiyat |
 | `Product.ProductLicenseOfferings` | `GET/POST/PUT/DELETE /api/products/{id}/license-offerings` | Satış tipine göre teklifler |
 
 ### `LicenseModel` Enum Değerleri
@@ -141,53 +139,6 @@ seçenekleriyle, modülleriyle ve kullanıcı sayısına göre artan fiyat kadem
  "convertToOfferingId": null,
  "isActive": true,
  "sortOrder": 3
- }
- ],
-
- "softwarePricingTiers": [
- {
- "productId": "00000000-0000-0000-0000-000000000000",
- "licenseModel": 4,
- "unit": "kullanici",
- "minUnits": 1,
- "maxUnits": 10,
- "pricePerUnit": 350.00,
- "flatFee": 0,
- "currencyCode": "TRY",
- "isActive": true
- },
- {
- "productId": "00000000-0000-0000-0000-000000000000",
- "licenseModel": 4,
- "unit": "kullanici",
- "minUnits": 11,
- "maxUnits": 50,
- "pricePerUnit": 280.00,
- "flatFee": 0,
- "currencyCode": "TRY",
- "isActive": true
- },
- {
- "productId": "00000000-0000-0000-0000-000000000000",
- "licenseModel": 4,
- "unit": "kullanici",
- "minUnits": 51,
- "maxUnits": null,
- "pricePerUnit": 220.00,
- "flatFee": 0,
- "currencyCode": "TRY",
- "isActive": true
- },
- {
- "productId": "00000000-0000-0000-0000-000000000000",
- "licenseModel": 3,
- "unit": "api-istek",
- "minUnits": 0,
- "maxUnits": null,
- "pricePerUnit": 0.005,
- "flatFee": 99.00,
- "currencyCode": "TRY",
- "isActive": true
  }
  ],
 
@@ -302,27 +253,6 @@ POST /api/products/{productId}/modules
 
 ---
 
-## Ayrı Endpoint Üzerinden Fiyat Kademesi Ekleme
-
-```
-POST /api/products/{productId}/pricing-tiers
-```
-
-```json
-{
- "licenseModel": 4,
- "unit": "kullanici",
- "minUnits": 1,
- "maxUnits": 10,
- "pricePerUnit": 350.00,
- "flatFee": 0,
- "currencyCode": "TRY",
- "isActive": true
-}
-```
-
----
-
 ## Ayrı Endpoint Üzerinden License Offering Ekleme
 
 ```
@@ -367,19 +297,6 @@ POST /api/products/{productId}/license-offerings
  "isOptional": true,
  "isActive": true,
  "sortOrder": 1
- }
- ],
-
- "softwarePricingTiers": [
- {
- "id": "...",
- "licenseModel": 4,
- "unit": "kullanici",
- "minUnits": 1,
- "maxUnits": 10,
- "pricePerUnit": 350.00,
- "flatFee": 0,
- "currencyCode": "TRY"
  }
  ],
 
@@ -431,23 +348,6 @@ CREATE TABLE [Product].[ProductModules] (
  IsOptional BIT NOT NULL DEFAULT 1,
  IsActive BIT NOT NULL DEFAULT 1,
  SortOrder INT NOT NULL DEFAULT 0,
- CreatedAt DATETIME2 NOT NULL,
- UpdatedAt DATETIME2 NULL,
- IsDeleted BIT NOT NULL DEFAULT 0,
- DeletedAt DATETIME2 NULL
-);
-
-CREATE TABLE [Product].[SoftwarePricingTiers] (
- Id UNIQUEIDENTIFIER PRIMARY KEY,
- ProductId UNIQUEIDENTIFIER NOT NULL REFERENCES [Product].[Products](Id),
- LicenseModel INT NOT NULL,
- Unit NVARCHAR(50) NOT NULL DEFAULT 'user',
- MinUnits INT NOT NULL DEFAULT 0,
- MaxUnits INT NULL,
- PricePerUnit DECIMAL(18,6) NOT NULL DEFAULT 0,
- FlatFee DECIMAL(18,4) NOT NULL DEFAULT 0,
- CurrencyCode NVARCHAR(10) NOT NULL DEFAULT 'TRY',
- IsActive BIT NOT NULL DEFAULT 1,
  CreatedAt DATETIME2 NOT NULL,
  UpdatedAt DATETIME2 NULL,
  IsDeleted BIT NOT NULL DEFAULT 0,

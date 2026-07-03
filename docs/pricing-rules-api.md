@@ -72,7 +72,7 @@ Rules are filtered by `isActive`, `validFrom`, `validTo`, optional sales channel
 
 `GET /api/products/{productId}/license-offerings/{offeringId}/pricing-parameters` now returns:
 
-- `unitParameters`: legacy `SoftwarePricingTiers` unit inputs.
+- `unitParameters`: seat/usage teklifleri için ürünün varsayılan biriminden türetilen miktar alanları.
 - `ruleParameters`: dynamic `ProductPricingRules.priceAdjustment.unit.field` inputs such as `feature.userCount`.
 
 Dealer portal order pricing sends the selected values through `POST /api/orders/calculate-order-price` item `features`. A feature with `"featureName": "userCount"` is forwarded to the pricing engine as `feature.userCount`.

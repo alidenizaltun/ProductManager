@@ -126,7 +126,6 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public ProductServiceProfileDto? ServiceProfile { get; init; }
         public ProductSubscriptionProfileDto? SubscriptionProfile { get; init; }
         public IReadOnlyList<ProductModuleDto> Modules { get; init; } = [];
-        public IReadOnlyList<SoftwarePricingTierDto> SoftwarePricingTiers { get; init; } = [];
         public IReadOnlyList<ProductLicenseOfferingDto> LicenseOfferings { get; init; } = [];
         public IReadOnlyList<InventoryTransactionDto> InventoryTransactions { get; init; } = [];
         public IReadOnlyList<InventoryReservationDto> InventoryReservations { get; init; } = [];
@@ -149,7 +148,6 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public IReadOnlyList<CreateInventoryReservationRequestDto>? InventoryReservations { get; init; }
         public IReadOnlyList<CreateProductPriceListItemRequestDto>? PriceListItems { get; init; }
         public IReadOnlyList<CreateProductModuleRequestDto>? Modules { get; init; }
-        public IReadOnlyList<CreateSoftwarePricingTierRequestDto>? SoftwarePricingTiers { get; init; }
         public IReadOnlyList<CreateProductLicenseOfferingRequestDto>? LicenseOfferings { get; init; }
         public UpsertProductPhysicalProfileRequestDto? PhysicalProfile { get; init; }
         public UpsertProductSoftwareProfileRequestDto? SoftwareProfile { get; init; }
@@ -173,7 +171,6 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public IReadOnlyList<CreateInventoryReservationRequestDto>? InventoryReservations { get; init; }
         public IReadOnlyList<CreateProductPriceListItemRequestDto>? PriceListItems { get; init; }
         public IReadOnlyList<CreateProductModuleRequestDto>? Modules { get; init; }
-        public IReadOnlyList<CreateSoftwarePricingTierRequestDto>? SoftwarePricingTiers { get; init; }
         public IReadOnlyList<CreateProductLicenseOfferingRequestDto>? LicenseOfferings { get; init; }
         public UpsertProductPhysicalProfileRequestDto? PhysicalProfile { get; init; }
         public UpsertProductSoftwareProfileRequestDto? SoftwareProfile { get; init; }

@@ -3,6 +3,7 @@ using ProductManager.Shared.Infrastructure.Exceptions;
 using ProductManager.API.Models;
 using Microsoft.AspNetCore.Diagnostics;
 using Hangfire;
+using System.Text.Json;
 
 namespace ProductManager.API.Infrastructures.Extensions
 {
@@ -20,11 +21,7 @@ namespace ProductManager.API.Infrastructures.Extensions
                     var contextFeature = context.Features.Get<IExceptionHandlerFeature>();
                     if (contextFeature != null)
                     {
-                        int statusCode = contextFeature.Error switch
-                        {
-                            BaseException b => b.StatusCode,
-                            _ => 500
-                        };
+                        int statusCode = GetStatusCode(contextFeature.Error);
 
                         string errorCode = string.Concat("GEM_", Guid.NewGuid().ToString("N").AsSpan(0, 8));
 
@@ -34,22 +31,8 @@ namespace ProductManager.API.Infrastructures.Extensions
                             ErrorCode = errorCode,
                         };
 
-                        errorModel.Message = contextFeature.Error switch
-                        {
-                            BaseException b => b.Message,
-                            _ =>
-                            #if DEBUG
-                                contextFeature.Error.Message
-                            #else
-                                "Beklenmedik bir sistem hatası oluştu."
-                            #endif
-                        };
-
-                        errorModel.AdditionalData = contextFeature.Error switch
-                        {
-                            BaseException b => b.AdditionalData,
-                            _ => null
-                        };
+                        errorModel.Message = GetErrorMessage(contextFeature.Error);
+                        errorModel.AdditionalData = GetAdditionalData(contextFeature.Error);
 
                         context.Response.StatusCode = statusCode;
                         await context.Response.WriteAsync(errorModel.ToString());
@@ -107,6 +90,63 @@ namespace ProductManager.API.Infrastructures.Extensions
             {
                 DashboardTitle = "ProductManager API - Recurring Jobs"
             });
+        }
+
+        private static int GetStatusCode(Exception exception)
+        {
+            return exception switch
+            {
+                BaseException b => b.StatusCode,
+                JsonException => StatusCodes.Status400BadRequest,
+                BadHttpRequestException => StatusCodes.Status400BadRequest,
+                InvalidDataException => StatusCodes.Status400BadRequest,
+                _ => StatusCodes.Status500InternalServerError
+            };
+        }
+
+        private static string GetErrorMessage(Exception exception)
+        {
+            return exception switch
+            {
+                BaseException b => b.Message,
+                JsonException => "Gönderilen JSON formatı geçersiz. Lütfen alan tiplerini ve sayı formatlarını kontrol edin.",
+                BadHttpRequestException => "İstek gövdesi okunamadı. Lütfen gönderilen verinin formatını kontrol edin.",
+                InvalidDataException => "Gönderilen veri geçerli değil. Lütfen formatı kontrol edin.",
+                _ =>
+#if DEBUG
+                    exception.Message
+#else
+                    "Beklenmedik bir sistem hatası oluştu."
+#endif
+            };
+        }
+
+        private static object? GetAdditionalData(Exception exception)
+        {
+            return exception switch
+            {
+                BaseException b => b.AdditionalData,
+                JsonException jsonException => new Dictionary<string, string[]>
+                {
+                    [NormalizeJsonPath(jsonException.Path)] =
+                    [
+                        "Bu alanın değeri beklenen veri tipine uygun değil. Sayısal alanlarda nokta kullanın; örn: 18.5."
+                    ]
+                },
+                _ => null
+            };
+        }
+
+        private static string NormalizeJsonPath(string? path)
+        {
+            if (string.IsNullOrWhiteSpace(path) || path == "$")
+            {
+                return "request";
+            }
+
+            return path.StartsWith("$.", StringComparison.Ordinal)
+                ? path[2..]
+                : path.TrimStart('$', '.');
         }
     }
 }

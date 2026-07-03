@@ -21,9 +21,6 @@ public sealed class SoftwareLicenseController : ControllerBase
         _priceEngineService = priceEngineService;
     }
 
-    /// <summary>
-    /// Seçilen lisans teklifi için UI'da gösterilecek birim parametrelerini döner (Kullanıcı, API istek vb.).
-    /// </summary>
     [HttpGet("license-offerings/{offeringId:guid}/pricing-parameters")]
     [ProducesResponseType(typeof(LicenseOfferingPricingParametersDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -143,58 +140,6 @@ public sealed class SoftwareLicenseController : ControllerBase
         Guid productId, Guid moduleId, Guid priceId, CancellationToken cancellationToken)
     {
         var deleted = await _service.DeleteModuleOfferingPriceAsync(priceId, cancellationToken);
-        return deleted ? NoContent() : NotFound();
-    }
-
-    // ─── SoftwarePricingTiers ─────────────────────────────────────────────────────
-
-    [HttpGet("pricing-tiers")]
-    [ProducesResponseType(typeof(IReadOnlyList<SoftwarePricingTierDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<SoftwarePricingTierDto>>> GetPricingTiers(Guid productId, CancellationToken cancellationToken)
-    {
-        var items = await _service.GetSoftwarePricingTiersAsync(productId, cancellationToken);
-        return Ok(items);
-    }
-
-    [HttpGet("pricing-tiers/{tierId:guid}")]
-    [ProducesResponseType(typeof(SoftwarePricingTierDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<SoftwarePricingTierDto>> GetPricingTierById(Guid productId, Guid tierId, CancellationToken cancellationToken)
-    {
-        var item = await _service.GetSoftwarePricingTierByIdAsync(tierId, cancellationToken);
-        return item is null ? NotFound() : Ok(item);
-    }
-
-    [HttpPost("pricing-tiers")]
-    [ProducesResponseType(typeof(SoftwarePricingTierDto), StatusCodes.Status201Created)]
-    public async Task<ActionResult<SoftwarePricingTierDto>> CreatePricingTier(
-    Guid productId,
-    [FromBody] CreateSoftwarePricingTierRequestDto request,
-    CancellationToken cancellationToken)
-    {
-        var created = await _service.CreateSoftwarePricingTierAsync(
-        request with { ProductId = productId }, cancellationToken);
-        return CreatedAtAction(nameof(GetPricingTierById), new { productId, tierId = created.Id }, created);
-    }
-
-    [HttpPut("pricing-tiers/{tierId:guid}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdatePricingTier(
-    Guid productId, Guid tierId,
-    [FromBody] UpdateSoftwarePricingTierRequestDto request,
-    CancellationToken cancellationToken)
-    {
-        var updated = await _service.UpdateSoftwarePricingTierAsync(tierId, request, cancellationToken);
-        return updated ? NoContent() : NotFound();
-    }
-
-    [HttpDelete("pricing-tiers/{tierId:guid}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeletePricingTier(Guid productId, Guid tierId, CancellationToken cancellationToken)
-    {
-        var deleted = await _service.DeleteSoftwarePricingTierAsync(tierId, cancellationToken);
         return deleted ? NoContent() : NotFound();
     }
 

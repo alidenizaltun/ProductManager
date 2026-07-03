@@ -147,12 +147,6 @@ namespace ProductManager.Service.Shared.Abstract
         Task<bool> UpdateModuleOfferingPriceAsync(Guid priceId, UpdateProductModuleOfferingPriceRequestDto request, CancellationToken cancellationToken = default);
         Task<bool> DeleteModuleOfferingPriceAsync(Guid priceId, CancellationToken cancellationToken = default);
 
-        Task<IReadOnlyList<SoftwarePricingTierDto>> GetSoftwarePricingTiersAsync(Guid productId, CancellationToken cancellationToken = default);
-        Task<SoftwarePricingTierDto?> GetSoftwarePricingTierByIdAsync(Guid tierId, CancellationToken cancellationToken = default);
-        Task<SoftwarePricingTierDto> CreateSoftwarePricingTierAsync(CreateSoftwarePricingTierRequestDto request, CancellationToken cancellationToken = default);
-        Task<bool> UpdateSoftwarePricingTierAsync(Guid tierId, UpdateSoftwarePricingTierRequestDto request, CancellationToken cancellationToken = default);
-        Task<bool> DeleteSoftwarePricingTierAsync(Guid tierId, CancellationToken cancellationToken = default);
-
         Task<IReadOnlyList<ProductLicenseOfferingDto>> GetProductLicenseOfferingsAsync(Guid productId, CancellationToken cancellationToken = default);
         Task<ProductLicenseOfferingDto?> GetProductLicenseOfferingByIdAsync(Guid offeringId, CancellationToken cancellationToken = default);
         Task<ProductLicenseOfferingDto> CreateProductLicenseOfferingAsync(CreateProductLicenseOfferingRequestDto request, CancellationToken cancellationToken = default);

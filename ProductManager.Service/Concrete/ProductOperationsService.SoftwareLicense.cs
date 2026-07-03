@@ -38,23 +38,6 @@ namespace ProductManager.Service.Concrete
         public Task<bool> DeleteModuleOfferingPriceAsync(Guid priceId, CancellationToken cancellationToken = default)
         => _repository.DeleteModuleOfferingPriceAsync(priceId, cancellationToken);
 
-        // ─── SoftwarePricingTier ──────────────────────────────────────────────────────
-
-        public Task<IReadOnlyList<SoftwarePricingTierDto>> GetSoftwarePricingTiersAsync(Guid productId, CancellationToken cancellationToken = default)
-        => _repository.GetSoftwarePricingTiersAsync(productId, cancellationToken);
-
-        public Task<SoftwarePricingTierDto?> GetSoftwarePricingTierByIdAsync(Guid tierId, CancellationToken cancellationToken = default)
-        => _repository.GetSoftwarePricingTierByIdAsync(tierId, cancellationToken);
-
-        public Task<SoftwarePricingTierDto> CreateSoftwarePricingTierAsync(CreateSoftwarePricingTierRequestDto request, CancellationToken cancellationToken = default)
-        => _repository.CreateSoftwarePricingTierAsync(request, cancellationToken);
-
-        public Task<bool> UpdateSoftwarePricingTierAsync(Guid tierId, UpdateSoftwarePricingTierRequestDto request, CancellationToken cancellationToken = default)
-        => _repository.UpdateSoftwarePricingTierAsync(tierId, request, cancellationToken);
-
-        public Task<bool> DeleteSoftwarePricingTierAsync(Guid tierId, CancellationToken cancellationToken = default)
-        => _repository.DeleteSoftwarePricingTierAsync(tierId, cancellationToken);
-
         // ─── ProductLicenseOffering ───────────────────────────────────────────────────
 
         public Task<IReadOnlyList<ProductLicenseOfferingDto>> GetProductLicenseOfferingsAsync(Guid productId, CancellationToken cancellationToken = default)

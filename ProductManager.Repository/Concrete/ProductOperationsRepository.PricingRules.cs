@@ -3,6 +3,7 @@ using ProductManager.Shared.Dtos.ProductOperations;
 using ProductManager.Shared.Infrastructure.Exceptions;
 using System.Data;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace ProductManager.Repository.Concrete
 {
@@ -97,7 +98,7 @@ ORDER BY Priority, CreatedAt;";
             using var connection = CreateConnection();
             var items = await connection.QueryAsync<ProductPricingRuleDto>(
                 new CommandDefinition(sql, new { ProductId = productId }, cancellationToken: cancellationToken));
-            return items.AsList();
+            return items.Select(NormalizePricingRuleDto).AsList();
         }
 
         public async Task<ProductPricingRuleDto?> GetPricingRuleByIdAsync(
@@ -112,8 +113,9 @@ FROM [Product].[ProductPricingRules]
 WHERE Id = @PricingRuleId AND IsDeleted = 0;";
 
             using var connection = CreateConnection();
-            return await connection.QuerySingleOrDefaultAsync<ProductPricingRuleDto>(
+            var pricingRule = await connection.QuerySingleOrDefaultAsync<ProductPricingRuleDto>(
                 new CommandDefinition(sql, new { PricingRuleId = pricingRuleId }, cancellationToken: cancellationToken));
+            return pricingRule is null ? null : NormalizePricingRuleDto(pricingRule);
         }
 
         public async Task<ProductPricingRuleDto> CreatePricingRuleAsync(
@@ -211,15 +213,79 @@ WHERE Id = @PricingRuleId AND IsDeleted = 0;";
         {
             if (!string.IsNullOrWhiteSpace(priceAdjustmentJson))
             {
-                return priceAdjustmentJson;
+                return NormalizePriceAdjustmentOperation(priceAdjustmentJson);
             }
 
             if (priceAdjustment.HasValue && priceAdjustment.Value.ValueKind is not JsonValueKind.Null and not JsonValueKind.Undefined)
             {
-                return priceAdjustment.Value.GetRawText();
+                return NormalizePriceAdjustmentOperation(priceAdjustment.Value.GetRawText());
             }
 
             throw new ValidationException("priceAdjustment", "priceAdjustment veya priceAdjustmentJson alanı zorunludur.");
+        }
+
+        private static ProductPricingRuleDto NormalizePricingRuleDto(ProductPricingRuleDto pricingRule)
+            => string.IsNullOrWhiteSpace(pricingRule.PriceAdjustmentJson)
+                ? pricingRule
+                : pricingRule with { PriceAdjustmentJson = NormalizePriceAdjustmentOperation(pricingRule.PriceAdjustmentJson) };
+
+        private static string NormalizePriceAdjustmentOperation(string priceAdjustmentJson)
+        {
+            try
+            {
+                var node = JsonNode.Parse(priceAdjustmentJson);
+                if (node is not JsonObject adjustment)
+                {
+                    return priceAdjustmentJson;
+                }
+
+                var operationPropertyName = FindPropertyName(adjustment, "operation");
+                var directionPropertyName = FindPropertyName(adjustment, "direction");
+                var operation = NormalizeOperation(ReadJsonString(adjustment, operationPropertyName))
+                    ?? NormalizeOperation(ReadJsonString(adjustment, directionPropertyName))
+                    ?? "add";
+
+                if (operationPropertyName is not null && operationPropertyName != "operation")
+                {
+                    adjustment.Remove(operationPropertyName);
+                }
+
+                adjustment["operation"] = operation;
+                return adjustment.ToJsonString();
+            }
+            catch (JsonException)
+            {
+                return priceAdjustmentJson;
+            }
+        }
+
+        private static string? FindPropertyName(JsonObject jsonObject, string propertyName)
+            => jsonObject
+                .Select(property => property.Key)
+                .FirstOrDefault(key => string.Equals(key, propertyName, StringComparison.OrdinalIgnoreCase));
+
+        private static string? ReadJsonString(JsonObject jsonObject, string? propertyName)
+        {
+            if (propertyName is null || !jsonObject.TryGetPropertyValue(propertyName, out var value) || value is null)
+            {
+                return null;
+            }
+
+            return value.GetValueKind() == JsonValueKind.String
+                ? value.GetValue<string>()
+                : value.ToJsonString();
+        }
+
+        private static string? NormalizeOperation(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            return string.Equals(value, "subtract", StringComparison.OrdinalIgnoreCase)
+                ? "subtract"
+                : "add";
         }
 
         public async Task<bool> DeletePricingRuleAsync(

@@ -302,39 +302,6 @@ namespace ProductManager.EfCore.Context
         }
     }
 
-    public class SoftwarePricingTierConfiguration : IEntityTypeConfiguration<SoftwarePricingTier>
-    {
-        public void Configure(EntityTypeBuilder<SoftwarePricingTier> builder)
-        {
-            builder.HasOne(t => t.Product)
-            .WithMany(p => p.SoftwarePricingTiers)
-            .HasForeignKey(t => t.ProductId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-            builder.HasOne(t => t.ProductLicenseOffering)
-            .WithMany(o => o.PricingTiers)
-            .HasForeignKey(t => t.ProductLicenseOfferingId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-            builder.HasOne(t => t.UnitDefinition)
-            .WithMany()
-            .HasForeignKey(t => t.UnitDefinitionId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-            builder.HasIndex(t => new { t.ProductId, t.ProductLicenseOfferingId, t.UnitDefinitionId, t.MinUnits })
-            .HasDatabaseName("IX_SoftwarePricingTiers_Product_Offering_Unit_Min");
-
-            builder.Property(t => t.PricePerUnit)
-            .HasPrecision(18, 4);
-
-            builder.Property(t => t.FlatFee)
-            .HasPrecision(18, 4);
-
-            builder.Property(t => t.CurrencyCode)
-            .HasMaxLength(3);
-        }
-    }
-
     public class UnitDefinitionConfiguration : IEntityTypeConfiguration<UnitDefinition>
     {
         public void Configure(EntityTypeBuilder<UnitDefinition> builder)

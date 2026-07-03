@@ -107,8 +107,7 @@ namespace ProductManager.Shared.Dtos.PriceEngine
         public string? UnitDefinitionName { get; init; }
         public string DisplayLabel { get; init; } = string.Empty;
         public int Value { get; init; }
-        public Guid? PricingTierId { get; init; }
-        public decimal TierAmount { get; init; }
+        public decimal Amount { get; init; }
     }
 
     public sealed record PriceCalculationLineDto
@@ -125,7 +124,6 @@ namespace ProductManager.Shared.Dtos.PriceEngine
     public static class PriceCalculationLineTypes
     {
         public const string LicenseBase = "LicenseBase";
-        public const string PricingTier = "PricingTier";
         public const string Module = "Module";
         public const string UnitPrice = "UnitPrice";
         public const string PriceList = "PriceList";

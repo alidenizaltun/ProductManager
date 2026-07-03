@@ -84,53 +84,6 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public bool IsActive { get; init; } = true;
     }
 
-    // ─── SoftwarePricingTier ─────────────────────────────────────────
-
-    public sealed record SoftwarePricingTierDto
-    {
-        public Guid Id { get; init; }
-        public Guid ProductId { get; init; }
-        public Guid ProductLicenseOfferingId { get; init; }
-        public string? LicenseOfferingName { get; init; }
-        public Guid UnitDefinitionId { get; init; }
-        public string? UnitDefinitionCode { get; init; }
-        public string? UnitDefinitionName { get; init; }
-        public int MinUnits { get; init; }
-        public int? MaxUnits { get; init; }
-        public decimal PricePerUnit { get; init; }
-        public decimal FlatFee { get; init; }
-        public string CurrencyCode { get; init; } = "TRY";
-        public bool IsActive { get; init; }
-        public DateTime CreatedAt { get; init; }
-        public DateTime? UpdatedAt { get; init; }
-    }
-
-    public sealed record CreateSoftwarePricingTierRequestDto
-    {
-        public Guid? ProductId { get; init; }
-        public Guid? ProductLicenseOfferingId { get; init; }
-        public string? LicenseOfferingTempId { get; init; }
-        public Guid? UnitDefinitionId { get; init; }
-        public int MinUnits { get; init; }
-        public int? MaxUnits { get; init; }
-        public decimal PricePerUnit { get; init; }
-        public decimal FlatFee { get; init; }
-        public string CurrencyCode { get; init; } = "TRY";
-        public bool IsActive { get; init; } = true;
-    }
-
-    public sealed record UpdateSoftwarePricingTierRequestDto
-    {
-        public required Guid ProductLicenseOfferingId { get; init; }
-        public required Guid UnitDefinitionId { get; init; }
-        public int MinUnits { get; init; }
-        public int? MaxUnits { get; init; }
-        public decimal PricePerUnit { get; init; }
-        public decimal FlatFee { get; init; }
-        public string CurrencyCode { get; init; } = "TRY";
-        public bool IsActive { get; init; } = true;
-    }
-
     // ─── ProductLicenseOffering ──────────────────────────────────────
 
     public sealed record ProductLicenseOfferingDto

@@ -1638,67 +1638,6 @@ namespace ProductManager.EFCore.Migrations
                     b.ToTable("ProductVariants", "Product");
                 });
 
-            modelBuilder.Entity("ProductManager.Domain.Entities.Product.SoftwarePricingTier", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CurrencyCode")
-                        .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("FlatFee")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<int?>("MaxUnits")
-                        .HasColumnType("int");
-
-                    b.Property<int>("MinUnits")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("PricePerUnit")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("ProductLicenseOfferingId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("UnitDefinitionId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProductLicenseOfferingId");
-
-                    b.HasIndex("UnitDefinitionId");
-
-                    b.HasIndex("ProductId", "ProductLicenseOfferingId", "UnitDefinitionId", "MinUnits")
-                        .HasDatabaseName("IX_SoftwarePricingTiers_Product_Offering_Unit_Min");
-
-                    b.ToTable("SoftwarePricingTiers", "Product");
-                });
-
             modelBuilder.Entity("ProductManager.Domain.Entities.Product.UnitDefinition", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2232,33 +2171,6 @@ namespace ProductManager.EFCore.Migrations
                     b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("ProductManager.Domain.Entities.Product.SoftwarePricingTier", b =>
-                {
-                    b.HasOne("ProductManager.Domain.Entities.Product.Product", "Product")
-                        .WithMany("SoftwarePricingTiers")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ProductManager.Domain.Entities.Product.ProductLicenseOffering", "ProductLicenseOffering")
-                        .WithMany("PricingTiers")
-                        .HasForeignKey("ProductLicenseOfferingId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("ProductManager.Domain.Entities.Product.UnitDefinition", "UnitDefinition")
-                        .WithMany()
-                        .HasForeignKey("UnitDefinitionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Product");
-
-                    b.Navigation("ProductLicenseOffering");
-
-                    b.Navigation("UnitDefinition");
-                });
-
             modelBuilder.Entity("ProductManager.Domain.Entities.Product.Product", b =>
                 {
                     b.Navigation("AttributeValues");
@@ -2289,8 +2201,6 @@ namespace ProductManager.EFCore.Migrations
 
                     b.Navigation("ServiceProfile");
 
-                    b.Navigation("SoftwarePricingTiers");
-
                     b.Navigation("SoftwareProfile");
 
                     b.Navigation("SubscriptionProfile");
@@ -2307,11 +2217,6 @@ namespace ProductManager.EFCore.Migrations
                     b.Navigation("Children");
 
                     b.Navigation("ProductMaps");
-                });
-
-            modelBuilder.Entity("ProductManager.Domain.Entities.Product.ProductLicenseOffering", b =>
-                {
-                    b.Navigation("PricingTiers");
                 });
 
             modelBuilder.Entity("ProductManager.Domain.Entities.Product.ProductModule", b =>

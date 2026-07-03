@@ -8,10 +8,5 @@ namespace ProductManager.Service.Shared.Abstract
             Guid productId,
             Guid licenseOfferingId,
             CancellationToken cancellationToken = default);
-
-        Task<ProductPriceCalculationResultDto> CalculateProductPriceAsync(
-            Guid productId,
-            CalculateProductPriceRequestDto request,
-            CancellationToken cancellationToken = default);
     }
 }

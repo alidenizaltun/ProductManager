@@ -38,28 +38,4 @@ namespace ProductManager.Domain.Entities.Product
         public bool IsActive { get; set; } = true;
     }
 
-    [Table("SoftwarePricingTiers", Schema = "Product")]
-    public class SoftwarePricingTier : BaseEntity
-    {
-        public Guid ProductId { get; set; }
-        public Product? Product { get; set; }
-
-        public Guid ProductLicenseOfferingId { get; set; }
-        public ProductLicenseOffering? ProductLicenseOffering { get; set; }
-
-        public Guid UnitDefinitionId { get; set; }
-        public UnitDefinition? UnitDefinition { get; set; }
-
-        public int MinUnits { get; set; }
-
-        public int? MaxUnits { get; set; }
-
-        public decimal PricePerUnit { get; set; }
-
-        public decimal FlatFee { get; set; } = 0;
-
-        public string CurrencyCode { get; set; } = "TRY";
-
-        public bool IsActive { get; set; } = true;
-    }
 }

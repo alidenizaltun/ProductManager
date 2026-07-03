@@ -27,23 +27,7 @@ Lisans modeli ve koltuk bilgisi yalnızca **`ProductLicenseOfferings`** üzerind
 
 ### `Product.SoftwarePricingTiers`
 
-| Değişiklik | Detay |
-|------------|--------|
-| **Kaldırıldı** | `LicenseModel` (int), `Unit` (nvarchar) |
-| **Eklendi** | `ProductLicenseOfferingId` (NOT NULL), FK → `ProductLicenseOfferings` (`Restrict`) |
-| **Eklendi** | `UnitDefinitionId` (NOT NULL), FK → `UnitDefinitions` (`Restrict`) |
-| **İndeks** | Eski `IX_SoftwarePricingTiers_ProductId_Model_Unit_Min` kaldırıldı; yerine `(ProductId, ProductLicenseOfferingId, UnitDefinitionId, MinUnits)` |
-
-### Migrasyon sırasında veri düzeltmesi
-
-FK oluşturulmadan önce migration şunu yapar:
-
-1. `UnitDefinitions` içinde `Code = 'MIGRATE_DEFAULT'` yoksa tek satır ekler (geçiş için varsayılan birim).
-2. Tüm `SoftwarePricingTiers` satırlarında boş GUID olan `UnitDefinitionId` bu varsayılan birime atanır.
-3. Boş GUID olan `ProductLicenseOfferingId`, aynı `ProductId` için ilk uygun `ProductLicenseOfferings` kaydına bağlanır (`SortOrder`, `Name`).
-4. Hâlâ geçersiz kalan tier satırları **silinir** (üründe hiç license offering yoksa ilgili tier’lar kaybolur).
-
-Üretimde `MIGRATE_DEFAULT` kaydını düzenleyebilir veya gerçek birim kodlarıyla değiştirebilirsiniz.
+`SoftwarePricingTiers` tamamen kaldırıldı. Yazılım fiyatlandırması artık `ProductPricingRules` üzerinden yönetilir; lisans teklifi taban fiyatı `ProductLicenseOfferings.BasePrice` alanında kalır.
 
 ---
 
@@ -67,14 +51,11 @@ FK oluşturulmadan önce migration şunu yapar:
 | **GET** `/api/lookups` (`ProductReferenceLookupsDto`) | Yanıtta **`unitDefinitions`** listesi eklendi (`LookupItemDto[]`). |
 | **GET** `/api/products` | Liste öğelerinde **`unitOfMeasure` yok**; **`unitDefinitionId`**, okumada **`unitDefinitionName`** (JOIN ile). |
 | **GET** `/api/products/{productId}` | Aynı ürün alanları. |
-| **GET** ürün detayı (projede kullanılan detay endpoint’i) | **`ProductDetailDto`**: üst düzey ürün için **`unitDefinitionId`** / **`unitDefinitionName`**; yazılım profili ve tier DTO’ları aşağıda. |
+| **GET** ürün detayı (projede kullanılan detay endpoint’i) | **`ProductDetailDto`**: üst düzey ürün için **`unitDefinitionId`** / **`unitDefinitionName`**; fiyatlandırma kuralları `pricingRules` üzerinden döner. |
 | **POST** `/api/products`, **PUT** `/api/products/{id}` | İstek gövdelerinde **`unitOfMeasure` yok**; **`unitDefinitionId`** (nullable Guid). |
-| **POST** tam ürün oluşturma / **PUT** tam güncelleme | İç **`product`** nesnesinde **`unitDefinitionId`**; **`softwarePricingTiers`** gövdeleri yeni şema (aşağıda). |
+| **POST** tam ürün oluşturma / **PUT** tam güncelleme | İç **`product`** nesnesinde **`unitDefinitionId`**; fiyat kuralları için **`pricingRules`** kullanılır. |
 | **GET** `/api/products/{productId}/profiles/software` | **`licenseModel`**, **`seatCount` kaldırıldı**. |
 | **PUT** `/api/products/{productId}/profiles/software` | **`UpsertProductSoftwareProfileRequestDto`**: yalnızca `version`, `downloadUrl`, `supportedPlatformsJson`, `systemRequirementsJson`, `releaseNotes`. |
-| **GET** `/api/products/{productId}/pricing-tiers` | **`SoftwarePricingTierDto`**: **`licenseModel`**, **`unit` yok**; **`productLicenseOfferingId`**, **`licenseOfferingName`**, **`unitDefinitionId`**, **`unitDefinitionName`**. |
-| **POST** `/api/products/{productId}/pricing-tiers` | **`productLicenseOfferingId`** ve **`unitDefinitionId`** zorunlu; **`licenseModel`** ve **`unit` string yok**. |
-| **PUT** `/api/products/{productId}/pricing-tiers/{tierId}` | Aynı güncelleme alanları (`ProductLicenseOfferingId`, `UnitDefinitionId`, …). |
 
 `ProductLicenseOffering` CRUD endpoint’leri (**`/api/products/{productId}/license-offerings`**) aynı kalır; **`licenseModel`** burada durmaya devam eder.
 
@@ -95,20 +76,6 @@ FK oluşturulmadan önce migration şunu yapar:
 |------------|
 | `licenseModel` |
 | `seatCount` |
-
-### Fiyat kademesi (`SoftwarePricingTierDto`)
-
-| Kaldırılan | Eklenen |
-|------------|---------|
-| `licenseModel` | `productLicenseOfferingId` |
-| `unit` (string) | `unitDefinitionId` |
-| — | Okuma: `licenseOfferingName`, `unitDefinitionName` |
-
-### `CreateSoftwarePricingTierRequestDto` / `UpdateSoftwarePricingTierRequestDto`
-
-- **`productLicenseOfferingId`** (create + update’ta zorunlu mantıkta kullanılmalı)
-- **`unitDefinitionId`**
-- **`licenseModel`**, **`unit`** kaldırıldı.
 
 ### Lookup aggregate (`ProductReferenceLookupsDto`)
 
