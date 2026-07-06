@@ -25,9 +25,6 @@ namespace ProductManager.Domain.Entities.Product
 
         public string DefaultCurrencyCode { get; set; } = "TRY";
 
-        public Guid? UnitDefinitionId { get; set; }
-        public UnitDefinition? UnitDefinition { get; set; }
-
         public decimal? TaxRate { get; set; }
         public string? TaxCode { get; set; }
 

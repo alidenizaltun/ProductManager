@@ -90,6 +90,8 @@ namespace ProductManager.Shared.Dtos.ProductOperations
     {
         public Guid Id { get; init; }
         public Guid ProductId { get; init; }
+        public IReadOnlyList<Guid> ProductUnitIds { get; init; } = [];
+        public IReadOnlyList<ProductUnitDto> ProductUnits { get; init; } = [];
         public int LicenseModel { get; init; }
         public string Name { get; init; } = string.Empty;
         public string? Description { get; init; }
@@ -116,7 +118,9 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public Guid? Id { get; init; }
         [JsonPropertyName("_tempId")]
         public string? TempId { get; init; }
+        public IReadOnlyList<string>? ProductUnitTempIds { get; init; }
         public Guid ProductId { get; init; }
+        public IReadOnlyList<Guid>? ProductUnitIds { get; init; }
         public int LicenseModel { get; init; } = 1;
         public required string Name { get; init; }
         public string? Description { get; init; }
@@ -138,6 +142,7 @@ namespace ProductManager.Shared.Dtos.ProductOperations
     public sealed record UpdateProductLicenseOfferingRequestDto
     {
         public int LicenseModel { get; init; }
+        public IReadOnlyList<Guid>? ProductUnitIds { get; init; }
         public required string Name { get; init; }
         public string? Description { get; init; }
         public decimal BasePrice { get; init; }

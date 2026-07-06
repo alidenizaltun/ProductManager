@@ -8,6 +8,7 @@ namespace ProductManager.Domain.Entities.Product
     {
         public Guid ProductId { get; set; }
         public Product? Product { get; set; }
+        public ICollection<ProductLicenseOfferingUnit> UnitAssignments { get; set; } = new List<ProductLicenseOfferingUnit>();
         public SoftwareLicenseModel LicenseModel { get; set; }
         public string Name { get; set; } = string.Empty;
 
@@ -45,5 +46,14 @@ namespace ProductManager.Domain.Entities.Product
 
         public int SortOrder { get; set; }
 
+    }
+
+    [Table("ProductLicenseOfferingUnits", Schema = "Product")]
+    public class ProductLicenseOfferingUnit : BaseEntity
+    {
+        public Guid ProductLicenseOfferingId { get; set; }
+        public ProductLicenseOffering? ProductLicenseOffering { get; set; }
+        public Guid ProductUnitId { get; set; }
+        public ProductUnit? ProductUnit { get; set; }
     }
 }

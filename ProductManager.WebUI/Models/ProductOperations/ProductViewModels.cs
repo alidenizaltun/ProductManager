@@ -88,9 +88,6 @@ public sealed class ProductFormViewModel
     [StringLength(8)]
     public string DefaultCurrencyCode { get; set; } = "TRY";
 
-    [Display(Name = "Ölçü Birimi")]
-    public Guid? UnitDefinitionId { get; set; }
-
     [Display(Name = "Vergi Oranı (%)")]
     [Range(0, 100)]
     public decimal? TaxRate { get; set; }

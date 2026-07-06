@@ -24,7 +24,7 @@ namespace ProductManager.Service.Concrete.PriceEngine
             var previousResult = 0m;
 
             foreach (var rule in product.PricingRules
-                .Where(rule => RuleScopeMatches(rule, request, now))
+                .Where(rule => RuleScopeMatches(product, rule, request, now))
                 .OrderBy(rule => rule.Priority)
                 .ThenBy(rule => rule.CreatedAt))
             {
@@ -61,7 +61,11 @@ namespace ProductManager.Service.Concrete.PriceEngine
             return Math.Max(0, currentPrice);
         }
 
-        private static bool RuleScopeMatches(ProductPricingRuleDto rule, CalculateProductPriceRequestDto request, DateTime now)
+        private static bool RuleScopeMatches(
+            ProductDetailDto product,
+            ProductPricingRuleDto rule,
+            CalculateProductPriceRequestDto request,
+            DateTime now)
         {
             if (!rule.IsActive)
             {
@@ -88,12 +92,41 @@ namespace ProductManager.Service.Concrete.PriceEngine
                 return false;
             }
 
+            if (!RuleProductUnitsMatch(product, rule, request))
+            {
+                return false;
+            }
+
             if (!TextMatches(rule.SalesChannel, request.SalesChannel))
             {
                 return false;
             }
 
             return TextMatches(rule.CustomerGroupCode, request.CustomerGroupCode);
+        }
+
+        private static bool RuleProductUnitsMatch(
+            ProductDetailDto product,
+            ProductPricingRuleDto rule,
+            CalculateProductPriceRequestDto request)
+        {
+            IReadOnlyList<ProductUnitDto> assignedUnits = rule.ProductUnits;
+
+            if (assignedUnits.Count == 0)
+            {
+                return true;
+            }
+
+            if (request.OfferingUnits is null || request.OfferingUnits.Count == 0)
+            {
+                return false;
+            }
+
+            var assignedUnitDefinitionIds = assignedUnits
+                .Select(unit => unit.UnitDefinitionId)
+                .ToHashSet();
+
+            return request.OfferingUnits.Any(input => assignedUnitDefinitionIds.Contains(input.UnitDefinitionId));
         }
 
         private static bool TextMatches(string? ruleValue, string? requestValue)

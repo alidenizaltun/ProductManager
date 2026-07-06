@@ -77,7 +77,6 @@
                                     <dt class="col-5">Tür</dt><dd class="col-7">@Model.Product.Kind</dd>
                                     <dt class="col-5">Durum</dt><dd class="col-7">@Model.Product.Status</dd>
                                     <dt class="col-5">Para Birimi</dt><dd class="col-7">@Model.Product.DefaultCurrencyCode</dd>
-                                    <dt class="col-5">Birim</dt><dd class="col-7">@(Model.Product.UnitDefinitionName ?? "-")</dd>
                                     <dt class="col-5">Vergi Oranı</dt><dd class="col-7">@(Model.Product.TaxRate?.ToString("0.##", CultureInfo.InvariantCulture) ?? "-")</dd>
                                 </dl>
                             </div>

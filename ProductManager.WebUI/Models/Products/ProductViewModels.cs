@@ -90,9 +90,6 @@ namespace ProductManager.WebUI.Models.Products
         [Display(Name = "Varsayılan Para Birimi")]
         public string DefaultCurrencyCode { get; set; } = "TRY";
 
-        [Display(Name = "Ölçü Birimi")]
-        public Guid? UnitDefinitionId { get; set; }
-
         [Range(typeof(decimal), "0", "100")]
         [Display(Name = "Vergi Oranı")]
         public decimal? TaxRate { get; set; }

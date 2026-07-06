@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ProductManager.EfCore.Context;
 
@@ -11,9 +12,11 @@ using ProductManager.EfCore.Context;
 namespace ProductManager.EFCore.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260706105843_RemoveProductUnitDefinitionLink")]
+    partial class RemoveProductUnitDefinitionLink
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -803,6 +806,9 @@ namespace ProductManager.EFCore.Migrations
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("ProductUnitId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("SortOrder")
                         .HasColumnType("int");
 
@@ -821,6 +827,8 @@ namespace ProductManager.EFCore.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ConvertToOfferingId");
+
+                    b.HasIndex("ProductUnitId");
 
                     b.HasIndex("ProductId", "Name")
                         .IsUnique()
@@ -1294,6 +1302,9 @@ namespace ProductManager.EFCore.Migrations
                     b.Property<Guid?>("ProductLicenseOfferingId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("ProductUnitId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid?>("ProductVariantId")
                         .HasColumnType("uniqueidentifier");
 
@@ -1313,6 +1324,8 @@ namespace ProductManager.EFCore.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ProductLicenseOfferingId");
+
+                    b.HasIndex("ProductUnitId");
 
                     b.HasIndex("ProductVariantId");
 
@@ -2075,9 +2088,16 @@ namespace ProductManager.EFCore.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("ProductManager.Domain.Entities.Product.ProductUnit", "ProductUnit")
+                        .WithMany()
+                        .HasForeignKey("ProductUnitId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("ConvertToOffering");
 
                     b.Navigation("Product");
+
+                    b.Navigation("ProductUnit");
                 });
 
             modelBuilder.Entity("ProductManager.Domain.Entities.Product.ProductLicenseOfferingUnit", b =>
@@ -2207,6 +2227,11 @@ namespace ProductManager.EFCore.Migrations
                         .HasForeignKey("ProductLicenseOfferingId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("ProductManager.Domain.Entities.Product.ProductUnit", "ProductUnit")
+                        .WithMany()
+                        .HasForeignKey("ProductUnitId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("ProductManager.Domain.Entities.Product.ProductVariant", "ProductVariant")
                         .WithMany()
                         .HasForeignKey("ProductVariantId")
@@ -2215,6 +2240,8 @@ namespace ProductManager.EFCore.Migrations
                     b.Navigation("Product");
 
                     b.Navigation("ProductLicenseOffering");
+
+                    b.Navigation("ProductUnit");
 
                     b.Navigation("ProductVariant");
                 });

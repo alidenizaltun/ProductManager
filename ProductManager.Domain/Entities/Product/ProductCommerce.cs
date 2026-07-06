@@ -75,6 +75,17 @@ namespace ProductManager.Domain.Entities.Product
 
         public Guid? ProductLicenseOfferingId { get; set; }
         public ProductLicenseOffering? ProductLicenseOffering { get; set; }
+
+        public ICollection<ProductPricingRuleUnit> UnitAssignments { get; set; } = new List<ProductPricingRuleUnit>();
+    }
+
+    [Table("ProductPricingRuleUnits", Schema = "Product")]
+    public class ProductPricingRuleUnit : BaseEntity
+    {
+        public Guid ProductPricingRuleId { get; set; }
+        public ProductPricingRule? ProductPricingRule { get; set; }
+        public Guid ProductUnitId { get; set; }
+        public ProductUnit? ProductUnit { get; set; }
     }
 
     [Table("ProductInventories", Schema = "Product")]

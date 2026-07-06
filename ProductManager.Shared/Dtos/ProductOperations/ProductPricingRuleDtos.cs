@@ -19,6 +19,8 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public string? CustomerGroupCode { get; init; }
         public Guid? ProductVariantId { get; init; }
         public Guid? ProductLicenseOfferingId { get; init; }
+        public IReadOnlyList<Guid> ProductUnitIds { get; init; } = [];
+        public IReadOnlyList<ProductUnitDto> ProductUnits { get; init; } = [];
         public DateTime CreatedAt { get; init; }
         public DateTime? UpdatedAt { get; init; }
     }
@@ -27,6 +29,7 @@ namespace ProductManager.Shared.Dtos.ProductOperations
     {
         public Guid ProductId { get; init; }
         public string? LicenseOfferingTempId { get; init; }
+        public IReadOnlyList<string>? ProductUnitTempIds { get; init; }
         public required string Code { get; init; }
         public required string Name { get; init; }
         public string? Description { get; init; }
@@ -41,6 +44,7 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public string? CustomerGroupCode { get; init; }
         public Guid? ProductVariantId { get; init; }
         public Guid? ProductLicenseOfferingId { get; init; }
+        public IReadOnlyList<Guid>? ProductUnitIds { get; init; }
     }
 
     public sealed record UpdateProductPricingRuleRequestDto
@@ -59,5 +63,6 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public string? CustomerGroupCode { get; init; }
         public Guid? ProductVariantId { get; init; }
         public Guid? ProductLicenseOfferingId { get; init; }
+        public IReadOnlyList<Guid>? ProductUnitIds { get; init; }
     }
 }

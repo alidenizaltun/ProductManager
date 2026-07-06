@@ -35,7 +35,10 @@ namespace ProductManager.EfCore.Context
  public DbSet<ProductModule> ProductModules => Set<ProductModule>();
  public DbSet<ProductModuleOfferingPrice> ProductModuleOfferingPrices => Set<ProductModuleOfferingPrice>();
  public DbSet<ProductLicenseOffering> ProductLicenseOfferings => Set<ProductLicenseOffering>();
+ public DbSet<ProductLicenseOfferingUnit> ProductLicenseOfferingUnits => Set<ProductLicenseOfferingUnit>();
  public DbSet<UnitDefinition> UnitDefinitions => Set<UnitDefinition>();
+ public DbSet<ProductUnit> ProductUnits => Set<ProductUnit>();
+ public DbSet<ProductPricingRuleUnit> ProductPricingRuleUnits => Set<ProductPricingRuleUnit>();
  public DbSet<ProductUnitConversion> ProductUnitConversions => Set<ProductUnitConversion>();
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }

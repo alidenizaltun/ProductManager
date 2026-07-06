@@ -47,10 +47,6 @@ namespace ProductManager.EfCore.Context
                 .HasForeignKey<ProductSubscriptionProfile>(sp => sp.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasOne(p => p.UnitDefinition)
-                .WithMany()
-                .HasForeignKey(p => p.UnitDefinitionId)
-                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 
@@ -344,6 +340,76 @@ namespace ProductManager.EfCore.Context
 
             builder.Property(c => c.ConversionFactor)
             .HasPrecision(18, 6);
+        }
+    }
+
+    public class ProductPricingRuleUnitConfiguration : IEntityTypeConfiguration<ProductPricingRuleUnit>
+    {
+        public void Configure(EntityTypeBuilder<ProductPricingRuleUnit> builder)
+        {
+            builder.HasOne(u => u.ProductPricingRule)
+            .WithMany(r => r.UnitAssignments)
+            .HasForeignKey(u => u.ProductPricingRuleId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(u => u.ProductUnit)
+            .WithMany()
+            .HasForeignKey(u => u.ProductUnitId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasIndex(u => new { u.ProductPricingRuleId, u.ProductUnitId })
+            .IsUnique()
+            .HasDatabaseName("IX_ProductPricingRuleUnits_Rule_Unit");
+        }
+    }
+
+    public class ProductLicenseOfferingUnitConfiguration : IEntityTypeConfiguration<ProductLicenseOfferingUnit>
+    {
+        public void Configure(EntityTypeBuilder<ProductLicenseOfferingUnit> builder)
+        {
+            builder.HasOne(u => u.ProductLicenseOffering)
+            .WithMany(o => o.UnitAssignments)
+            .HasForeignKey(u => u.ProductLicenseOfferingId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(u => u.ProductUnit)
+            .WithMany()
+            .HasForeignKey(u => u.ProductUnitId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasIndex(u => new { u.ProductLicenseOfferingId, u.ProductUnitId })
+            .IsUnique()
+            .HasDatabaseName("IX_ProductLicenseOfferingUnits_Offering_Unit");
+        }
+    }
+
+    public class ProductUnitConfiguration : IEntityTypeConfiguration<ProductUnit>
+    {
+        public void Configure(EntityTypeBuilder<ProductUnit> builder)
+        {
+            builder.HasOne(u => u.Product)
+            .WithMany(p => p.Units)
+            .HasForeignKey(u => u.ProductId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(u => u.UnitDefinition)
+            .WithMany()
+            .HasForeignKey(u => u.UnitDefinitionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasIndex(u => new { u.ProductId, u.Code })
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0")
+            .HasDatabaseName("IX_ProductUnits_ProductId_Code");
+
+            builder.HasIndex(u => new { u.ProductId, u.UnitDefinitionId })
+            .HasDatabaseName("IX_ProductUnits_Product_UnitDefinition");
+
+            builder.Property(u => u.Code)
+            .HasMaxLength(64);
+
+            builder.Property(u => u.Name)
+            .HasMaxLength(150);
         }
     }
 

@@ -17,8 +17,6 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public bool IsPurchasable { get; init; }
         public bool TrackInventory { get; init; }
         public string DefaultCurrencyCode { get; init; } = "TRY";
-        public Guid? UnitDefinitionId { get; init; }
-        public string? UnitDefinitionName { get; init; }
         public decimal? TaxRate { get; init; }
         public string? TaxCode { get; init; }
         public string? Tags { get; init; }
@@ -56,7 +54,6 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public bool IsPurchasable { get; init; } = true;
         public bool TrackInventory { get; init; } = true;
         public string DefaultCurrencyCode { get; init; } = "TRY";
-        public Guid? UnitDefinitionId { get; init; }
         public decimal? TaxRate { get; init; }
         public string? TaxCode { get; init; }
         public string? Tags { get; init; }
@@ -79,7 +76,6 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public bool IsPurchasable { get; init; }
         public bool TrackInventory { get; init; }
         public string DefaultCurrencyCode { get; init; } = "TRY";
-        public Guid? UnitDefinitionId { get; init; }
         public decimal? TaxRate { get; init; }
         public string? TaxCode { get; init; }
         public string? Tags { get; init; }
@@ -103,8 +99,6 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public bool IsPurchasable { get; init; }
         public bool TrackInventory { get; init; }
         public string DefaultCurrencyCode { get; init; } = "TRY";
-        public Guid? UnitDefinitionId { get; init; }
-        public string? UnitDefinitionName { get; init; }
         public decimal? TaxRate { get; init; }
         public string? TaxCode { get; init; }
         public string? Tags { get; init; }

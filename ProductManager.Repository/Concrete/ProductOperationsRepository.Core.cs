@@ -29,8 +29,6 @@ SELECT TOP (@Take)
     p.IsPurchasable,
     p.TrackInventory,
     p.DefaultCurrencyCode,
-    p.UnitDefinitionId,
-    u.Name AS UnitDefinitionName,
     p.TaxRate,
     p.TaxCode,
     p.Tags,
@@ -44,7 +42,6 @@ SELECT TOP (@Take)
 
             sqlBuilder.Append(@"
 FROM [Product].[Products] p
-LEFT JOIN [Product].[UnitDefinitions] u ON u.Id = p.UnitDefinitionId AND u.IsDeleted = 0
 WHERE p.IsDeleted = 0");
 
             var parameters = new DynamicParameters();
@@ -166,8 +163,6 @@ SELECT
     p.IsPurchasable,
     p.TrackInventory,
     p.DefaultCurrencyCode,
-    p.UnitDefinitionId,
-    u.Name AS UnitDefinitionName,
     p.TaxRate,
     p.TaxCode,
     p.Tags,
@@ -175,7 +170,6 @@ SELECT
     p.CreatedAt,
     p.UpdatedAt
 FROM [Product].[Products] p
-LEFT JOIN [Product].[UnitDefinitions] u ON u.Id = p.UnitDefinitionId AND u.IsDeleted = 0
 WHERE p.Id = @ProductId
   AND p.IsDeleted = 0;";
 
@@ -191,10 +185,9 @@ WHERE p.Id = @ProductId
 SELECT
     p.Id, p.ProductCode, p.Name, p.ShortDescription, p.Description, p.Kind, p.Status,
     p.Brand, p.Manufacturer, p.Barcode, p.IsActive, p.IsSellable, p.IsPurchasable,
-    p.TrackInventory, p.DefaultCurrencyCode, p.UnitDefinitionId, u.Name AS UnitDefinitionName, p.TaxRate, p.TaxCode,
+    p.TrackInventory, p.DefaultCurrencyCode, p.TaxRate, p.TaxCode,
     p.Tags, p.MetadataJson, p.CreatedAt, p.UpdatedAt
 FROM [Product].[Products] p
-LEFT JOIN [Product].[UnitDefinitions] u ON u.Id = p.UnitDefinitionId AND u.IsDeleted = 0
 WHERE p.Id = @ProductId AND p.IsDeleted = 0;
 
 -- 2: AttributeValues
@@ -223,12 +216,23 @@ LEFT JOIN [Product].[ProductVariants] v ON v.Id = p.ProductVariantId AND v.IsDel
 WHERE p.ProductId = @ProductId AND p.IsDeleted = 0;
 
 -- 4b: PricingRules
-SELECT Id, ProductId, Code, Name, Description, PriceAdjustmentJson, ConditionsJson,
-       Priority, IsActive, ValidFrom, ValidTo, SalesChannel, CustomerGroupCode,
-       ProductVariantId, ProductLicenseOfferingId, CreatedAt, UpdatedAt
-FROM [Product].[ProductPricingRules]
-WHERE ProductId = @ProductId AND IsDeleted = 0
-ORDER BY Priority, CreatedAt;
+SELECT r.Id, r.ProductId, r.Code, r.Name, r.Description, r.PriceAdjustmentJson, r.ConditionsJson,
+       r.Priority, r.IsActive, r.ValidFrom, r.ValidTo, r.SalesChannel, r.CustomerGroupCode,
+       r.ProductVariantId, r.ProductLicenseOfferingId,
+       r.CreatedAt, r.UpdatedAt
+FROM [Product].[ProductPricingRules] r
+WHERE r.ProductId = @ProductId AND r.IsDeleted = 0
+ORDER BY r.Priority, r.CreatedAt;
+
+-- 4c: ProductUnits
+SELECT pu.Id, pu.ProductId, pu.UnitDefinitionId,
+       ud.Code AS UnitDefinitionCode, ud.Name AS UnitDefinitionName,
+       pu.Code, pu.Name, pu.Description, pu.Role, pu.IsDefault, pu.IsActive,
+       pu.SortOrder, pu.CreatedAt, pu.UpdatedAt
+FROM [Product].[ProductUnits] pu
+JOIN [Product].[UnitDefinitions] ud ON ud.Id = pu.UnitDefinitionId AND ud.IsDeleted = 0
+WHERE pu.ProductId = @ProductId AND pu.IsDeleted = 0
+ORDER BY pu.SortOrder, pu.Name;
 
 -- 5: Inventories
 SELECT i.Id, i.ProductId, i.ProductVariantId, v.Sku AS VariantSku, v.Name AS VariantName,
@@ -305,7 +309,8 @@ WHERE ProductId = @ProductId AND IsDeleted = 0
 ORDER BY SortOrder, Name;
 
 -- 15: LicenseOfferings
-SELECT o.Id, o.ProductId, o.LicenseModel, o.Name, o.Description, o.BasePrice, o.CurrencyCode,
+SELECT o.Id, o.ProductId,
+ o.LicenseModel, o.Name, o.Description, o.BasePrice, o.CurrencyCode,
  o.BillingPeriodUnit, o.BillingPeriodValue, o.AutoRenew, o.GracePeriodDays,
  o.TrialDays, o.ConvertToOfferingId, cto.Name AS ConvertToOfferingName, o.MaxSeats, o.ValidFrom, o.ValidTo,
  o.IsActive, o.SortOrder, o.CreatedAt, o.UpdatedAt
@@ -371,6 +376,7 @@ ORDER BY m.SortOrder, m.Name, o.Name;
             var variants = (await multi.ReadAsync<ProductVariantDto>()).AsList();
             var prices = (await multi.ReadAsync<ProductPriceDto>()).AsList();
             var pricingRules = (await multi.ReadAsync<ProductPricingRuleDto>()).Select(NormalizePricingRuleDto).ToList();
+            var productUnits = (await multi.ReadAsync<ProductUnitDto>()).AsList();
             var inventories = (await multi.ReadAsync<ProductInventoryDto>()).AsList();
             var mediaItems = (await multi.ReadAsync<ProductMediaDto>()).AsList();
             var categoryMaps = (await multi.ReadAsync<ProductCategoryMapDto>()).AsList();
@@ -386,6 +392,10 @@ ORDER BY m.SortOrder, m.Name, o.Name;
             var inventoryReservations = (await multi.ReadAsync<InventoryReservationDto>()).AsList();
             var priceListItems = (await multi.ReadAsync<ProductPriceListItemDto>()).AsList();
             var moduleOfferingPrices = (await multi.ReadAsync<ProductModuleOfferingPriceDto>()).AsList();
+            var unitsByPricingRuleId = await LoadPricingRuleUnitsAsync(connection, pricingRules.Select(r => r.Id), cancellationToken);
+            var unitsByOfferingId = await LoadLicenseOfferingUnitsAsync(connection, licenseOfferings.Select(o => o.Id), cancellationToken);
+            var pricingRulesWithUnits = AttachProductUnits(pricingRules, unitsByPricingRuleId);
+            var licenseOfferingsWithUnits = AttachProductUnits(licenseOfferings, unitsByOfferingId);
 
             var offeringPricesByModule = moduleOfferingPrices
                 .GroupBy(p => p.ProductModuleId)
@@ -415,8 +425,6 @@ ORDER BY m.SortOrder, m.Name, o.Name;
                 IsPurchasable = product.IsPurchasable,
                 TrackInventory = product.TrackInventory,
                 DefaultCurrencyCode = product.DefaultCurrencyCode,
-                UnitDefinitionId = product.UnitDefinitionId,
-                UnitDefinitionName = product.UnitDefinitionName,
                 TaxRate = product.TaxRate,
                 TaxCode = product.TaxCode,
                 Tags = product.Tags,
@@ -426,7 +434,8 @@ ORDER BY m.SortOrder, m.Name, o.Name;
                 AttributeValues = attributeValues,
                 Variants = variants,
                 Prices = prices,
-                PricingRules = pricingRules,
+                PricingRules = pricingRulesWithUnits,
+                ProductUnits = productUnits,
                 Inventories = inventories,
                 MediaItems = mediaItems,
                 CategoryMaps = categoryMaps,
@@ -437,7 +446,7 @@ ORDER BY m.SortOrder, m.Name, o.Name;
                 ServiceProfile = serviceProfile,
                 SubscriptionProfile = subscriptionProfile,
                 Modules = modules,
-                LicenseOfferings = licenseOfferings,
+                LicenseOfferings = licenseOfferingsWithUnits,
                 InventoryTransactions = inventoryTransactions,
                 InventoryReservations = inventoryReservations,
                 PriceListItems = priceListItems,
@@ -464,7 +473,6 @@ INSERT INTO [Product].[Products]
     IsPurchasable,
     TrackInventory,
     DefaultCurrencyCode,
-    UnitDefinitionId,
     TaxRate,
     TaxCode,
     Tags,
@@ -489,7 +497,6 @@ VALUES
     @IsPurchasable,
     @TrackInventory,
     @DefaultCurrencyCode,
-    @UnitDefinitionId,
     @TaxRate,
     @TaxCode,
     @Tags,
@@ -521,7 +528,6 @@ VALUES
                         request.IsPurchasable,
                         request.TrackInventory,
                         request.DefaultCurrencyCode,
-                        request.UnitDefinitionId,
                         request.TaxRate,
                         request.TaxCode,
                         request.Tags,
@@ -568,7 +574,6 @@ INSERT INTO [Product].[Products]
     IsPurchasable,
     TrackInventory,
     DefaultCurrencyCode,
-    UnitDefinitionId,
     TaxRate,
     TaxCode,
     Tags,
@@ -593,7 +598,6 @@ VALUES
     @IsPurchasable,
     @TrackInventory,
     @DefaultCurrencyCode,
-    @UnitDefinitionId,
     @TaxRate,
     @TaxCode,
     @Tags,
@@ -622,7 +626,6 @@ VALUES
                             request.Product.IsPurchasable,
                             request.Product.TrackInventory,
                             request.Product.DefaultCurrencyCode,
-                            request.Product.UnitDefinitionId,
                             request.Product.TaxRate,
                             request.Product.TaxCode,
                             request.Product.Tags,
@@ -643,9 +646,10 @@ VALUES
                 await InsertInventoryTransactionsAsync(connection, transaction, productId, now, request.InventoryTransactions, cancellationToken);
                 await InsertInventoryReservationsAsync(connection, transaction, productId, now, request.InventoryReservations, cancellationToken);
                 await InsertPriceListItemsAsync(connection, transaction, productId, now, request.PriceListItems, cancellationToken);
+                var productUnitTempIdMap = await InsertProductUnitsAsync(connection, transaction, productId, now, request.ProductUnits, cancellationToken);
                 var moduleCodeMap = await InsertModulesAsync(connection, transaction, productId, now, request.Modules, cancellationToken);
-                var licenseOfferingTempIdMap = await InsertLicenseOfferingsAsync(connection, transaction, productId, now, request.LicenseOfferings, cancellationToken);
-                await InsertPricingRulesAsync(connection, transaction, productId, now, request.PricingRules, licenseOfferingTempIdMap, cancellationToken);
+                var licenseOfferingTempIdMap = await InsertLicenseOfferingsAsync(connection, transaction, productId, now, request.LicenseOfferings, productUnitTempIdMap, cancellationToken);
+                await InsertPricingRulesAsync(connection, transaction, productId, now, request.PricingRules, licenseOfferingTempIdMap, productUnitTempIdMap, cancellationToken);
                 await InsertModuleOfferingPricesAsync(connection, transaction, now, request.Modules, moduleCodeMap, licenseOfferingTempIdMap, cancellationToken);
                 await UpsertPhysicalProfileAsync(connection, transaction, productId, now, request.PhysicalProfile, cancellationToken);
                 await UpsertSoftwareProfileAsync(connection, transaction, productId, now, request.SoftwareProfile, cancellationToken);
@@ -1741,7 +1745,6 @@ SET
     IsPurchasable = @IsPurchasable,
     TrackInventory = @TrackInventory,
     DefaultCurrencyCode = @DefaultCurrencyCode,
-    UnitDefinitionId = @UnitDefinitionId,
     Tags = @Tags,
     MetadataJson = @MetadataJson,
     UpdatedAt = @Now
@@ -1769,7 +1772,6 @@ WHERE Id = @ProductId
                         request.IsPurchasable,
                         request.TrackInventory,
                         request.DefaultCurrencyCode,
-                        request.UnitDefinitionId,
                         request.Tags,
                         request.MetadataJson,
                         Now = DateTime.UtcNow

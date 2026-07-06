@@ -243,9 +243,7 @@ namespace ProductManager.Service.Concrete.PriceEngine
                     ? offering.ProductUnits.Where(unit => unit.IsActive)
                     : product.ProductUnits.Where(unit =>
                         unit.IsActive
-                        && (offering.ProductUnitId.HasValue
-                            ? unit.Id == offering.ProductUnitId.Value
-                            : unit.IsDefault));
+                        && unit.IsDefault);
 
                 var parameters = assignedUnits
                     .GroupBy(unit => unit.UnitDefinitionId)
@@ -276,28 +274,9 @@ namespace ProductManager.Service.Concrete.PriceEngine
                     return parameters;
                 }
 
-                if (!product.UnitDefinitionId.HasValue)
-                {
-                    throw new ValidationException(
-                        "licenseOfferingId",
-                        "Seat/kullanım teklifi için ProductUnit veya ürünün varsayılan unitDefinitionId alanı tanımlanmalıdır.");
-                }
-
-                var displayLabel = product.UnitDefinitionName ?? "Kullanıcı";
-                return
-                [
-                    new LicenseOfferingUnitParameterDto
-                    {
-                        UnitDefinitionId = product.UnitDefinitionId.Value,
-                        UnitDefinitionCode = string.Empty,
-                        UnitDefinitionName = product.UnitDefinitionName ?? string.Empty,
-                        DisplayLabel = displayLabel,
-                        HelpText = $"Birim miktarı \"{displayLabel}\" alanından girilir; fiyat birim başına hesaplanır.",
-                        IsRequired = true,
-                        MinValue = 1,
-                        MaxValue = offering.MaxSeats
-                    }
-                ];
+                throw new ValidationException(
+                    "licenseOfferingId",
+                    "Seat/kullanım teklifi için en az bir aktif ProductUnit tanımlanmalıdır.");
             }
 
             return [];

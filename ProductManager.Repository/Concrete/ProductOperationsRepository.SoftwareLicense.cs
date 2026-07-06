@@ -200,7 +200,8 @@ WHERE Id = @PriceId AND IsDeleted = 0;";
         public async Task<IReadOnlyList<ProductLicenseOfferingDto>> GetProductLicenseOfferingsAsync(Guid productId, CancellationToken cancellationToken = default)
         {
             const string sql = @"
-SELECT o.Id, o.ProductId, o.LicenseModel, o.Name, o.Description, o.BasePrice, o.CurrencyCode,
+SELECT o.Id, o.ProductId,
+ o.LicenseModel, o.Name, o.Description, o.BasePrice, o.CurrencyCode,
  o.BillingPeriodUnit, o.BillingPeriodValue, o.AutoRenew, o.GracePeriodDays,
  o.TrialDays, o.ConvertToOfferingId, cto.Name AS ConvertToOfferingName, o.MaxSeats, o.ValidFrom, o.ValidTo,
  o.IsActive, o.SortOrder, o.CreatedAt, o.UpdatedAt
@@ -212,13 +213,16 @@ ORDER BY o.SortOrder, o.LicenseModel;";
             using var connection = CreateConnection();
             var items = await connection.QueryAsync<ProductLicenseOfferingDto>(
             new CommandDefinition(sql, new { ProductId = productId }, cancellationToken: cancellationToken));
-            return items.AsList();
+            var offerings = items.AsList();
+            var unitsByOfferingId = await LoadLicenseOfferingUnitsAsync(connection, offerings.Select(o => o.Id), cancellationToken);
+            return AttachProductUnits(offerings, unitsByOfferingId);
         }
 
         public async Task<ProductLicenseOfferingDto?> GetProductLicenseOfferingByIdAsync(Guid offeringId, CancellationToken cancellationToken = default)
         {
             const string sql = @"
-SELECT o.Id, o.ProductId, o.LicenseModel, o.Name, o.Description, o.BasePrice, o.CurrencyCode,
+SELECT o.Id, o.ProductId,
+ o.LicenseModel, o.Name, o.Description, o.BasePrice, o.CurrencyCode,
  o.BillingPeriodUnit, o.BillingPeriodValue, o.AutoRenew, o.GracePeriodDays,
  o.TrialDays, o.ConvertToOfferingId, cto.Name AS ConvertToOfferingName, o.MaxSeats, o.ValidFrom, o.ValidTo,
  o.IsActive, o.SortOrder, o.CreatedAt, o.UpdatedAt
@@ -227,8 +231,15 @@ LEFT JOIN [Product].[ProductLicenseOfferings] cto ON cto.Id = o.ConvertToOfferin
 WHERE o.Id = @OfferingId AND o.IsDeleted = 0;";
 
             using var connection = CreateConnection();
-            return await connection.QuerySingleOrDefaultAsync<ProductLicenseOfferingDto>(
+            var offering = await connection.QuerySingleOrDefaultAsync<ProductLicenseOfferingDto>(
             new CommandDefinition(sql, new { OfferingId = offeringId }, cancellationToken: cancellationToken));
+            if (offering is null)
+            {
+                return null;
+            }
+
+            var unitsByOfferingId = await LoadLicenseOfferingUnitsAsync(connection, [offering.Id], cancellationToken);
+            return AttachProductUnits([offering], unitsByOfferingId).First();
         }
 
         public async Task<ProductLicenseOfferingDto> CreateProductLicenseOfferingAsync(CreateProductLicenseOfferingRequestDto request, CancellationToken cancellationToken = default)
@@ -246,7 +257,16 @@ VALUES
  @IsActive, @SortOrder, @Now, 0);";
 
             var id = Guid.NewGuid();
+            var now = DateTime.UtcNow;
+            var productUnitIds = ResolveProductUnitIds(
+                request.ProductUnitIds,
+                request.ProductUnitTempIds,
+                null);
             using var connection = CreateConnection();
+            connection.Open();
+            using var transaction = connection.BeginTransaction();
+            try
+            {
             await connection.ExecuteAsync(new CommandDefinition(sql, new
             {
                 Id = id,
@@ -267,8 +287,18 @@ VALUES
                 request.ValidTo,
                 request.IsActive,
                 request.SortOrder,
-                Now = DateTime.UtcNow
-            }, cancellationToken: cancellationToken));
+                Now = now
+            }, transaction, cancellationToken: cancellationToken));
+
+            await InsertLicenseOfferingUnitAssignmentsAsync(connection, transaction, id, productUnitIds, now, cancellationToken);
+
+            transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
 
             return await GetProductLicenseOfferingByIdAsync(id, cancellationToken)
             ?? throw new InvalidOperationException("ProductLicenseOffering could not be loaded after insert.");
@@ -287,7 +317,16 @@ SET LicenseModel = @LicenseModel, Name = @Name, Description = @Description,
  IsActive = @IsActive, SortOrder = @SortOrder, UpdatedAt = @Now
 WHERE Id = @OfferingId AND IsDeleted = 0;";
 
+            var now = DateTime.UtcNow;
+            var productUnitIds = ResolveProductUnitIds(
+                request.ProductUnitIds,
+                null,
+                null);
             using var connection = CreateConnection();
+            connection.Open();
+            using var transaction = connection.BeginTransaction();
+            try
+            {
             var rows = await connection.ExecuteAsync(new CommandDefinition(sql, new
             {
                 OfferingId = offeringId,
@@ -307,9 +346,24 @@ WHERE Id = @OfferingId AND IsDeleted = 0;";
                 request.ValidTo,
                 request.IsActive,
                 request.SortOrder,
-                Now = DateTime.UtcNow
-            }, cancellationToken: cancellationToken));
+                Now = now
+            }, transaction, cancellationToken: cancellationToken));
+            if (rows == 0)
+            {
+                transaction.Rollback();
+                return false;
+            }
+
+            await DeleteLicenseOfferingUnitAssignmentsAsync(connection, transaction, offeringId, cancellationToken);
+            await InsertLicenseOfferingUnitAssignmentsAsync(connection, transaction, offeringId, productUnitIds, now, cancellationToken);
+            transaction.Commit();
             return rows > 0;
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
         }
 
         public async Task<bool> DeleteProductLicenseOfferingAsync(Guid offeringId, CancellationToken cancellationToken = default)
@@ -422,6 +476,7 @@ VALUES
         Guid productId,
         DateTime now,
         IReadOnlyList<CreateProductLicenseOfferingRequestDto>? offerings,
+        IReadOnlyDictionary<string, Guid>? productUnitTempIdMap,
         CancellationToken cancellationToken)
         {
             if (offerings is null || offerings.Count == 0) return new Dictionary<string, Guid>();
@@ -440,6 +495,7 @@ VALUES
 
             // Build the params and track tempId → realId
             var tempIdMap = new Dictionary<string, Guid>();
+            var assignments = new List<(Guid OfferingId, IReadOnlyList<Guid> ProductUnitIds)>();
             var parameters = offerings.Select(o =>
             {
                 var realId = o.Id is { } existingId && existingId != Guid.Empty
@@ -447,6 +503,11 @@ VALUES
       : Guid.NewGuid();
                 if (!string.IsNullOrEmpty(o.TempId))
                     tempIdMap[o.TempId] = realId;
+                var productUnitIds = ResolveProductUnitIds(
+                    o.ProductUnitIds,
+                    o.ProductUnitTempIds,
+                    productUnitTempIdMap);
+                assignments.Add((realId, productUnitIds));
                 return new
                 {
                     Id = realId,
@@ -472,6 +533,17 @@ VALUES
             }).ToList();
 
             await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
+            foreach (var assignment in assignments)
+            {
+                await InsertLicenseOfferingUnitAssignmentsAsync(
+                    connection,
+                    transaction,
+                    assignment.OfferingId,
+                    assignment.ProductUnitIds,
+                    now,
+                    cancellationToken);
+            }
+
             return tempIdMap;
         }
     }

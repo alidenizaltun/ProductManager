@@ -16,6 +16,7 @@ namespace ProductManager.Repository.Concrete
             DateTime now,
             IReadOnlyList<CreateProductPricingRuleRequestDto>? rules,
             IReadOnlyDictionary<string, Guid>? licenseOfferingTempIdMap,
+            IReadOnlyDictionary<string, Guid>? productUnitTempIdMap,
             CancellationToken cancellationToken)
         {
             if (rules is null || rules.Count == 0)
@@ -37,30 +38,50 @@ VALUES
     @ProductVariantId, @ProductLicenseOfferingId, @Now, 0
 );";
 
-            var parameters = rules.Select(rule => new
+            var assignments = new List<(Guid PricingRuleId, IReadOnlyList<Guid> ProductUnitIds)>();
+            var parameters = rules.Select(rule =>
             {
-                Id = Guid.NewGuid(),
-                ProductId = productId,
-                rule.Code,
-                rule.Name,
-                rule.Description,
-                PriceAdjustmentJson = ResolvePriceAdjustmentJson(rule.PriceAdjustmentJson, rule.PriceAdjustment),
-                rule.ConditionsJson,
-                rule.Priority,
-                rule.IsActive,
-                rule.ValidFrom,
-                rule.ValidTo,
-                rule.SalesChannel,
-                rule.CustomerGroupCode,
-                rule.ProductVariantId,
-                ProductLicenseOfferingId = ResolveLicenseOfferingId(
+                var id = Guid.NewGuid();
+                var productUnitIds = ResolveProductUnitIds(
+                    rule.ProductUnitIds,
+                    rule.ProductUnitTempIds,
+                    productUnitTempIdMap);
+                assignments.Add((id, productUnitIds));
+                return new
+                {
+                    Id = id,
+                    ProductId = productId,
+                    rule.Code,
+                    rule.Name,
+                    rule.Description,
+                    PriceAdjustmentJson = ResolvePriceAdjustmentJson(rule.PriceAdjustmentJson, rule.PriceAdjustment),
+                    rule.ConditionsJson,
+                    rule.Priority,
+                    rule.IsActive,
+                    rule.ValidFrom,
+                    rule.ValidTo,
+                    rule.SalesChannel,
+                    rule.CustomerGroupCode,
+                    rule.ProductVariantId,
+                    ProductLicenseOfferingId = ResolveLicenseOfferingId(
                     rule.ProductLicenseOfferingId,
                     rule.LicenseOfferingTempId,
                     licenseOfferingTempIdMap),
-                Now = now
+                    Now = now
+                };
             });
 
             await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
+            foreach (var assignment in assignments)
+            {
+                await InsertPricingRuleUnitAssignmentsAsync(
+                    connection,
+                    transaction,
+                    assignment.PricingRuleId,
+                    assignment.ProductUnitIds,
+                    now,
+                    cancellationToken);
+            }
         }
 
         private static Guid? ResolveLicenseOfferingId(
@@ -88,17 +109,20 @@ VALUES
             CancellationToken cancellationToken = default)
         {
             const string sql = @"
-SELECT Id, ProductId, Code, Name, Description, PriceAdjustmentJson, ConditionsJson,
-       Priority, IsActive, ValidFrom, ValidTo, SalesChannel, CustomerGroupCode,
-       ProductVariantId, ProductLicenseOfferingId, CreatedAt, UpdatedAt
-FROM [Product].[ProductPricingRules]
-WHERE ProductId = @ProductId AND IsDeleted = 0
-ORDER BY Priority, CreatedAt;";
+SELECT r.Id, r.ProductId, r.Code, r.Name, r.Description, r.PriceAdjustmentJson, r.ConditionsJson,
+       r.Priority, r.IsActive, r.ValidFrom, r.ValidTo, r.SalesChannel, r.CustomerGroupCode,
+       r.ProductVariantId, r.ProductLicenseOfferingId,
+       r.CreatedAt, r.UpdatedAt
+FROM [Product].[ProductPricingRules] r
+WHERE r.ProductId = @ProductId AND r.IsDeleted = 0
+ORDER BY r.Priority, r.CreatedAt;";
 
             using var connection = CreateConnection();
             var items = await connection.QueryAsync<ProductPricingRuleDto>(
                 new CommandDefinition(sql, new { ProductId = productId }, cancellationToken: cancellationToken));
-            return items.Select(NormalizePricingRuleDto).AsList();
+            var rules = items.Select(NormalizePricingRuleDto).ToList();
+            var unitsByRuleId = await LoadPricingRuleUnitsAsync(connection, rules.Select(r => r.Id), cancellationToken);
+            return AttachProductUnits(rules, unitsByRuleId);
         }
 
         public async Task<ProductPricingRuleDto?> GetPricingRuleByIdAsync(
@@ -106,16 +130,24 @@ ORDER BY Priority, CreatedAt;";
             CancellationToken cancellationToken = default)
         {
             const string sql = @"
-SELECT Id, ProductId, Code, Name, Description, PriceAdjustmentJson, ConditionsJson,
-       Priority, IsActive, ValidFrom, ValidTo, SalesChannel, CustomerGroupCode,
-       ProductVariantId, ProductLicenseOfferingId, CreatedAt, UpdatedAt
-FROM [Product].[ProductPricingRules]
-WHERE Id = @PricingRuleId AND IsDeleted = 0;";
+SELECT r.Id, r.ProductId, r.Code, r.Name, r.Description, r.PriceAdjustmentJson, r.ConditionsJson,
+       r.Priority, r.IsActive, r.ValidFrom, r.ValidTo, r.SalesChannel, r.CustomerGroupCode,
+       r.ProductVariantId, r.ProductLicenseOfferingId,
+       r.CreatedAt, r.UpdatedAt
+FROM [Product].[ProductPricingRules] r
+WHERE r.Id = @PricingRuleId AND r.IsDeleted = 0;";
 
             using var connection = CreateConnection();
             var pricingRule = await connection.QuerySingleOrDefaultAsync<ProductPricingRuleDto>(
                 new CommandDefinition(sql, new { PricingRuleId = pricingRuleId }, cancellationToken: cancellationToken));
-            return pricingRule is null ? null : NormalizePricingRuleDto(pricingRule);
+            if (pricingRule is null)
+            {
+                return null;
+            }
+
+            var normalizedRule = NormalizePricingRuleDto(pricingRule);
+            var unitsByRuleId = await LoadPricingRuleUnitsAsync(connection, [normalizedRule.Id], cancellationToken);
+            return AttachProductUnits([normalizedRule], unitsByRuleId).First();
         }
 
         public async Task<ProductPricingRuleDto> CreatePricingRuleAsync(
@@ -137,8 +169,17 @@ VALUES
 );";
 
             var id = Guid.NewGuid();
+            var now = DateTime.UtcNow;
             var priceAdjustmentJson = ResolvePriceAdjustmentJson(request.PriceAdjustmentJson, request.PriceAdjustment);
+            var productUnitIds = ResolveProductUnitIds(
+                request.ProductUnitIds,
+                request.ProductUnitTempIds,
+                null);
             using var connection = CreateConnection();
+            connection.Open();
+            using var transaction = connection.BeginTransaction();
+            try
+            {
             await connection.ExecuteAsync(new CommandDefinition(sql, new
             {
                 Id = id,
@@ -156,8 +197,18 @@ VALUES
                 request.CustomerGroupCode,
                 request.ProductVariantId,
                 request.ProductLicenseOfferingId,
-                Now = DateTime.UtcNow
-            }, cancellationToken: cancellationToken));
+                Now = now
+            }, transaction, cancellationToken: cancellationToken));
+
+            await InsertPricingRuleUnitAssignmentsAsync(connection, transaction, id, productUnitIds, now, cancellationToken);
+
+            transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
 
             return await GetPricingRuleByIdAsync(id, cancellationToken)
                 ?? throw new InvalidOperationException("ProductPricingRule could not be loaded after insert.");
@@ -187,7 +238,16 @@ SET Code = @Code,
 WHERE Id = @PricingRuleId AND IsDeleted = 0;";
 
             var priceAdjustmentJson = ResolvePriceAdjustmentJson(request.PriceAdjustmentJson, request.PriceAdjustment);
+            var now = DateTime.UtcNow;
+            var productUnitIds = ResolveProductUnitIds(
+                request.ProductUnitIds,
+                null,
+                null);
             using var connection = CreateConnection();
+            connection.Open();
+            using var transaction = connection.BeginTransaction();
+            try
+            {
             var rows = await connection.ExecuteAsync(new CommandDefinition(sql, new
             {
                 PricingRuleId = pricingRuleId,
@@ -204,9 +264,24 @@ WHERE Id = @PricingRuleId AND IsDeleted = 0;";
                 request.CustomerGroupCode,
                 request.ProductVariantId,
                 request.ProductLicenseOfferingId,
-                Now = DateTime.UtcNow
-            }, cancellationToken: cancellationToken));
+                Now = now
+            }, transaction, cancellationToken: cancellationToken));
+            if (rows == 0)
+            {
+                transaction.Rollback();
+                return false;
+            }
+
+            await DeletePricingRuleUnitAssignmentsAsync(connection, transaction, pricingRuleId, cancellationToken);
+            await InsertPricingRuleUnitAssignmentsAsync(connection, transaction, pricingRuleId, productUnitIds, now, cancellationToken);
+            transaction.Commit();
             return rows > 0;
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
         }
 
         private static string ResolvePriceAdjustmentJson(string? priceAdjustmentJson, JsonElement? priceAdjustment)
