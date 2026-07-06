@@ -220,4 +220,59 @@ public sealed class ProductCommerceController : ControllerBase
 
         return NoContent();
     }
+
+    [HttpGet("{productId:guid}/units")]
+    [ProducesResponseType(typeof(IReadOnlyList<ProductUnitDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<ProductUnitDto>>> GetProductUnits(
+        Guid productId,
+        CancellationToken cancellationToken)
+    {
+        var units = await _service.GetProductUnitsAsync(productId, cancellationToken);
+        return Ok(units);
+    }
+
+    [HttpGet("units/{productUnitId:guid}")]
+    [ProducesResponseType(typeof(ProductUnitDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ProductUnitDto>> GetProductUnitById(
+        Guid productUnitId,
+        CancellationToken cancellationToken)
+    {
+        var unit = await _service.GetProductUnitByIdAsync(productUnitId, cancellationToken);
+        return unit is null ? NotFound() : Ok(unit);
+    }
+
+    [HttpPost("{productId:guid}/units")]
+    [ProducesResponseType(typeof(ProductUnitDto), StatusCodes.Status201Created)]
+    public async Task<ActionResult<ProductUnitDto>> CreateProductUnit(
+        Guid productId,
+        [FromBody] CreateProductUnitRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var created = await _service.CreateProductUnitAsync(request with { ProductId = productId }, cancellationToken);
+        return CreatedAtAction(nameof(GetProductUnitById), new { productUnitId = created.Id }, created);
+    }
+
+    [HttpPut("units/{productUnitId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateProductUnit(
+        Guid productUnitId,
+        [FromBody] UpdateProductUnitRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var updated = await _service.UpdateProductUnitAsync(productUnitId, request, cancellationToken);
+        return updated ? NoContent() : NotFound();
+    }
+
+    [HttpDelete("units/{productUnitId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteProductUnit(
+        Guid productUnitId,
+        CancellationToken cancellationToken)
+    {
+        var deleted = await _service.DeleteProductUnitAsync(productUnitId, cancellationToken);
+        return deleted ? NoContent() : NotFound();
+    }
 }

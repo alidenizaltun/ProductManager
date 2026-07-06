@@ -16,6 +16,7 @@ namespace ProductManager.Service.Concrete.PriceEngine
         private const int LicenseModelUsageBased = 3;
 
         private sealed record OfferingUnitEntry(
+            Guid? ProductUnitId,
             Guid UnitDefinitionId,
             int Value,
             string DisplayLabel,
@@ -188,55 +189,21 @@ namespace ProductManager.Service.Concrete.PriceEngine
 
             foreach (var unitInput in unitInputs)
             {
-                var tier = FindMatchingPricingTier(product, offering.Id, unitInput.UnitDefinitionId, unitInput.Value);
-                if (tier is not null)
+                if (offering.LicenseModel is LicenseModelSeatBased or LicenseModelUsageBased
+                    && offering.BasePrice > 0)
                 {
-                    var tierAmount = tier.FlatFee + (tier.PricePerUnit * unitInput.Value);
-                    var tierDescription = tier.MaxUnits.HasValue
-                        ? $"{tier.MinUnits}-{tier.MaxUnits}"
-                        : $"{tier.MinUnits}+";
-
-                    lines.Add(new PriceCalculationLineDto
-                    {
-                        LineType = PriceCalculationLineTypes.PricingTier,
-                        Description = $"Kademe ({unitInput.DisplayLabel}): {tierDescription}",
-                        Quantity = unitInput.Value,
-                        UnitAmount = tier.PricePerUnit,
-                        Amount = tierAmount,
-                        ReferenceId = tier.Id.ToString(),
-                        Metadata = $"unitDefinitionId={unitInput.UnitDefinitionId};flatFee={tier.FlatFee}"
-                    });
-
-                    subtotal += tierAmount;
-                    appliedUnits.Add(new AppliedLicenseOfferingUnitDto
-                    {
-                        UnitDefinitionId = unitInput.UnitDefinitionId,
-                        UnitDefinitionCode = tier.UnitDefinitionCode ?? unitInput.UnitDefinitionCode,
-                        UnitDefinitionName = tier.UnitDefinitionName ?? unitInput.UnitDefinitionName,
-                        DisplayLabel = unitInput.DisplayLabel,
-                        Value = unitInput.Value,
-                        PricingTierId = tier.Id,
-                        TierAmount = Round(tierAmount)
-                    });
-                    continue;
-                }
-
-                if (offering.LicenseModel == LicenseModelSeatBased
-                    && offering.BasePrice > 0
-                    && !HasActiveTierForOffering(product, offering.Id))
-                {
-                    var seatAmount = offering.BasePrice * unitInput.Value;
+                    var unitAmount = offering.BasePrice * unitInput.Value;
                     lines.Add(new PriceCalculationLineDto
                     {
                         LineType = PriceCalculationLineTypes.LicenseBase,
                         Description = $"{offering.Name} ({unitInput.Value} {unitInput.DisplayLabel})",
                         Quantity = unitInput.Value,
                         UnitAmount = offering.BasePrice,
-                        Amount = seatAmount,
+                        Amount = unitAmount,
                         ReferenceId = offering.Id.ToString(),
-                        Metadata = $"unitDefinitionId={unitInput.UnitDefinitionId}"
+                        Metadata = $"productUnitId={unitInput.ProductUnitId};unitDefinitionId={unitInput.UnitDefinitionId}"
                     });
-                    subtotal += seatAmount;
+                    subtotal += unitAmount;
                     appliedUnits.Add(new AppliedLicenseOfferingUnitDto
                     {
                         UnitDefinitionId = unitInput.UnitDefinitionId,
@@ -244,7 +211,7 @@ namespace ProductManager.Service.Concrete.PriceEngine
                         UnitDefinitionName = unitInput.UnitDefinitionName,
                         DisplayLabel = unitInput.DisplayLabel,
                         Value = unitInput.Value,
-                        TierAmount = Round(seatAmount)
+                        Amount = Round(unitAmount)
                     });
                     continue;
                 }
@@ -270,44 +237,50 @@ namespace ProductManager.Service.Concrete.PriceEngine
             ProductDetailDto product,
             ProductLicenseOfferingDto offering)
         {
-            var tiers = product.SoftwarePricingTiers
-                .Where(t => t.IsActive && t.ProductLicenseOfferingId == offering.Id)
-                .ToList();
-
-            if (tiers.Count > 0)
+            if (offering.LicenseModel is LicenseModelSeatBased or LicenseModelUsageBased)
             {
-                return tiers
-                    .GroupBy(t => t.UnitDefinitionId)
+                var assignedUnits = offering.ProductUnits.Count > 0
+                    ? offering.ProductUnits.Where(unit => unit.IsActive)
+                    : product.ProductUnits.Where(unit =>
+                        unit.IsActive
+                        && (offering.ProductUnitId.HasValue
+                            ? unit.Id == offering.ProductUnitId.Value
+                            : unit.IsDefault));
+
+                var parameters = assignedUnits
+                    .GroupBy(unit => unit.UnitDefinitionId)
                     .Select(group =>
                     {
-                        var reference = group.First();
-                        var displayLabel = reference.UnitDefinitionName
-                            ?? reference.UnitDefinitionCode
-                            ?? "Birim";
-
+                        var productUnit = group
+                            .OrderBy(unit => unit.SortOrder)
+                            .ThenBy(unit => unit.Name)
+                            .First();
+                        var displayLabel = productUnit.Name;
                         return new LicenseOfferingUnitParameterDto
                         {
-                            UnitDefinitionId = reference.UnitDefinitionId,
-                            UnitDefinitionCode = reference.UnitDefinitionCode ?? string.Empty,
-                            UnitDefinitionName = reference.UnitDefinitionName ?? string.Empty,
+                            ProductUnitId = productUnit.Id,
+                            UnitDefinitionId = productUnit.UnitDefinitionId,
+                            UnitDefinitionCode = productUnit.UnitDefinitionCode ?? string.Empty,
+                            UnitDefinitionName = productUnit.UnitDefinitionName ?? string.Empty,
                             DisplayLabel = displayLabel,
                             HelpText = $"Birim miktarı \"{displayLabel}\" alanından girilir; fiyat birim başına hesaplanır.",
                             IsRequired = true,
-                            MinValue = group.Min(t => t.MinUnits),
-                            MaxValue = ResolveMaxValue(group, offering.MaxSeats)
+                            MinValue = 1,
+                            MaxValue = offering.MaxSeats
                         };
                     })
-                    .OrderBy(p => p.DisplayLabel)
                     .ToList();
-            }
 
-            if (offering.LicenseModel is LicenseModelSeatBased or LicenseModelUsageBased)
-            {
+                if (parameters.Count > 0)
+                {
+                    return parameters;
+                }
+
                 if (!product.UnitDefinitionId.HasValue)
                 {
                     throw new ValidationException(
                         "licenseOfferingId",
-                        "Kademesiz seat/kullanım teklifi için ürünün varsayılan birim tanımı (unitDefinitionId) tanımlanmalıdır.");
+                        "Seat/kullanım teklifi için ProductUnit veya ürünün varsayılan unitDefinitionId alanı tanımlanmalıdır.");
                 }
 
                 var displayLabel = product.UnitDefinitionName ?? "Kullanıcı";
@@ -457,24 +430,6 @@ namespace ProductManager.Service.Concrete.PriceEngine
             return maxValue;
         }
 
-        private static int? ResolveMaxValue(
-            IEnumerable<SoftwarePricingTierDto> tiers,
-            int? offeringMaxSeats)
-        {
-            var tierMax = tiers
-                .Where(t => t.MaxUnits.HasValue)
-                .Select(t => t.MaxUnits!.Value)
-                .DefaultIfEmpty()
-                .Max();
-
-            if (offeringMaxSeats.HasValue && tierMax > 0)
-            {
-                return Math.Min(offeringMaxSeats.Value, tierMax);
-            }
-
-            return offeringMaxSeats ?? (tierMax > 0 ? tierMax : null);
-        }
-
         private static IReadOnlyList<OfferingUnitEntry> ResolveOfferingUnitInputs(
             ProductLicenseOfferingDto offering,
             IReadOnlyList<LicenseOfferingUnitParameterDto> unitParameters,
@@ -536,6 +491,7 @@ namespace ProductManager.Service.Concrete.PriceEngine
                 }
 
                 result.Add(new OfferingUnitEntry(
+                    parameter.ProductUnitId,
                     input.UnitDefinitionId,
                     input.Value,
                     parameter.DisplayLabel,
@@ -721,26 +677,6 @@ namespace ProductManager.Service.Concrete.PriceEngine
 
             return variant.AdditionalPrice ?? 0;
         }
-
-        private static SoftwarePricingTierDto? FindMatchingPricingTier(
-            ProductDetailDto product,
-            Guid offeringId,
-            Guid unitDefinitionId,
-            int unitValue)
-        {
-            return product.SoftwarePricingTiers
-                .Where(t =>
-                    t.IsActive
-                    && t.ProductLicenseOfferingId == offeringId
-                    && t.UnitDefinitionId == unitDefinitionId
-                    && unitValue >= t.MinUnits
-                    && (t.MaxUnits is null || unitValue <= t.MaxUnits))
-                .OrderByDescending(t => t.MinUnits)
-                .FirstOrDefault();
-        }
-
-        private static bool HasActiveTierForOffering(ProductDetailDto product, Guid offeringId)
-            => product.SoftwarePricingTiers.Any(t => t.IsActive && t.ProductLicenseOfferingId == offeringId);
 
         private static ProductLicenseOfferingDto? ResolveLicenseOffering(
             ProductDetailDto product,

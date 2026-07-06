@@ -28,4 +28,22 @@ namespace ProductManager.Domain.Entities.Product
 
         public bool IsActive { get; set; } = true;
     }
+
+    [Table("ProductUnits", Schema = "Product")]
+    public class ProductUnit : BaseEntity
+    {
+        public Guid ProductId { get; set; }
+        public Product? Product { get; set; }
+
+        public Guid UnitDefinitionId { get; set; }
+        public UnitDefinition? UnitDefinition { get; set; }
+
+        public string Code { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public UnitRole Role { get; set; } = UnitRole.Sales;
+        public bool IsDefault { get; set; }
+        public bool IsActive { get; set; } = true;
+        public int SortOrder { get; set; }
+    }
 }

@@ -55,6 +55,7 @@ namespace ProductManager.Shared.Dtos.PriceEngine
 
     public sealed record LicenseOfferingUnitParameterDto
     {
+        public Guid? ProductUnitId { get; init; }
         public Guid UnitDefinitionId { get; init; }
         public string UnitDefinitionCode { get; init; } = string.Empty;
         public string UnitDefinitionName { get; init; } = string.Empty;

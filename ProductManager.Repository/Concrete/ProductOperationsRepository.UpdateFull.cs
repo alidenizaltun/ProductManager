@@ -100,12 +100,6 @@ WHERE Id = @ProductId
                     await InsertPricesAsync(connection, transaction, productId, now, request.Prices, cancellationToken);
                 }
 
-                if (request.PricingRules is not null && request.LicenseOfferings is null)
-                {
-                    await HardDeleteByProductIdAsync(connection, transaction, "[Product].[ProductPricingRules]", productId, cancellationToken);
-                    await InsertPricingRulesAsync(connection, transaction, productId, now, request.PricingRules, null, cancellationToken);
-                }
-
                 if (request.Inventories is not null)
                 {
                     await HardDeleteByProductIdAsync(connection, transaction, "[Product].[ProductInventories]", productId, cancellationToken);
@@ -141,6 +135,29 @@ WHERE Id = @ProductId
                     await InsertSupplierMapsAsync(connection, transaction, productId, now, request.SupplierMaps, cancellationToken);
                 }
 
+                IReadOnlyDictionary<string, Guid>? productUnitTempIdMap = null;
+                if (request.ProductUnits is not null)
+                {
+                    if (request.LicenseOfferings is not null)
+                    {
+                        await HardDeleteByProductIdAsync(connection, transaction, "[Product].[ProductPricingRules]", productId, cancellationToken);
+                        await HardDeleteByProductIdAsync(connection, transaction, "[Product].[ProductLicenseOfferings]", productId, cancellationToken);
+                    }
+                    else if (request.PricingRules is not null)
+                    {
+                        await HardDeleteByProductIdAsync(connection, transaction, "[Product].[ProductPricingRules]", productId, cancellationToken);
+                    }
+
+                    await HardDeleteByProductIdAsync(connection, transaction, "[Product].[ProductUnits]", productId, cancellationToken);
+                    productUnitTempIdMap = await InsertProductUnitsAsync(connection, transaction, productId, now, request.ProductUnits, cancellationToken);
+                }
+
+                if (request.PricingRules is not null && request.LicenseOfferings is null)
+                {
+                    await HardDeleteByProductIdAsync(connection, transaction, "[Product].[ProductPricingRules]", productId, cancellationToken);
+                    await InsertPricingRulesAsync(connection, transaction, productId, now, request.PricingRules, null, productUnitTempIdMap, cancellationToken);
+                }
+
                 IReadOnlyDictionary<string, Guid>? moduleCodeMap = null;
                 if (request.Modules is not null)
                 {
@@ -154,12 +171,12 @@ WHERE Id = @ProductId
                 {
                     await HardDeleteByProductIdAsync(connection, transaction, "[Product].[ProductPricingRules]", productId, cancellationToken);
                     await HardDeleteByProductIdAsync(connection, transaction, "[Product].[ProductLicenseOfferings]", productId, cancellationToken);
-                    licenseOfferingTempIdMap = await InsertLicenseOfferingsAsync(connection, transaction, productId, now, request.LicenseOfferings, cancellationToken);
+                    licenseOfferingTempIdMap = await InsertLicenseOfferingsAsync(connection, transaction, productId, now, request.LicenseOfferings, productUnitTempIdMap, cancellationToken);
                 }
 
                 if (request.PricingRules is not null && request.LicenseOfferings is not null)
                 {
-                    await InsertPricingRulesAsync(connection, transaction, productId, now, request.PricingRules, licenseOfferingTempIdMap, cancellationToken);
+                    await InsertPricingRulesAsync(connection, transaction, productId, now, request.PricingRules, licenseOfferingTempIdMap, productUnitTempIdMap, cancellationToken);
                 }
 
                 if (moduleCodeMap is not null && licenseOfferingTempIdMap is not null)

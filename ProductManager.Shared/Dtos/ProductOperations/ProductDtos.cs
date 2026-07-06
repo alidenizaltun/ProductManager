@@ -116,6 +116,7 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public IReadOnlyList<ProductVariantDto> Variants { get; init; } = [];
         public IReadOnlyList<ProductPriceDto> Prices { get; init; } = [];
         public IReadOnlyList<ProductPricingRuleDto> PricingRules { get; init; } = [];
+        public IReadOnlyList<ProductUnitDto> ProductUnits { get; init; } = [];
         public IReadOnlyList<ProductInventoryDto> Inventories { get; init; } = [];
         public IReadOnlyList<ProductMediaDto> MediaItems { get; init; } = [];
         public IReadOnlyList<ProductCategoryMapDto> CategoryMaps { get; init; } = [];
@@ -139,6 +140,7 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public IReadOnlyList<CreateProductVariantRequestDto>? Variants { get; init; }
         public IReadOnlyList<CreateProductPriceRequestDto>? Prices { get; init; }
         public IReadOnlyList<CreateProductPricingRuleRequestDto>? PricingRules { get; init; }
+        public IReadOnlyList<CreateProductUnitRequestDto>? ProductUnits { get; init; }
         public IReadOnlyList<CreateProductInventoryRequestDto>? Inventories { get; init; }
         public IReadOnlyList<CreateProductMediaRequestDto>? MediaItems { get; init; }
         public IReadOnlyList<CreateProductCategoryMapRequestDto>? CategoryMaps { get; init; }
@@ -162,6 +164,7 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public IReadOnlyList<CreateProductVariantRequestDto>? Variants { get; init; }
         public IReadOnlyList<CreateProductPriceRequestDto>? Prices { get; init; }
         public IReadOnlyList<CreateProductPricingRuleRequestDto>? PricingRules { get; init; }
+        public IReadOnlyList<CreateProductUnitRequestDto>? ProductUnits { get; init; }
         public IReadOnlyList<CreateProductInventoryRequestDto>? Inventories { get; init; }
         public IReadOnlyList<CreateProductMediaRequestDto>? MediaItems { get; init; }
         public IReadOnlyList<CreateProductCategoryMapRequestDto>? CategoryMaps { get; init; }

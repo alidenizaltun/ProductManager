@@ -45,4 +45,50 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public bool IsActive { get; init; } = true;
         public int SortOrder { get; init; }
     }
+
+    public sealed record ProductUnitDto
+    {
+        public Guid Id { get; init; }
+        public Guid ProductId { get; init; }
+        public Guid UnitDefinitionId { get; init; }
+        public string? UnitDefinitionCode { get; init; }
+        public string? UnitDefinitionName { get; init; }
+        public string Code { get; init; } = string.Empty;
+        public string Name { get; init; } = string.Empty;
+        public string? Description { get; init; }
+        public int Role { get; init; } = 1;
+        public bool IsDefault { get; init; }
+        public bool IsActive { get; init; }
+        public int SortOrder { get; init; }
+        public DateTime CreatedAt { get; init; }
+        public DateTime? UpdatedAt { get; init; }
+    }
+
+    public sealed record CreateProductUnitRequestDto
+    {
+        public Guid? Id { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("_tempId")]
+        public string? TempId { get; init; }
+        public Guid ProductId { get; init; }
+        public Guid UnitDefinitionId { get; init; }
+        public required string Code { get; init; }
+        public required string Name { get; init; }
+        public string? Description { get; init; }
+        public int Role { get; init; } = 1;
+        public bool IsDefault { get; init; }
+        public bool IsActive { get; init; } = true;
+        public int SortOrder { get; init; }
+    }
+
+    public sealed record UpdateProductUnitRequestDto
+    {
+        public Guid UnitDefinitionId { get; init; }
+        public required string Code { get; init; }
+        public required string Name { get; init; }
+        public string? Description { get; init; }
+        public int Role { get; init; } = 1;
+        public bool IsDefault { get; init; }
+        public bool IsActive { get; init; } = true;
+        public int SortOrder { get; init; }
+    }
 }

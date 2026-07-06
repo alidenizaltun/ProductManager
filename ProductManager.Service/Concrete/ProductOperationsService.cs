@@ -202,6 +202,21 @@ namespace ProductManager.Service.Concrete
         public Task<bool> DeletePricingRuleAsync(Guid pricingRuleId, CancellationToken cancellationToken = default)
             => ExecuteWithSqlMapping(() => _repository.DeletePricingRuleAsync(pricingRuleId, cancellationToken));
 
+        public Task<IReadOnlyList<ProductUnitDto>> GetProductUnitsAsync(Guid productId, CancellationToken cancellationToken = default)
+            => _repository.GetProductUnitsAsync(productId, cancellationToken);
+
+        public Task<ProductUnitDto?> GetProductUnitByIdAsync(Guid productUnitId, CancellationToken cancellationToken = default)
+            => _repository.GetProductUnitByIdAsync(productUnitId, cancellationToken);
+
+        public Task<ProductUnitDto> CreateProductUnitAsync(CreateProductUnitRequestDto request, CancellationToken cancellationToken = default)
+            => ExecuteWithSqlMapping(() => _repository.CreateProductUnitAsync(request, cancellationToken));
+
+        public Task<bool> UpdateProductUnitAsync(Guid productUnitId, UpdateProductUnitRequestDto request, CancellationToken cancellationToken = default)
+            => ExecuteWithSqlMapping(() => _repository.UpdateProductUnitAsync(productUnitId, request, cancellationToken));
+
+        public Task<bool> DeleteProductUnitAsync(Guid productUnitId, CancellationToken cancellationToken = default)
+            => ExecuteWithSqlMapping(() => _repository.DeleteProductUnitAsync(productUnitId, cancellationToken));
+
         public Task<IReadOnlyList<ProductInventoryDto>> GetProductInventoriesAsync(ProductInventoryFilterDto filter, CancellationToken cancellationToken = default)
             => _repository.GetProductInventoriesAsync(filter, cancellationToken);
 
@@ -406,6 +421,8 @@ namespace ProductManager.Service.Concrete
                     return new ConflictException("Bu koda sahip depo zaten mevcut.");
                 if (message.Contains("IX_UnitDefinitions_Code"))
                     return new ConflictException("Bu koda sahip birim tanımı zaten mevcut.");
+                if (message.Contains("IX_ProductUnits_ProductId_Code"))
+                    return new ConflictException("Bu üründe aynı koda sahip birim zaten mevcut.");
                 if (message.Contains("IX_ProductPriceLists_Code") || message.Contains("PriceList"))
                     return new ConflictException("Bu koda sahip fiyat listesi zaten mevcut.");
                 if (message.Contains("IX_ProductModules_ProductId_ModuleCode"))
