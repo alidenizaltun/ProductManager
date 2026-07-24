@@ -180,29 +180,29 @@ VALUES
             using var transaction = connection.BeginTransaction();
             try
             {
-            await connection.ExecuteAsync(new CommandDefinition(sql, new
-            {
-                Id = id,
-                request.ProductId,
-                request.Code,
-                request.Name,
-                request.Description,
-                PriceAdjustmentJson = priceAdjustmentJson,
-                request.ConditionsJson,
-                request.Priority,
-                request.IsActive,
-                request.ValidFrom,
-                request.ValidTo,
-                request.SalesChannel,
-                request.CustomerGroupCode,
-                request.ProductVariantId,
-                request.ProductLicenseOfferingId,
-                Now = now
-            }, transaction, cancellationToken: cancellationToken));
+                await connection.ExecuteAsync(new CommandDefinition(sql, new
+                {
+                    Id = id,
+                    request.ProductId,
+                    request.Code,
+                    request.Name,
+                    request.Description,
+                    PriceAdjustmentJson = priceAdjustmentJson,
+                    request.ConditionsJson,
+                    request.Priority,
+                    request.IsActive,
+                    request.ValidFrom,
+                    request.ValidTo,
+                    request.SalesChannel,
+                    request.CustomerGroupCode,
+                    request.ProductVariantId,
+                    request.ProductLicenseOfferingId,
+                    Now = now
+                }, transaction, cancellationToken: cancellationToken));
 
-            await InsertPricingRuleUnitAssignmentsAsync(connection, transaction, id, productUnitIds, now, cancellationToken);
+                await InsertPricingRuleUnitAssignmentsAsync(connection, transaction, id, productUnitIds, now, cancellationToken);
 
-            transaction.Commit();
+                transaction.Commit();
             }
             catch
             {
@@ -248,34 +248,34 @@ WHERE Id = @PricingRuleId AND IsDeleted = 0;";
             using var transaction = connection.BeginTransaction();
             try
             {
-            var rows = await connection.ExecuteAsync(new CommandDefinition(sql, new
-            {
-                PricingRuleId = pricingRuleId,
-                request.Code,
-                request.Name,
-                request.Description,
-                PriceAdjustmentJson = priceAdjustmentJson,
-                request.ConditionsJson,
-                request.Priority,
-                request.IsActive,
-                request.ValidFrom,
-                request.ValidTo,
-                request.SalesChannel,
-                request.CustomerGroupCode,
-                request.ProductVariantId,
-                request.ProductLicenseOfferingId,
-                Now = now
-            }, transaction, cancellationToken: cancellationToken));
-            if (rows == 0)
-            {
-                transaction.Rollback();
-                return false;
-            }
+                var rows = await connection.ExecuteAsync(new CommandDefinition(sql, new
+                {
+                    PricingRuleId = pricingRuleId,
+                    request.Code,
+                    request.Name,
+                    request.Description,
+                    PriceAdjustmentJson = priceAdjustmentJson,
+                    request.ConditionsJson,
+                    request.Priority,
+                    request.IsActive,
+                    request.ValidFrom,
+                    request.ValidTo,
+                    request.SalesChannel,
+                    request.CustomerGroupCode,
+                    request.ProductVariantId,
+                    request.ProductLicenseOfferingId,
+                    Now = now
+                }, transaction, cancellationToken: cancellationToken));
+                if (rows == 0)
+                {
+                    transaction.Rollback();
+                    return false;
+                }
 
-            await DeletePricingRuleUnitAssignmentsAsync(connection, transaction, pricingRuleId, cancellationToken);
-            await InsertPricingRuleUnitAssignmentsAsync(connection, transaction, pricingRuleId, productUnitIds, now, cancellationToken);
-            transaction.Commit();
-            return rows > 0;
+                await DeletePricingRuleUnitAssignmentsAsync(connection, transaction, pricingRuleId, cancellationToken);
+                await InsertPricingRuleUnitAssignmentsAsync(connection, transaction, pricingRuleId, productUnitIds, now, cancellationToken);
+                transaction.Commit();
+                return rows > 0;
             }
             catch
             {

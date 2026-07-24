@@ -193,8 +193,9 @@ WHERE Id = @ProductId
                     await InsertInventoryReservationsAsync(connection, transaction, productId, now, request.InventoryReservations, cancellationToken);
                 }
 
-                if (request.PriceListItems is not null && request.PriceListItems.Count > 0)
+                if (request.PriceListItems is not null)
                 {
+                    await HardDeleteByProductIdAsync(connection, transaction, "[Product].[ProductPriceListItems]", productId, cancellationToken);
                     await InsertPriceListItemsAsync(connection, transaction, productId, now, request.PriceListItems, cancellationToken);
                 }
 

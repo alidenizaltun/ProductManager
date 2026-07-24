@@ -614,6 +614,7 @@ namespace ProductManager.Service.Concrete.PriceEngine
                     && (i.MinQuantity is null || quantity >= i.MinQuantity)
                     && (i.MaxQuantity is null || quantity <= i.MaxQuantity))
                 .OrderByDescending(i => i.MinQuantity ?? 0)
+                .ThenByDescending(i => i.UpdatedAt ?? i.CreatedAt)
                 .FirstOrDefault();
         }
 
@@ -641,6 +642,7 @@ namespace ProductManager.Service.Concrete.PriceEngine
                     && (p.MaxQuantity is null || quantity <= p.MaxQuantity))
                 .OrderByDescending(p => p.MinQuantity ?? 0)
                 .ThenByDescending(p => !string.IsNullOrWhiteSpace(p.SalesChannel))
+                .ThenByDescending(p => p.UpdatedAt ?? p.CreatedAt)
                 .FirstOrDefault();
         }
 
