@@ -11,6 +11,7 @@ namespace ProductManager.Shared.Dtos.Authentication
         public bool EmailConfirmed { get; init; }
         public bool IsActive { get; init; }
         public IEnumerable<string> Roles { get; init; } = [];
+        public IEnumerable<string> Permissions { get; init; } = [];
         public DateTime CreatedAt { get; init; }
     }
 }

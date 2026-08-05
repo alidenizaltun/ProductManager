@@ -1,5 +1,6 @@
 ﻿using ProductManager.Domain.Entities;
 using ProductManager.Domain.Entities.Product;
+using ProductManager.Domain.Entities.SystemManagement;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -40,6 +41,8 @@ namespace ProductManager.EfCore.Context
         public DbSet<ProductUnit> ProductUnits => Set<ProductUnit>();
         public DbSet<ProductPricingRuleUnit> ProductPricingRuleUnits => Set<ProductPricingRuleUnit>();
         public DbSet<ProductUnitConversion> ProductUnitConversions => Set<ProductUnitConversion>();
+        public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
+        public DbSet<Integration> Integrations => Set<Integration>();
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 

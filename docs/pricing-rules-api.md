@@ -83,7 +83,7 @@ Dealer portal order pricing sends the selected values through `POST /api/orders/
 - `type`: `fixed`, `percent`, `percentage`, `multiplier`, `custom`
 - `operation`/`direction`: use `subtract` to force a negative adjustment
 - `applyOn`: `basePrice`, `currentPrice`, `previousResult`
-- `unit.field`: supports request `featureValues` via `feature.<key>` and product attributes by key
+- `unit.field`: supports request `featureValues` via `feature.<key>`, product attributes by key, and other offering units via `unit.<unitDefinitionId>` (resolved from the request's `offeringUnits`)
 - `unit.freeUnits`: ignored when `tiers` are present, because tiers are authoritative
 - `unit.rounding`: `ceil`, `floor`, `round`, or `none`
 - `conditions.operator`: `all` or `any`

@@ -2,6 +2,7 @@ using ProductManager.Domain.Entities;
 using ProductManager.Service.Shared.Abstract;
 using ProductManager.Service.Shared.Configuration;
 using ProductManager.Shared.Dtos.Authentication;
+using ProductManager.Shared.Infrastructure.Security;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -85,6 +86,7 @@ namespace ProductManager.Service.Concrete
 
             // Başarılı giriş - token oluştur
             var roles = await _userManager.GetRolesAsync(user);
+            var permissions = await GetPermissionsForRolesAsync(roles);
             var additionalClaims = new Dictionary<string, string>();
 
             var tokenResponse = _tokenService.GenerateAccessToken(
@@ -92,7 +94,8 @@ namespace ProductManager.Service.Concrete
                 user.Email!,
                 roles,
                 additionalClaims,
-                request.RememberMe);
+                request.RememberMe,
+                permissions);
 
             // Refresh token'ı kaydet
             var refreshTokenExpiryDays = request.RememberMe
@@ -106,7 +109,7 @@ namespace ProductManager.Service.Concrete
 
             _logger.LogInformation("Kullanıcı giriş yaptı. UserId: {UserId}", user.Id);
 
-            var userDto = MapToUserDto(user, roles);
+            var userDto = MapToUserDto(user, roles, permissions);
 
             return AuthResponseDto.Success(userDto, tokenResponse);
         }
@@ -155,20 +158,22 @@ namespace ProductManager.Service.Concrete
 
             // Otomatik giriş yap ve token oluştur
             var roles = await _userManager.GetRolesAsync(user);
+            var permissions = await GetPermissionsForRolesAsync(roles);
             var additionalClaims = new Dictionary<string, string>();
 
             var tokenResponse = _tokenService.GenerateAccessToken(
                 user.Id,
                 user.Email!,
                 roles,
-                additionalClaims);
+                additionalClaims,
+                permissions: permissions);
 
             user.RefreshToken = tokenResponse.RefreshToken;
             user.RefreshTokenExpiryTime = DateTime.Now.AddDays(_jwtSettings.RefreshTokenExpirationDays);
 
             await _userManager.UpdateAsync(user);
 
-            var userDto = MapToUserDto(user, roles);
+            var userDto = MapToUserDto(user, roles, permissions);
 
             return AuthResponseDto.Success(userDto, tokenResponse);
         }
@@ -215,13 +220,15 @@ namespace ProductManager.Service.Concrete
 
             // Yeni token oluştur
             var roles = await _userManager.GetRolesAsync(user);
+            var permissions = await GetPermissionsForRolesAsync(roles);
             var additionalClaims = new Dictionary<string, string>();
 
             var tokenResponse = _tokenService.GenerateAccessToken(
                 user.Id,
                 user.Email!,
                 roles,
-                additionalClaims);
+                additionalClaims,
+                permissions: permissions);
 
             // Refresh token'ı güncelle
             user.RefreshToken = tokenResponse.RefreshToken;
@@ -231,7 +238,7 @@ namespace ProductManager.Service.Concrete
 
             _logger.LogInformation("Token yenilendi. UserId: {UserId}", user.Id);
 
-            var userDto = MapToUserDto(user, roles);
+            var userDto = MapToUserDto(user, roles, permissions);
 
             return AuthResponseDto.Success(userDto, tokenResponse);
         }
@@ -296,7 +303,8 @@ namespace ProductManager.Service.Concrete
             _logger.LogInformation("Kullanıcı şifresi değiştirildi. UserId: {UserId}", userId);
 
             var roles = await _userManager.GetRolesAsync(user);
-            var userDto = MapToUserDto(user, roles);
+            var permissions = await GetPermissionsForRolesAsync(roles);
+            var userDto = MapToUserDto(user, roles, permissions);
 
             return new AuthResponseDto
             {
@@ -388,7 +396,8 @@ namespace ProductManager.Service.Concrete
             _logger.LogInformation("Kullanıcı şifresi sıfırlandı. UserId: {UserId}", user.Id);
 
             var roles = await _userManager.GetRolesAsync(user);
-            var userDto = MapToUserDto(user, roles);
+            var permissions = await GetPermissionsForRolesAsync(roles);
+            var userDto = MapToUserDto(user, roles, permissions);
 
             return new AuthResponseDto
             {
@@ -407,8 +416,9 @@ namespace ProductManager.Service.Concrete
             }
 
             var roles = await _userManager.GetRolesAsync(user);
+            var permissions = await GetPermissionsForRolesAsync(roles);
 
-            return MapToUserDto(user, roles);
+            return MapToUserDto(user, roles, permissions);
         }
 
         public async Task<bool> ConfirmEmailAsync(Guid userId, string token, CancellationToken cancellationToken = default)
@@ -445,7 +455,29 @@ namespace ProductManager.Service.Concrete
             }
         }
 
-        private static UserDto MapToUserDto(ApplicationUser user, IList<string> roles)
+        private async Task<IReadOnlyList<string>> GetPermissionsForRolesAsync(IList<string> roles)
+        {
+            var permissions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var roleName in roles)
+            {
+                var role = await _roleManager.FindByNameAsync(roleName);
+                if (role == null)
+                {
+                    continue;
+                }
+
+                var claims = await _roleManager.GetClaimsAsync(role);
+                foreach (var claim in claims.Where(c => c.Type == Permissions.ClaimType))
+                {
+                    permissions.Add(claim.Value);
+                }
+            }
+
+            return permissions.ToList();
+        }
+
+        private static UserDto MapToUserDto(ApplicationUser user, IList<string> roles, IEnumerable<string>? permissions = null)
         {
             return new UserDto
             {
@@ -457,6 +489,7 @@ namespace ProductManager.Service.Concrete
                 EmailConfirmed = user.EmailConfirmed,
                 IsActive = user.IsActive,
                 Roles = roles,
+                Permissions = permissions ?? [],
                 CreatedAt = user.CreatedAt
             };
         }

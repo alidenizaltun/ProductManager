@@ -16,6 +16,7 @@ using ProductManager.Shared.Infrastructure.Helpers;
 using Dapper;
 using Hangfire;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
@@ -162,6 +163,10 @@ namespace ProductManager.API.Infrastructures.Extensions
             service.AddAuthorizationBuilder()
                 .AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"))
                 .AddPolicy("RequireUserRole", policy => policy.RequireRole("User", "Admin"));
+
+            // Claim tabanlı granüler izin politikaları (Permission:X) dinamik olarak üretilir
+            service.AddSingleton<IAuthorizationHandler, ProductManager.Shared.Infrastructure.Security.PermissionAuthorizationHandler>();
+            service.AddSingleton<IAuthorizationPolicyProvider, ProductManager.Shared.Infrastructure.Security.PermissionPolicyProvider>();
         }
 
         public static void AddAuthenticationServices(this IServiceCollection service)
@@ -294,6 +299,7 @@ namespace ProductManager.API.Infrastructures.Extensions
 
             service.AddScoped<IRepositoryManager, RepositoryManager>();
             service.AddScoped<IProductOperationsRepository, ProductOperationsRepository>();
+            service.AddScoped<ISystemManagementRepository, SystemManagementRepository>();
             service.AddScoped<IServiceManager, ServiceManager>();
 
             service.Scan(selector => selector

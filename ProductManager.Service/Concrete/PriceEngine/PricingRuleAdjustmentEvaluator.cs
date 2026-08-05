@@ -412,6 +412,13 @@ namespace ProductManager.Service.Concrete.PriceEngine
                 return attribute is null ? ResolvedValue.Missing : ResolvedValue.FromAttribute(attribute);
             }
 
+            if (normalized.StartsWith("unit.", StringComparison.OrdinalIgnoreCase)
+                && Guid.TryParse(normalized["unit.".Length..], out var unitDefinitionId))
+            {
+                var offeringUnit = request.OfferingUnits?.FirstOrDefault(unit => unit.UnitDefinitionId == unitDefinitionId);
+                return offeringUnit is null ? ResolvedValue.Missing : ResolvedValue.FromDecimal(offeringUnit.Value);
+            }
+
             return normalized.ToLowerInvariant() switch
             {
                 "quantity" or "request.quantity" => ResolvedValue.FromDecimal(request.Quantity),

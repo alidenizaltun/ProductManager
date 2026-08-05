@@ -82,6 +82,23 @@ try
     // app.ApplyMigrations();
     // app.ConfigreFirebase();
 
+    // Migration'lar otomatik uygulanmadığı için (bkz. app.ApplyMigrations() yorum satırı),
+    // yeni tablolar henüz DB'de olmayabilir; seed hatası tüm uygulamanın ayağa kalkmasını
+    // engellememeli, sadece loglanmalı.
+    using (var seedScope = app.Services.CreateScope())
+    {
+        try
+        {
+            var seedService = seedScope.ServiceProvider.GetRequiredService<ProductManager.Service.Shared.Abstract.IStartupSeedService>();
+            await seedService.SeedAsync();
+        }
+        catch (Exception seedEx)
+        {
+            var seedLogger = seedScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+            seedLogger.LogWarning(seedEx, "Başlangıç seed işlemi atlandı (muhtemelen migration henüz uygulanmadı).");
+        }
+    }
+
     app.ConfigureHangfire();
     app.ConfigureLocalization();
     app.UseHttpLogging();

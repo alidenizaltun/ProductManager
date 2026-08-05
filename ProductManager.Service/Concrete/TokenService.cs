@@ -37,7 +37,8 @@ namespace ProductManager.Service.Concrete
             string email,
             IEnumerable<string> roles,
             IDictionary<string, string>? additionalClaims = null,
-            bool rememberMe = false)
+            bool rememberMe = false,
+            IEnumerable<string>? permissions = null)
         {
             var expirationMinutes = rememberMe
                 ? _jwtSettings.RememberMeAccessTokenExpirationMinutes
@@ -62,6 +63,15 @@ namespace ProductManager.Service.Concrete
             foreach (var role in roles)
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
+            }
+
+            // İzinleri ekle
+            if (permissions != null)
+            {
+                foreach (var permission in permissions)
+                {
+                    claims.Add(new Claim(ProductManager.Shared.Infrastructure.Security.Permissions.ClaimType, permission));
+                }
             }
 
             // Ek claim'leri ekle

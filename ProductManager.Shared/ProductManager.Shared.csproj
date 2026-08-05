@@ -10,6 +10,7 @@
     <PackageReference Include="Mapster" Version="10.0.7" />
     <PackageReference Include="Mapster.DependencyInjection" Version="10.0.7" />
 	<PackageReference Include="Deva.Extensions.Gateway" Version="1.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="10.0.5" />
   </ItemGroup>
 
   <ItemGroup>
