@@ -68,6 +68,7 @@ namespace ProductManager.Repository.Shared.Abstract
         Task<ProductPricingRuleDto> CreatePricingRuleAsync(CreateProductPricingRuleRequestDto request, CancellationToken cancellationToken = default);
         Task<bool> UpdatePricingRuleAsync(Guid pricingRuleId, UpdateProductPricingRuleRequestDto request, CancellationToken cancellationToken = default);
         Task<bool> DeletePricingRuleAsync(Guid pricingRuleId, CancellationToken cancellationToken = default);
+        Task<bool> ReorderPricingRulesAsync(Guid productId, IReadOnlyList<Guid> orderedPricingRuleIds, CancellationToken cancellationToken = default);
 
         Task<IReadOnlyList<ProductUnitDto>> GetProductUnitsAsync(Guid productId, CancellationToken cancellationToken = default);
         Task<ProductUnitDto?> GetProductUnitByIdAsync(Guid productUnitId, CancellationToken cancellationToken = default);

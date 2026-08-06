@@ -205,6 +205,23 @@ public sealed class ProductCommerceController : ControllerBase
         return NoContent();
     }
 
+    [HttpPut("{productId:guid}/pricing-rules/reorder")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ReorderPricingRules(
+        Guid productId,
+        [FromBody] ReorderProductPricingRulesRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var updated = await _service.ReorderPricingRulesAsync(productId, request.OrderedPricingRuleIds, cancellationToken);
+        if (!updated)
+        {
+            return NotFound();
+        }
+
+        return NoContent();
+    }
+
     [HttpDelete("pricing-rules/{pricingRuleId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

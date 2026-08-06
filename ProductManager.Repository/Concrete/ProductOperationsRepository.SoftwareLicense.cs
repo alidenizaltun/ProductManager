@@ -407,10 +407,9 @@ SET LicenseModel = @LicenseModel, Name = @Name, Description = @Description,
 WHERE Id = @OfferingId AND IsDeleted = 0;";
 
             var now = DateTime.UtcNow;
-            var productUnitIds = ResolveProductUnitIds(
-                request.ProductUnitIds,
-                null,
-                null);
+            var productUnitIds = request.ProductUnitIds is null
+                ? null
+                : ResolveProductUnitIds(request.ProductUnitIds, null, null);
             using var connection = CreateConnection();
             connection.Open();
             using var transaction = connection.BeginTransaction();
@@ -443,8 +442,11 @@ WHERE Id = @OfferingId AND IsDeleted = 0;";
                 return false;
             }
 
-            await DeleteLicenseOfferingUnitAssignmentsAsync(connection, transaction, offeringId, cancellationToken);
-            await InsertLicenseOfferingUnitAssignmentsAsync(connection, transaction, offeringId, productUnitIds, now, cancellationToken);
+            if (productUnitIds is not null)
+            {
+                await DeleteLicenseOfferingUnitAssignmentsAsync(connection, transaction, offeringId, cancellationToken);
+                await InsertLicenseOfferingUnitAssignmentsAsync(connection, transaction, offeringId, productUnitIds, now, cancellationToken);
+            }
             transaction.Commit();
             return rows > 0;
             }

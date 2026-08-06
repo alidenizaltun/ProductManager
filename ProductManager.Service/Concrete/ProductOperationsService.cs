@@ -202,6 +202,9 @@ namespace ProductManager.Service.Concrete
         public Task<bool> DeletePricingRuleAsync(Guid pricingRuleId, CancellationToken cancellationToken = default)
             => ExecuteWithSqlMapping(() => _repository.DeletePricingRuleAsync(pricingRuleId, cancellationToken));
 
+        public Task<bool> ReorderPricingRulesAsync(Guid productId, IReadOnlyList<Guid> orderedPricingRuleIds, CancellationToken cancellationToken = default)
+            => ExecuteWithSqlMapping(() => _repository.ReorderPricingRulesAsync(productId, orderedPricingRuleIds, cancellationToken));
+
         public Task<IReadOnlyList<ProductUnitDto>> GetProductUnitsAsync(Guid productId, CancellationToken cancellationToken = default)
             => _repository.GetProductUnitsAsync(productId, cancellationToken);
 

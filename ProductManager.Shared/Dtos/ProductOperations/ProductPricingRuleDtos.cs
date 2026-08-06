@@ -47,6 +47,11 @@ namespace ProductManager.Shared.Dtos.ProductOperations
         public IReadOnlyList<Guid>? ProductUnitIds { get; init; }
     }
 
+    public sealed record ReorderProductPricingRulesRequestDto
+    {
+        public required IReadOnlyList<Guid> OrderedPricingRuleIds { get; init; }
+    }
+
     public sealed record UpdateProductPricingRuleRequestDto
     {
         public required string Code { get; init; }

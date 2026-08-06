@@ -377,5 +377,46 @@ WHERE Id = @PricingRuleId AND IsDeleted = 0;";
                 new CommandDefinition(sql, new { PricingRuleId = pricingRuleId, Now = DateTime.UtcNow }, cancellationToken: cancellationToken));
             return rows > 0;
         }
+
+        public async Task<bool> ReorderPricingRulesAsync(
+            Guid productId,
+            IReadOnlyList<Guid> orderedPricingRuleIds,
+            CancellationToken cancellationToken = default)
+        {
+            if (orderedPricingRuleIds.Count == 0)
+            {
+                return true;
+            }
+
+            const string sql = @"
+UPDATE [Product].[ProductPricingRules]
+SET Priority = @Priority, UpdatedAt = @Now
+WHERE Id = @PricingRuleId AND ProductId = @ProductId AND IsDeleted = 0;";
+
+            var now = DateTime.UtcNow;
+            var parameters = orderedPricingRuleIds
+                .Select((id, index) => new
+                {
+                    PricingRuleId = id,
+                    ProductId = productId,
+                    Priority = (index + 1) * 10,
+                    Now = now
+                });
+
+            using var connection = CreateConnection();
+            connection.Open();
+            using var transaction = connection.BeginTransaction();
+            try
+            {
+                var rows = await connection.ExecuteAsync(new CommandDefinition(sql, parameters, transaction, cancellationToken: cancellationToken));
+                transaction.Commit();
+                return rows > 0;
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
     }
 }
