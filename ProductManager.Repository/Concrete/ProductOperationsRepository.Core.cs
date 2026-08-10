@@ -75,10 +75,7 @@ WHERE p.IsDeleted = 0");
 
             using var connection = CreateConnection();
             var products = (await connection.QueryAsync<ProductDto>(
-                new CommandDefinition(
-                    sqlBuilder.ToString(),
-                    parameters,
-                    cancellationToken: cancellationToken))).AsList();
+                new CommandDefinition(sqlBuilder.ToString(), parameters, cancellationToken: cancellationToken))).AsList();
 
             return await EnrichProductsWithMediaAsync(connection, products, cancellationToken);
         }
