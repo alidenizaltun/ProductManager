@@ -16,7 +16,8 @@ namespace ProductManager.Shared.Dtos.ProductOperations
 
     public sealed record CreateProductSupplierRequestDto
     {
-        public required string SupplierCode { get; init; }
+        /// <summary>Boş bırakılırsa kod sistem tarafından üretilir (SUP-000001).</summary>
+        public string? SupplierCode { get; init; }
         public required string Name { get; init; }
         public string? TaxNumber { get; init; }
         public string? Email { get; init; }

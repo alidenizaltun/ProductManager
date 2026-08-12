@@ -41,7 +41,8 @@ namespace ProductManager.Presentation.Validators.ProductOperations
     {
         public CreateProductPriceListRequestDtoValidator()
         {
-            RuleFor(x => x.Code).NotEmpty().MaximumLength(64);
+            // Kod gönderilmezse sistem üretir; gönderildiyse yalnızca uzunluğu doğrulanır.
+            RuleFor(x => x.Code).MaximumLength(64).When(x => !string.IsNullOrWhiteSpace(x.Code));
             RuleFor(x => x.Name).NotEmpty().MaximumLength(250);
             RuleFor(x => x.Description).MaximumLength(1000).When(x => !string.IsNullOrWhiteSpace(x.Description));
             RuleFor(x => x.CurrencyCode).NotEmpty().Length(3).Matches("^[A-Z]{3}$");

@@ -76,8 +76,10 @@ namespace ProductManager.Presentation.Validators.ProductOperations
     {
         public CreateProductCategoryRequestDtoValidator()
         {
+            // Kod gönderilmezse sistem üretir; gönderildiyse yalnızca uzunluğu doğrulanır.
             RuleFor(x => x.Code)
-                .NotEmpty().WithMessage("Category code is required.");
+                .MaximumLength(64).WithMessage("Category code max length is 64.")
+                .When(x => !string.IsNullOrWhiteSpace(x.Code));
 
             RuleFor(x => x.Name)
                 .NotEmpty().WithMessage("Category name is required.");

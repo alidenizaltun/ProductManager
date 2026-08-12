@@ -502,36 +502,43 @@ VALUES
     0
 );";
 
-            var productId = Guid.NewGuid();
-
-            using var connection = CreateConnection();
-            await connection.ExecuteAsync(
-                new CommandDefinition(
-                    sql,
-                    new
-                    {
-                        Id = productId,
-                        request.ProductCode,
-                        request.Name,
-                        request.ShortDescription,
-                        request.Description,
-                        request.Kind,
-                        request.Status,
-                        request.Brand,
-                        request.Manufacturer,
-                        request.Barcode,
-                        request.IsActive,
-                        request.IsSellable,
-                        request.IsPurchasable,
-                        request.TrackInventory,
-                        request.DefaultCurrencyCode,
-                        request.TaxRate,
-                        request.TaxCode,
-                        request.Tags,
-                        request.MetadataJson,
-                        Now = DateTime.UtcNow
-                    },
-                    cancellationToken: cancellationToken));
+            var productId = await InsertWithGeneratedCodeAsync(
+                request.ProductCode,
+                ProductCodeSource,
+                async (connection, transaction, code, ct) =>
+                {
+                    var id = Guid.NewGuid();
+                    await connection.ExecuteAsync(
+                        new CommandDefinition(
+                            sql,
+                            new
+                            {
+                                Id = id,
+                                ProductCode = code,
+                                request.Name,
+                                request.ShortDescription,
+                                request.Description,
+                                request.Kind,
+                                request.Status,
+                                request.Brand,
+                                request.Manufacturer,
+                                request.Barcode,
+                                request.IsActive,
+                                request.IsSellable,
+                                request.IsPurchasable,
+                                request.TrackInventory,
+                                request.DefaultCurrencyCode,
+                                request.TaxRate,
+                                request.TaxCode,
+                                request.Tags,
+                                request.MetadataJson,
+                                Now = DateTime.UtcNow
+                            },
+                            transaction,
+                            cancellationToken: ct));
+                    return id;
+                },
+                cancellationToken);
 
             return await GetProductByIdAsync(productId, cancellationToken)
                 ?? throw new InvalidOperationException("Product could not be loaded after insert.");
@@ -553,6 +560,10 @@ VALUES
 
             try
             {
+                // Kod istekte yoksa aynı işlem içinde sistem tarafından üretilir.
+                var productCode = NormalizeRequestedCode(request.Product.ProductCode)
+                    ?? await GenerateNextCodeAsync(connection, transaction, ProductCodeSource, cancellationToken);
+
                 const string productSql = @"
 INSERT INTO [Product].[Products]
 (
@@ -609,7 +620,7 @@ VALUES
                         new
                         {
                             Id = productId,
-                            request.Product.ProductCode,
+                            ProductCode = productCode,
                             request.Product.Name,
                             request.Product.ShortDescription,
                             request.Product.Description,
@@ -2262,22 +2273,29 @@ VALUES
     0
 );";
 
-            var categoryId = Guid.NewGuid();
-
-            using var connection = CreateConnection();
-            await connection.ExecuteAsync(
-                new CommandDefinition(
-                    sql,
-                    new
-                    {
-                        Id = categoryId,
-                        request.Code,
-                        request.Name,
-                        request.Description,
-                        request.ParentCategoryId,
-                        Now = DateTime.UtcNow
-                    },
-                    cancellationToken: cancellationToken));
+            var categoryId = await InsertWithGeneratedCodeAsync(
+                request.Code,
+                CategoryCodeSource,
+                async (connection, transaction, code, ct) =>
+                {
+                    var id = Guid.NewGuid();
+                    await connection.ExecuteAsync(
+                        new CommandDefinition(
+                            sql,
+                            new
+                            {
+                                Id = id,
+                                Code = code,
+                                request.Name,
+                                request.Description,
+                                request.ParentCategoryId,
+                                Now = DateTime.UtcNow
+                            },
+                            transaction,
+                            cancellationToken: ct));
+                    return id;
+                },
+                cancellationToken);
 
             return await GetCategoryByIdAsync(categoryId, cancellationToken)
                 ?? throw new InvalidOperationException("Category could not be loaded after insert.");

@@ -54,18 +54,25 @@ INSERT INTO [Product].[UnitDefinitions]
 VALUES
     (@Id, @Code, @Name, @Description, @IsActive, @SortOrder, @Now, 0);";
 
-            var id = Guid.NewGuid();
-            using var connection = CreateConnection();
-            await connection.ExecuteAsync(new CommandDefinition(sql, new
-            {
-                Id = id,
+            var id = await InsertWithGeneratedCodeAsync(
                 request.Code,
-                request.Name,
-                request.Description,
-                request.IsActive,
-                request.SortOrder,
-                Now = DateTime.UtcNow
-            }, cancellationToken: cancellationToken));
+                UnitDefinitionCodeSource,
+                async (connection, transaction, code, ct) =>
+                {
+                    var unitDefinitionId = Guid.NewGuid();
+                    await connection.ExecuteAsync(new CommandDefinition(sql, new
+                    {
+                        Id = unitDefinitionId,
+                        Code = code,
+                        request.Name,
+                        request.Description,
+                        request.IsActive,
+                        request.SortOrder,
+                        Now = DateTime.UtcNow
+                    }, transaction, cancellationToken: ct));
+                    return unitDefinitionId;
+                },
+                cancellationToken);
 
             return await GetUnitDefinitionByIdAsync(id, cancellationToken)
                 ?? throw new InvalidOperationException("UnitDefinition could not be loaded after insert.");

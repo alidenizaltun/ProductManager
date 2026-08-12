@@ -7,9 +7,10 @@ namespace ProductManager.Presentation.Validators.ProductOperations
     {
         public CreateProductSupplierRequestDtoValidator()
         {
+            // Kod gönderilmezse sistem üretir; gönderildiyse yalnızca uzunluğu doğrulanır.
             RuleFor(x => x.SupplierCode)
-                .NotEmpty().WithMessage("Supplier code is required.")
-                .MaximumLength(64).WithMessage("Supplier code max length is 64.");
+                .MaximumLength(64).WithMessage("Supplier code max length is 64.")
+                .When(x => !string.IsNullOrWhiteSpace(x.SupplierCode));
 
             RuleFor(x => x.Name)
                 .NotEmpty().WithMessage("Supplier name is required.")
@@ -85,9 +86,10 @@ namespace ProductManager.Presentation.Validators.ProductOperations
     {
         public CreateWarehouseRequestDtoValidator()
         {
+            // Kod gönderilmezse sistem üretir; gönderildiyse yalnızca uzunluğu doğrulanır.
             RuleFor(x => x.Code)
-                .NotEmpty().WithMessage("Warehouse code is required.")
-                .MaximumLength(32).WithMessage("Warehouse code max length is 32.");
+                .MaximumLength(32).WithMessage("Warehouse code max length is 32.")
+                .When(x => !string.IsNullOrWhiteSpace(x.Code));
 
             RuleFor(x => x.Name)
                 .NotEmpty().WithMessage("Warehouse name is required.")
@@ -113,9 +115,10 @@ namespace ProductManager.Presentation.Validators.ProductOperations
     {
         public CreateUnitDefinitionRequestDtoValidator()
         {
+            // Kod gönderilmezse sistem üretir; gönderildiyse yalnızca uzunluğu doğrulanır.
             RuleFor(x => x.Code)
-                .NotEmpty().WithMessage("Unit code is required.")
-                .MaximumLength(32).WithMessage("Unit code max length is 32.");
+                .MaximumLength(32).WithMessage("Unit code max length is 32.")
+                .When(x => !string.IsNullOrWhiteSpace(x.Code));
 
             RuleFor(x => x.Name)
                 .NotEmpty().WithMessage("Unit name is required.")

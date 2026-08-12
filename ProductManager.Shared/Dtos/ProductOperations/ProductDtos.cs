@@ -40,7 +40,8 @@ namespace ProductManager.Shared.Dtos.ProductOperations
 
     public sealed record CreateProductRequestDto
     {
-        public required string ProductCode { get; init; }
+        /// <summary>Boş bırakılırsa kod sistem tarafından üretilir (PRD-000001).</summary>
+        public string? ProductCode { get; init; }
         public required string Name { get; init; }
         public string? ShortDescription { get; init; }
         public string? Description { get; init; }

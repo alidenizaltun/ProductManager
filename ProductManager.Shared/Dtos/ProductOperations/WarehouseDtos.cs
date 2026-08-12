@@ -16,7 +16,8 @@ namespace ProductManager.Shared.Dtos.ProductOperations
 
     public sealed record CreateWarehouseRequestDto
     {
-        public required string Code { get; init; }
+        /// <summary>Boş bırakılırsa kod sistem tarafından üretilir (WH-000001).</summary>
+        public string? Code { get; init; }
         public required string Name { get; init; }
         public string? Description { get; init; }
         public string? Address { get; init; }

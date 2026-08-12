@@ -18,7 +18,8 @@ namespace ProductManager.Shared.Dtos.ProductOperations
 
     public sealed record CreateProductPriceListRequestDto
     {
-        public required string Code { get; init; }
+        /// <summary>Boş bırakılırsa kod sistem tarafından üretilir (PL-000001).</summary>
+        public string? Code { get; init; }
         public required string Name { get; init; }
         public string? Description { get; init; }
         public string CurrencyCode { get; init; } = "TRY";

@@ -151,26 +151,34 @@ VALUES
     0
 );";
 
-            var supplierId = Guid.NewGuid();
             var now = DateTime.UtcNow;
 
-            using var connection = CreateConnection();
-            await connection.ExecuteAsync(
-                new CommandDefinition(
-                    sql,
-                    new
-                    {
-                        Id = supplierId,
-                        request.SupplierCode,
-                        request.Name,
-                        request.TaxNumber,
-                        request.Email,
-                        request.Phone,
-                        request.Address,
-                        request.IsActive,
-                        Now = now
-                    },
-                    cancellationToken: cancellationToken));
+            var supplierId = await InsertWithGeneratedCodeAsync(
+                request.SupplierCode,
+                SupplierCodeSource,
+                async (connection, transaction, code, ct) =>
+                {
+                    var id = Guid.NewGuid();
+                    await connection.ExecuteAsync(
+                        new CommandDefinition(
+                            sql,
+                            new
+                            {
+                                Id = id,
+                                SupplierCode = code,
+                                request.Name,
+                                request.TaxNumber,
+                                request.Email,
+                                request.Phone,
+                                request.Address,
+                                request.IsActive,
+                                Now = now
+                            },
+                            transaction,
+                            cancellationToken: ct));
+                    return id;
+                },
+                cancellationToken);
 
             return await GetSupplierByIdAsync(supplierId, cancellationToken)
                 ?? throw new InvalidOperationException("Supplier could not be loaded after insert.");
@@ -488,25 +496,32 @@ VALUES
     0
 );";
 
-            var warehouseId = Guid.NewGuid();
-
-            using var connection = CreateConnection();
-            await connection.ExecuteAsync(
-                new CommandDefinition(
-                    sql,
-                    new
-                    {
-                        Id = warehouseId,
-                        request.Code,
-                        request.Name,
-                        request.Description,
-                        request.Address,
-                        request.City,
-                        request.Country,
-                        request.IsActive,
-                        Now = DateTime.UtcNow
-                    },
-                    cancellationToken: cancellationToken));
+            var warehouseId = await InsertWithGeneratedCodeAsync(
+                request.Code,
+                WarehouseCodeSource,
+                async (connection, transaction, code, ct) =>
+                {
+                    var id = Guid.NewGuid();
+                    await connection.ExecuteAsync(
+                        new CommandDefinition(
+                            sql,
+                            new
+                            {
+                                Id = id,
+                                Code = code,
+                                request.Name,
+                                request.Description,
+                                request.Address,
+                                request.City,
+                                request.Country,
+                                request.IsActive,
+                                Now = DateTime.UtcNow
+                            },
+                            transaction,
+                            cancellationToken: ct));
+                    return id;
+                },
+                cancellationToken);
 
             return await GetWarehouseByIdAsync(warehouseId, cancellationToken)
                 ?? throw new InvalidOperationException("Warehouse could not be loaded after insert.");
@@ -1006,27 +1021,34 @@ VALUES
     0
 );";
 
-            var priceListId = Guid.NewGuid();
-
-            using var connection = CreateConnection();
-            await connection.ExecuteAsync(
-                new CommandDefinition(
-                    sql,
-                    new
-                    {
-                        Id = priceListId,
-                        request.Code,
-                        request.Name,
-                        request.Description,
-                        request.CurrencyCode,
-                        request.IsActive,
-                        request.ValidFrom,
-                        request.ValidTo,
-                        request.SalesChannel,
-                        request.CustomerGroupCode,
-                        Now = DateTime.UtcNow
-                    },
-                    cancellationToken: cancellationToken));
+            var priceListId = await InsertWithGeneratedCodeAsync(
+                request.Code,
+                PriceListCodeSource,
+                async (connection, transaction, code, ct) =>
+                {
+                    var id = Guid.NewGuid();
+                    await connection.ExecuteAsync(
+                        new CommandDefinition(
+                            sql,
+                            new
+                            {
+                                Id = id,
+                                Code = code,
+                                request.Name,
+                                request.Description,
+                                request.CurrencyCode,
+                                request.IsActive,
+                                request.ValidFrom,
+                                request.ValidTo,
+                                request.SalesChannel,
+                                request.CustomerGroupCode,
+                                Now = DateTime.UtcNow
+                            },
+                            transaction,
+                            cancellationToken: ct));
+                    return id;
+                },
+                cancellationToken);
 
             return await GetPriceListByIdAsync(priceListId, cancellationToken)
                 ?? throw new InvalidOperationException("Price list could not be loaded after insert.");
