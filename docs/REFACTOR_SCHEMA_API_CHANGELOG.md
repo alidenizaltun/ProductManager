@@ -99,7 +99,7 @@ Lisans modeli ve koltuk bilgisi yalnızca **`ProductLicenseOfferings`** üzerind
 ## Komutlar
 
 ```bash
-dotnet ef database update --project ProductManager.EFCore --startup-project ProductManager.API
+dotnet ef database update --project ProductManagement.EFCore --startup-project ProductManagement.API
 ```
 
 Migration ilk denemede FK hatası verdiyse, güncel migration dosyasında tier satırlarını düzelten SQL ile yeniden **`database update`** çalıştırılmalıdır (bu repoda düzeltme işlenmiştir).

@@ -1,6 +1,6 @@
 # Frontend change guide: sales plans and pricing rules with multiple product units
 
-This document is for applying the latest `ProductManager` backend change to the React frontend at:
+This document is for applying the latest `ProductManagement` backend change to the React frontend at:
 
 ```txt
 D:\Projects\React\product-management

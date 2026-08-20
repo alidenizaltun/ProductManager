@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/ProductManager.API/ProductManager.API.csproj",
+                "${workspaceFolder}/ProductManagement.API/ProductManagement.API.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary;ForceNoAlign"
             ],
@@ -19,7 +19,7 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/ProductManager.API/ProductManager.API.csproj",
+                "${workspaceFolder}/ProductManagement.API/ProductManagement.API.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary;ForceNoAlign"
             ],
@@ -33,7 +33,7 @@
                 "watch",
                 "run",
                 "--project",
-                "${workspaceFolder}/ProductManager.API/ProductManager.API.csproj"
+                "${workspaceFolder}/ProductManagement.API/ProductManagement.API.csproj"
             ],
             "problemMatcher": "$msCompile"
         }

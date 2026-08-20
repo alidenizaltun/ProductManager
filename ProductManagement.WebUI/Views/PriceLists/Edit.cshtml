@@ -1,0 +1,157 @@
+@model ProductManagement.WebUI.Models.ProductOperations.PriceListFormViewModel
+
+@{
+    var isEdit = Model.Id.HasValue;
+    ViewData["Title"] = isEdit ? "Fiyat Listesi Düzenle" : "Yeni Fiyat Listesi";
+}
+
+<div class="nk-content">
+    <div class="container-fluid">
+        <div class="nk-content-inner">
+            <div class="nk-content-body">
+                <div class="nk-block-head nk-block-head-sm">
+                    <div class="nk-block-between">
+                        <div class="nk-block-head-content">
+                            <h3 class="nk-block-title page-title">@(isEdit ? "Fiyat Listesi Düzenle" : "Yeni Fiyat Listesi")</h3>
+                            <div class="nk-block-des text-soft">
+                                <p>Fiyat listesi temel bilgilerini ve geçerlilik aralığını yönetin.</p>
+                            </div>
+                        </div>
+                        <div class="nk-block-head-content">
+                            <a asp-action="Index" class="btn btn-outline-light">Listeye Dön</a>
+                        </div>
+                    </div>
+                </div>
+
+                @await Html.PartialAsync("_StatusMessage")
+
+                <div class="nk-block">
+                    <div class="card card-bordered">
+                        <div class="card-inner">
+                            <div class="card-head">
+                                <h5 class="card-title">Fiyat Listesi Bilgileri</h5>
+                            </div>
+
+                            <form method="post" asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" class="row g-4">
+                                @Html.AntiForgeryToken()
+                                <input asp-for="Id" type="hidden" />
+
+                                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                                <div class="col-lg-4">
+                                    <div class="form-group">
+                                        <label asp-for="Code" class="form-label"></label>
+                                        <div class="form-control-wrap">
+                                            <input asp-for="Code" class="form-control" placeholder="Örn: PRC-2026" />
+                                        </div>
+                                        <span asp-validation-for="Code" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-8">
+                                    <div class="form-group">
+                                        <label asp-for="Name" class="form-label"></label>
+                                        <div class="form-control-wrap">
+                                            <input asp-for="Name" class="form-control" placeholder="Fiyat listesi adı" />
+                                        </div>
+                                        <span asp-validation-for="Name" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="form-group">
+                                        <label asp-for="CurrencyCode" class="form-label"></label>
+                                        <div class="form-control-wrap">
+                                            <input asp-for="CurrencyCode" class="form-control" placeholder="TRY" />
+                                        </div>
+                                        <span asp-validation-for="CurrencyCode" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="form-group">
+                                        <label asp-for="SalesChannel" class="form-label"></label>
+                                        <div class="form-control-wrap">
+                                            <input asp-for="SalesChannel" class="form-control" placeholder="Online" />
+                                        </div>
+                                        <span asp-validation-for="SalesChannel" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="form-group">
+                                        <label asp-for="CustomerGroupCode" class="form-label"></label>
+                                        <div class="form-control-wrap">
+                                            <input asp-for="CustomerGroupCode" class="form-control" placeholder="B2C" />
+                                        </div>
+                                        <span asp-validation-for="CustomerGroupCode" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="form-group">
+                                        <label class="form-label">Durum</label>
+                                        <div class="form-control-wrap pt-2">
+                                            <div class="custom-control custom-control-sm custom-checkbox">
+                                                <input asp-for="IsActive" class="custom-control-input" />
+                                                <label class="custom-control-label" for="@Html.IdFor(m => m.IsActive)">Aktif</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-6">
+                                    <div class="form-group">
+                                        <label asp-for="ValidFrom" class="form-label"></label>
+                                        <div class="form-control-wrap">
+                                            <input asp-for="ValidFrom" class="form-control" type="datetime-local" />
+                                        </div>
+                                        <span asp-validation-for="ValidFrom" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-6">
+                                    <div class="form-group">
+                                        <label asp-for="ValidTo" class="form-label"></label>
+                                        <div class="form-control-wrap">
+                                            <input asp-for="ValidTo" class="form-control" type="datetime-local" />
+                                        </div>
+                                        <span asp-validation-for="ValidTo" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-12">
+                                    <div class="form-group">
+                                        <label asp-for="Description" class="form-label"></label>
+                                        <div class="form-control-wrap">
+                                            <textarea asp-for="Description" class="form-control" rows="3" placeholder="Açıklama"></textarea>
+                                        </div>
+                                        <span asp-validation-for="Description" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="col-12">
+                                    <div class="form-group">
+                                        <button type="submit" class="btn btn-primary">
+                                            <em class="icon ni ni-save"></em>
+                                            <span>@(isEdit ? "Değişiklikleri Kaydet" : "Fiyat Listesini Kaydet")</span>
+                                        </button>
+                                        <a asp-action="Index" class="btn btn-outline-light">İptal</a>
+                                        @if (isEdit)
+                                        {
+                                            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-primary">Detaya Git</a>
+                                        }
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

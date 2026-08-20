@@ -1,0 +1,125 @@
+@model ProductManagement.WebUI.Models.ProductOperations.AttributeDefinitionFormViewModel
+
+@{
+    var isEdit = Model.Id.HasValue;
+    ViewData["Title"] = isEdit ? "Özellik Düzenle" : "Yeni Özellik";
+}
+
+<div class="nk-content">
+    <div class="container-fluid">
+        <div class="nk-content-inner">
+            <div class="nk-content-body">
+                <div class="nk-block-head nk-block-head-sm">
+                    <div class="nk-block-between">
+                        <div class="nk-block-head-content">
+                            <h3 class="nk-block-title page-title">@(isEdit ? "Özellik Düzenle" : "Yeni Özellik")</h3>
+                            <div class="nk-block-des text-soft">
+                                <p>Özellik anahtarı, veri tipi ve doğrulama ayarlarını yönetin.</p>
+                            </div>
+                        </div>
+                        <div class="nk-block-head-content">
+                            <a asp-action="Index" class="btn btn-outline-light">Listeye Dön</a>
+                        </div>
+                    </div>
+                </div>
+
+                @await Html.PartialAsync("_StatusMessage")
+
+                <div class="nk-block">
+                    <div class="card card-bordered">
+                        <div class="card-inner">
+                            <div class="card-head">
+                                <h5 class="card-title">Özellik Bilgileri</h5>
+                            </div>
+
+                            <form method="post" asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" class="row g-4">
+                                @Html.AntiForgeryToken()
+                                <input asp-for="Id" type="hidden" />
+
+                                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                                <div class="col-lg-4">
+                                    <div class="form-group">
+                                        <label asp-for="Key" class="form-label"></label>
+                                        <div class="form-control-wrap">
+                                            <input asp-for="Key" class="form-control" placeholder="Örn: color" />
+                                        </div>
+                                        <span asp-validation-for="Key" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-8">
+                                    <div class="form-group">
+                                        <label asp-for="DisplayName" class="form-label"></label>
+                                        <div class="form-control-wrap">
+                                            <input asp-for="DisplayName" class="form-control" placeholder="Örn: Renk" />
+                                        </div>
+                                        <span asp-validation-for="DisplayName" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3">
+                                    <div class="form-group">
+                                        <label asp-for="DataType" class="form-label"></label>
+                                        <div class="form-control-wrap">
+                                            <input asp-for="DataType" class="form-control" type="number" min="1" />
+                                        </div>
+                                        <span asp-validation-for="DataType" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-9">
+                                    <div class="form-group">
+                                        <label class="form-label">Özellik Seçenekleri</label>
+                                        <ul class="custom-control-group g-3 align-center">
+                                            <li>
+                                                <div class="custom-control custom-control-sm custom-checkbox">
+                                                    <input asp-for="IsRequired" class="custom-control-input" />
+                                                    <label class="custom-control-label" for="@Html.IdFor(m => m.IsRequired)">Zorunlu</label>
+                                                </div>
+                                            </li>
+                                            <li>
+                                                <div class="custom-control custom-control-sm custom-checkbox">
+                                                    <input asp-for="IsFilterable" class="custom-control-input" />
+                                                    <label class="custom-control-label" for="@Html.IdFor(m => m.IsFilterable)">Filtrelenebilir</label>
+                                                </div>
+                                            </li>
+                                            <li>
+                                                <div class="custom-control custom-control-sm custom-checkbox">
+                                                    <input asp-for="IsVariantAxis" class="custom-control-input" />
+                                                    <label class="custom-control-label" for="@Html.IdFor(m => m.IsVariantAxis)">Varyant Ekseni</label>
+                                                </div>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-12">
+                                    <div class="form-group">
+                                        <div class="alert alert-light">
+                                            Gelişmiş doğrulama ayarları sistem tarafından otomatik yönetilir.
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-12">
+                                    <div class="form-group">
+                                        <button type="submit" class="btn btn-primary">
+                                            <em class="icon ni ni-save"></em>
+                                            <span>@(isEdit ? "Değişiklikleri Kaydet" : "Özelliği Kaydet")</span>
+                                        </button>
+                                        <a asp-action="Index" class="btn btn-outline-light">İptal</a>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

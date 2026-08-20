@@ -1,6 +1,6 @@
-# ProductManager
+# ProductManagement
 
-Bu doküman, **ProductManager** API’sindeki endpoint’lerin nasıl kullanılacağını ve temel DTO modellerini özetler.
+Bu doküman, **ProductManagement** API’sindeki endpoint’lerin nasıl kullanılacağını ve temel DTO modellerini özetler.
 
 ## İçerik
 - [Genel Bilgi](#genel-bilgi)

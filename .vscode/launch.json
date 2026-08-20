@@ -9,9 +9,9 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/ProductManager.API/bin/Debug/net10.0/ProductManager.API.dll",
+            "program": "${workspaceFolder}/ProductManagement.API/bin/Debug/net10.0/ProductManagement.API.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/ProductManager.API",
+            "cwd": "${workspaceFolder}/ProductManagement.API",
             "stopAtEntry": false,
             "serverReadyAction": {
                 "action": "openExternally",

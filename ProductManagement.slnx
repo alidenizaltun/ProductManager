@@ -1,0 +1,24 @@
+<Solution>
+  <Folder Name="/Application/">
+    <Project Path="ProductManagement.Repository/ProductManagement.Repository.csproj" />
+    <Project Path="ProductManagement.Service/ProductManagement.Service.csproj" />
+  </Folder>
+  <Folder Name="/Core/">
+    <Project Path="ProductManagement.Domain/ProductManagement.Domain.csproj" />
+    <Project Path="ProductManagement.EFCore/ProductManagement.EFCore.csproj" />
+  </Folder>
+  <Folder Name="/Presentation/" />
+  <Folder Name="/Presentation/API/">
+    <Project Path="ProductManagement.API.Presentation/ProductManagement.API.Presentation.csproj" Id="ce1669f3-4a69-4b40-a0a9-570aea4fd96e" />
+    <Project Path="ProductManagement.API/ProductManagement.API.csproj" />
+  </Folder>
+  <Folder Name="/Presentation/WebUI/">
+    <Project Path="ProductManagement.WebUI.Presentation/ProductManagement.WebUI.Presentation.csproj" Id="34aa40f1-a044-4915-b8fa-89d1c97c8292" />
+    <Project Path="ProductManagement.WebUI/ProductManagement.WebUI.csproj" Id="d08cdd71-df98-4b50-8dcc-5432dc3399fa" />
+  </Folder>
+  <Folder Name="/Shared/">
+    <Project Path="ProductManagement.Repository.Shared/ProductManagement.Repository.Shared.csproj" />
+    <Project Path="ProductManagement.Service.Shared/ProductManagement.Service.Shared.csproj" />
+    <Project Path="ProductManagement.Shared/ProductManagement.Shared.csproj" />
+  </Folder>
+</Solution>

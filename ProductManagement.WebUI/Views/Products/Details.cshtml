@@ -1,0 +1,340 @@
+@using System.Globalization
+@model ProductManagement.WebUI.Models.ProductOperations.ProductDetailsViewModel
+
+@{
+    ViewData["Title"] = "Ürün Detayı";
+    var categoryNames = Model.Categories.ToDictionary(x => x.Id, x => x.Name);
+    var attributeNames = Model.AttributeDefinitions.ToDictionary(x => x.Id, x => x.DisplayName);
+    var supplierNames = Model.Suppliers.ToDictionary(x => x.Id, x => x.Name);
+}
+
+<div class="nk-content nk-content-fluid">
+    <div class="container-fluid">
+        <div class="nk-content-inner">
+            <div class="nk-content-body">
+                <partial name="_StatusMessage" />
+
+                <div class="nk-block-head nk-block-head-sm">
+                    <div class="nk-block-between g-3">
+                        <div class="nk-block-head-content">
+                            <h3 class="nk-block-title page-title">@Model.Product.Name</h3>
+                            <div class="nk-block-des text-soft">
+                                <p>Kod: @Model.Product.ProductCode</p>
+                            </div>
+                        </div>
+                        <div class="nk-block-head-content">
+                            <div class="d-flex gap-2">
+                                <a asp-action="Index" asp-route-editId="@Model.Product.Id" class="btn btn-primary">Düzenle</a>
+                                <a asp-action="Index" class="btn btn-outline-light bg-white">Listeye Dön</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nk-block">
+                    <div class="row g-gs mb-3">
+                        <div class="col-sm-6 col-xl-3">
+                            <div class="card card-bordered h-100">
+                                <div class="card-inner">
+                                    <div class="fs-14px text-soft">Kategori</div>
+                                    <div class="fs-22px fw-bold">@Model.CategoryMaps.Count</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-xl-3">
+                            <div class="card card-bordered h-100">
+                                <div class="card-inner">
+                                    <div class="fs-14px text-soft">Varyant</div>
+                                    <div class="fs-22px fw-bold">@Model.Variants.Count</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-xl-3">
+                            <div class="card card-bordered h-100">
+                                <div class="card-inner">
+                                    <div class="fs-14px text-soft">Fiyat Kaydı</div>
+                                    <div class="fs-22px fw-bold">@Model.Prices.Count</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-xl-3">
+                            <div class="card card-bordered h-100">
+                                <div class="card-inner">
+                                    <div class="fs-14px text-soft">Stok Kalemi</div>
+                                    <div class="fs-22px fw-bold">@Model.Inventories.Count</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-gs mb-3">
+                    <div class="col-lg-6">
+                        <div class="card card-bordered h-100">
+                            <div class="card-inner">
+                                <h6 class="title mb-3">Temel Bilgiler</h6>
+                                <dl class="row mb-0">
+                                    <dt class="col-5">Kod</dt><dd class="col-7">@Model.Product.ProductCode</dd>
+                                    <dt class="col-5">Tür</dt><dd class="col-7">@Model.Product.Kind</dd>
+                                    <dt class="col-5">Durum</dt><dd class="col-7">@Model.Product.Status</dd>
+                                    <dt class="col-5">Para Birimi</dt><dd class="col-7">@Model.Product.DefaultCurrencyCode</dd>
+                                    <dt class="col-5">Vergi Oranı</dt><dd class="col-7">@(Model.Product.TaxRate?.ToString("0.##", CultureInfo.InvariantCulture) ?? "-")</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card card-bordered h-100">
+                            <div class="card-inner">
+                                <h6 class="title mb-3">Bayraklar</h6>
+                                <dl class="row mb-0">
+                                    <dt class="col-5">Aktif</dt><dd class="col-7">@(Model.Product.IsActive ? "Evet" : "Hayır")</dd>
+                                    <dt class="col-5">Satılabilir</dt><dd class="col-7">@(Model.Product.IsSellable ? "Evet" : "Hayır")</dd>
+                                    <dt class="col-5">Satın Alınabilir</dt><dd class="col-7">@(Model.Product.IsPurchasable ? "Evet" : "Hayır")</dd>
+                                    <dt class="col-5">Stok Takibi</dt><dd class="col-7">@(Model.Product.TrackInventory ? "Evet" : "Hayır")</dd>
+                                    <dt class="col-5">Marka</dt><dd class="col-7">@(Model.Product.Brand ?? "-")</dd>
+                                    <dt class="col-5">Üretici</dt><dd class="col-7">@(Model.Product.Manufacturer ?? "-")</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-gs mb-3">
+                    <div class="col-lg-6">
+                        <div class="card card-bordered">
+                            <div class="card-inner border-bottom py-2">
+                                <h6 class="title mb-0">Kategoriler</h6>
+                            </div>
+                            <div class="card-inner p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-tranx mb-0">
+                                        <thead><tr><th>Kategori</th><th>Tip</th><th>Sıra</th></tr></thead>
+                                        <tbody>
+                                        @if (Model.CategoryMaps.Count == 0)
+                                        {
+                                            <tr><td colspan="3" class="text-center">Kayıt yok</td></tr>
+                                        }
+                                        else
+                                        {
+                                            @foreach (var row in Model.CategoryMaps)
+                                            {
+                                                <tr>
+                                                    <td>@(categoryNames.TryGetValue(row.ProductCategoryId, out var name) ? name : row.ProductCategoryId.ToString())</td>
+                                                    <td>@(row.IsPrimary ? "Ana" : "Ek")</td>
+                                                    <td>@row.SortOrder</td>
+                                                </tr>
+                                            }
+                                        }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card card-bordered">
+                            <div class="card-inner border-bottom py-2">
+                                <h6 class="title mb-0">Özellik Değerleri</h6>
+                            </div>
+                            <div class="card-inner p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-tranx mb-0">
+                                        <thead><tr><th>Özellik</th><th>Değer</th></tr></thead>
+                                        <tbody>
+                                        @if (Model.AttributeValues.Count == 0)
+                                        {
+                                            <tr><td colspan="2" class="text-center">Kayıt yok</td></tr>
+                                        }
+                                        else
+                                        {
+                                            @foreach (var row in Model.AttributeValues)
+                                            {
+                                                <tr>
+                                                    <td>@(attributeNames.TryGetValue(row.AttributeDefinitionId, out var displayName) ? displayName : row.AttributeDefinitionId.ToString())</td>
+                                                    <td>
+                                                        @(row.ValueText
+                                                          ?? row.ValueNumber?.ToString(CultureInfo.InvariantCulture)
+                                                          ?? row.ValueBool?.ToString()
+                                                          ?? row.ValueDate?.ToString("yyyy-MM-dd")
+                                                          ?? row.ValueJson
+                                                          ?? "-")
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-gs mb-3">
+                    <div class="col-lg-6">
+                        <div class="card card-bordered">
+                            <div class="card-inner border-bottom py-2">
+                                <h6 class="title mb-0">Varyantlar</h6>
+                            </div>
+                            <div class="card-inner p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-tranx mb-0">
+                                        <thead><tr><th>SKU</th><th>Barkod</th><th>Aktif</th></tr></thead>
+                                        <tbody>
+                                        @if (Model.Variants.Count == 0)
+                                        {
+                                            <tr><td colspan="3" class="text-center">Kayıt yok</td></tr>
+                                        }
+                                        else
+                                        {
+                                            @foreach (var row in Model.Variants)
+                                            {
+                                                <tr>
+                                                    <td>@row.Sku</td>
+                                                    <td>@(row.Barcode ?? "-")</td>
+                                                    <td>@(row.IsActive ? "Evet" : "Hayır")</td>
+                                                </tr>
+                                            }
+                                        }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card card-bordered">
+                            <div class="card-inner border-bottom py-2">
+                                <h6 class="title mb-0">Fiyatlar</h6>
+                            </div>
+                            <div class="card-inner p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-tranx mb-0">
+                                        <thead><tr><th>Tutar</th><th>Tip</th><th>Min/Max</th></tr></thead>
+                                        <tbody>
+                                        @if (Model.Prices.Count == 0)
+                                        {
+                                            <tr><td colspan="3" class="text-center">Kayıt yok</td></tr>
+                                        }
+                                        else
+                                        {
+                                            @foreach (var row in Model.Prices)
+                                            {
+                                                <tr>
+                                                    <td>@row.Amount.ToString("0.##", CultureInfo.InvariantCulture) @row.CurrencyCode</td>
+                                                    <td>@row.PriceType</td>
+                                                    <td>@(row.MinQuantity?.ToString() ?? "-") / @(row.MaxQuantity?.ToString() ?? "-")</td>
+                                                </tr>
+                                            }
+                                        }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-gs mb-3">
+                    <div class="col-lg-6">
+                        <div class="card card-bordered">
+                            <div class="card-inner border-bottom py-2">
+                                <h6 class="title mb-0">Stok Görünümü</h6>
+                            </div>
+                            <div class="card-inner p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-tranx mb-0">
+                                        <thead><tr><th>Depo</th><th>Elde</th><th>Ayrılan</th><th>Kullanılabilir</th></tr></thead>
+                                        <tbody>
+                                        @if (Model.Inventories.Count == 0)
+                                        {
+                                            <tr><td colspan="4" class="text-center">Kayıt yok</td></tr>
+                                        }
+                                        else
+                                        {
+                                            @foreach (var row in Model.Inventories)
+                                            {
+                                                <tr>
+                                                    <td>@row.WarehouseCode</td>
+                                                    <td>@row.QuantityOnHand.ToString("0.##", CultureInfo.InvariantCulture)</td>
+                                                    <td>@row.QuantityReserved.ToString("0.##", CultureInfo.InvariantCulture)</td>
+                                                    <td>@row.QuantityAvailable.ToString("0.##", CultureInfo.InvariantCulture)</td>
+                                                </tr>
+                                            }
+                                        }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card card-bordered">
+                            <div class="card-inner border-bottom py-2">
+                                <h6 class="title mb-0">Tedarikçi Eşleşmeleri</h6>
+                            </div>
+                            <div class="card-inner p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-tranx mb-0">
+                                        <thead><tr><th>Tedarikçi</th><th>Kod</th><th>Maliyet</th><th>Öncelik</th></tr></thead>
+                                        <tbody>
+                                        @if (Model.SupplierMaps.Count == 0)
+                                        {
+                                            <tr><td colspan="4" class="text-center">Kayıt yok</td></tr>
+                                        }
+                                        else
+                                        {
+                                            @foreach (var row in Model.SupplierMaps)
+                                            {
+                                                <tr>
+                                                    <td>@(supplierNames.TryGetValue(row.ProductSupplierId, out var supplierName) ? supplierName : row.ProductSupplierId.ToString())</td>
+                                                    <td>@(row.SupplierProductCode ?? "-")</td>
+                                                    <td>@(row.SupplierCost?.ToString("0.##", CultureInfo.InvariantCulture) ?? "-")</td>
+                                                    <td>@(row.IsPreferred ? "Evet" : "Hayır")</td>
+                                                </tr>
+                                            }
+                                        }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card card-bordered">
+                    <div class="card-inner">
+                        <h6 class="title mb-3">Profil Özeti</h6>
+                        <div class="row g-gs">
+                            <div class="col-md-3">
+                                <div class="d-flex justify-content-between align-items-center border rounded p-2">
+                                    <span>Fiziksel</span>
+                                    <span class="badge @(Model.PhysicalProfile is null ? "bg-light text-dark" : "bg-success")">@(Model.PhysicalProfile is null ? "Yok" : "Var")</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex justify-content-between align-items-center border rounded p-2">
+                                    <span>Yazılım</span>
+                                    <span class="badge @(Model.SoftwareProfile is null ? "bg-light text-dark" : "bg-success")">@(Model.SoftwareProfile is null ? "Yok" : "Var")</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex justify-content-between align-items-center border rounded p-2">
+                                    <span>Hizmet</span>
+                                    <span class="badge @(Model.ServiceProfile is null ? "bg-light text-dark" : "bg-success")">@(Model.ServiceProfile is null ? "Yok" : "Var")</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex justify-content-between align-items-center border rounded p-2">
+                                    <span>Abonelik</span>
+                                    <span class="badge @(Model.SubscriptionProfile is null ? "bg-light text-dark" : "bg-success")">@(Model.SubscriptionProfile is null ? "Yok" : "Var")</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
