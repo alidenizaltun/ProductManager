@@ -22,6 +22,8 @@ namespace ProductManagement.Repository.Concrete
         private static readonly GeneratedCodeSource PriceListCodeSource = new("[Product].[ProductPriceLists]", "Code", "PL-");
         private static readonly GeneratedCodeSource UnitDefinitionCodeSource = new("[Product].[UnitDefinitions]", "Code", "UNIT-");
         private static readonly GeneratedCodeSource RegionCodeSource = new("[Product].[Regions]", "Code", "REG-");
+        private static readonly GeneratedCodeSource PricingTemplateCodeSource = new("[Product].[PricingTemplates]", "Code", "TPL-");
+        private static readonly GeneratedCodeSource PriceRevisionCodeSource = new("[Product].[PriceRevisions]", "Code", "ZAM-");
 
         private static string? NormalizeRequestedCode(string? requestedCode)
             => string.IsNullOrWhiteSpace(requestedCode) ? null : requestedCode.Trim();

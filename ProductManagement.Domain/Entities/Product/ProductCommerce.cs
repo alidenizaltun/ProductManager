@@ -62,8 +62,11 @@ namespace ProductManagement.Domain.Entities.Product
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
 
+        /// <summary>
+        /// Kuralın tamamı: tutar, mod, kademeler, limitler ve koşullar. Koşullar bu
+        /// gövdenin içindeki <c>conditions</c> alanında tutulur — ayrı bir kolonda değil.
+        /// </summary>
         public string PriceAdjustmentJson { get; set; } = string.Empty;
-        public string? ConditionsJson { get; set; }
 
         public int Priority { get; set; }
         public bool IsActive { get; set; } = true;
@@ -79,6 +82,13 @@ namespace ProductManagement.Domain.Entities.Product
 
         public Guid? ProductLicenseOfferingId { get; set; }
         public ProductLicenseOffering? ProductLicenseOffering { get; set; }
+
+        /// <summary>Bu kural bir fiyat şablonundan kopyalandıysa kaynağı. Zam kapsamı bu iz üzerinden bulunur.</summary>
+        public Guid? SourceTemplateId { get; set; }
+        public PricingTemplate? SourceTemplate { get; set; }
+
+        /// <summary>Kopyalandığı andaki şablon sürümü. Şablon sonradan güncellenirse fark buradan görülür.</summary>
+        public int? SourceTemplateVersion { get; set; }
 
         public ICollection<ProductPricingRuleUnit> UnitAssignments { get; set; } = new List<ProductPricingRuleUnit>();
     }

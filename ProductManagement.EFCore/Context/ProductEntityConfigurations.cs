@@ -198,10 +198,19 @@ namespace ProductManagement.EfCore.Context
             .HasForeignKey(r => r.ProductLicenseOfferingId)
             .OnDelete(DeleteBehavior.Restrict);
 
+            builder.HasOne(r => r.SourceTemplate)
+            .WithMany()
+            .HasForeignKey(r => r.SourceTemplateId)
+            .OnDelete(DeleteBehavior.SetNull);
+
             builder.HasIndex(r => new { r.ProductId, r.Code })
             .IsUnique()
             .HasFilter("[IsDeleted] = 0")
             .HasDatabaseName("IX_ProductPricingRules_ProductId_Code");
+
+            // Zam önizlemesi "şu şablondan gelen tüm kurallar" kapsamını bu indeksle tarar.
+            builder.HasIndex(r => r.SourceTemplateId)
+            .HasDatabaseName("IX_ProductPricingRules_SourceTemplateId");
 
             builder.HasIndex(r => new { r.ProductId, r.IsActive, r.Priority })
             .HasDatabaseName("IX_ProductPricingRules_Product_Active_Priority");
@@ -495,6 +504,93 @@ namespace ProductManagement.EfCore.Context
             builder.HasIndex(o => new { o.ProductId, o.Name })
             .IsUnique()
             .HasDatabaseName("IX_ProductLicenseOfferings_ProductId_Name");
+        }
+    }
+
+    public class PricingTemplateConfiguration : IEntityTypeConfiguration<PricingTemplate>
+    {
+        public void Configure(EntityTypeBuilder<PricingTemplate> builder)
+        {
+            builder.HasOne(t => t.UnitDefinition)
+            .WithMany()
+            .HasForeignKey(t => t.UnitDefinitionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasIndex(t => t.Code)
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0")
+            .HasDatabaseName("IX_PricingTemplates_Code");
+
+            builder.HasIndex(t => new { t.TemplateKind, t.IsActive })
+            .HasDatabaseName("IX_PricingTemplates_Kind_Active");
+
+            builder.Property(t => t.Code).HasMaxLength(64);
+            builder.Property(t => t.Name).HasMaxLength(200);
+            builder.Property(t => t.CurrencyCode).HasMaxLength(3);
+        }
+    }
+
+    public class PriceRevisionConfiguration : IEntityTypeConfiguration<PriceRevision>
+    {
+        public void Configure(EntityTypeBuilder<PriceRevision> builder)
+        {
+            builder.HasIndex(r => r.Code)
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0")
+            .HasDatabaseName("IX_PriceRevisions_Code");
+
+            builder.HasIndex(r => r.Status)
+            .HasDatabaseName("IX_PriceRevisions_Status");
+
+            builder.Property(r => r.Code).HasMaxLength(64);
+            builder.Property(r => r.Name).HasMaxLength(200);
+            builder.Property(r => r.CurrencyCode).HasMaxLength(3);
+            builder.Property(r => r.ApprovalNote).HasMaxLength(1000);
+            builder.Property(r => r.Value).HasPrecision(18, 4);
+            builder.Property(r => r.RoundingStep).HasPrecision(18, 4);
+        }
+    }
+
+    public class PriceRevisionScopeConfiguration : IEntityTypeConfiguration<PriceRevisionScope>
+    {
+        public void Configure(EntityTypeBuilder<PriceRevisionScope> builder)
+        {
+            builder.HasOne(s => s.PriceRevision)
+            .WithMany(r => r.Scopes)
+            .HasForeignKey(s => s.PriceRevisionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasIndex(s => new { s.PriceRevisionId, s.ScopeType })
+            .HasDatabaseName("IX_PriceRevisionScopes_Revision_Type");
+
+            builder.Property(s => s.TargetValue).HasMaxLength(64);
+        }
+    }
+
+    public class PriceRevisionLineConfiguration : IEntityTypeConfiguration<PriceRevisionLine>
+    {
+        public void Configure(EntityTypeBuilder<PriceRevisionLine> builder)
+        {
+            builder.HasOne(l => l.PriceRevision)
+            .WithMany(r => r.Lines)
+            .HasForeignKey(l => l.PriceRevisionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+            // Bir revizyonda aynı hedefin aynı alanı iki kez yer alamaz.
+            builder.HasIndex(l => new { l.PriceRevisionId, l.TargetType, l.TargetId, l.TargetPath })
+            .IsUnique()
+            .HasDatabaseName("IX_PriceRevisionLines_Revision_Target");
+
+            builder.HasIndex(l => new { l.PriceRevisionId, l.ProductId })
+            .HasDatabaseName("IX_PriceRevisionLines_Revision_Product");
+
+            builder.Property(l => l.TargetPath).HasMaxLength(128);
+            builder.Property(l => l.ProductName).HasMaxLength(250);
+            builder.Property(l => l.TargetLabel).HasMaxLength(256);
+            builder.Property(l => l.CurrencyCode).HasMaxLength(3);
+            builder.Property(l => l.SkipReason).HasMaxLength(500);
+            builder.Property(l => l.OldValue).HasPrecision(18, 4);
+            builder.Property(l => l.NewValue).HasPrecision(18, 4);
         }
     }
 }

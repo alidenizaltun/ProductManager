@@ -10,6 +10,12 @@ Backend now supports product-level dynamic pricing rules through `ProductPricing
 - `PUT /api/products/pricing-rules/{pricingRuleId}`
 - `DELETE /api/products/pricing-rules/{pricingRuleId}`
 
+## Şablondan üretilen kurallar
+
+Bir kural bir fiyat şablonundan kopyalanmışsa `sourceTemplateId` ve
+`sourceTemplateVersion` alanları dolu gelir; DTO ayrıca şablonun güncel sürümünü
+`templateCurrentVersion` ile döner. Ayrıntı: [pricing-templates-api.md](pricing-templates-api.md).
+
 ## Rule Shape
 
 ```json
@@ -53,6 +59,13 @@ Backend now supports product-level dynamic pricing rules through `ProductPricing
 
 For backward compatibility, clients may also send the same object serialized as `priceAdjustmentJson`.
 
+> **Kaldırıldı: `conditionsJson`.** Koşullar artık yalnızca `priceAdjustment.conditions`
+> içinde tutulur. Eskiden `ProductPricingRules` tablosunda ayrı bir `ConditionsJson`
+> kolonu daha vardı ve dolu olduğunda gövdedeki koşulları **sessizce eziyordu** — iki
+> kaynak, biri diğerini görünmez biçimde geçersiz kılıyordu. Kolon hiçbir kayıtta dolu
+> değildi ve arayüz hiç kullanmıyordu; kaldırıldı. İstek ve yanıt DTO'larındaki
+> `conditionsJson` alanı da yok.
+
 ## Price Calculation Request
 
 Dynamic feature values are passed to the existing price calculation endpoint:
@@ -84,9 +97,10 @@ Dealer portal order pricing sends the selected values through `POST /api/orders/
 - `operation`/`direction`: use `subtract` to force a negative adjustment
 - `applyOn`: `basePrice`, `currentPrice`, `previousResult`
 - `unit.field`: supports request `featureValues` via `feature.<key>`, product attributes by key, and other offering units via `unit.<unitDefinitionId>` (resolved from the request's `offeringUnits`)
-- `unit.freeUnits`: ignored when `tiers` are present, because tiers are authoritative
+- `unit.freeUnits`: ignored when `tiers` are present, because tiers are authoritative.
+  Boş bırakılabilir (`null`); motor bunu 0 sayar.
 - `unit.rounding`: `ceil`, `floor`, `round`, or `none`
-- `conditions.operator`: `all` or `any`
+- `conditions.operator`: `all` or `any` (yalnızca `priceAdjustment.conditions` içinde)
 - condition operators: `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `contains`, `in`, `exists`
 - `limits`: `minAdjustment`, `maxAdjustment`, `minFinalPrice`, `maxFinalPrice`
 

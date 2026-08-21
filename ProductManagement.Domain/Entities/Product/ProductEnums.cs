@@ -102,4 +102,67 @@ namespace ProductManagement.Domain.Entities.Product
         Month = 3,
         Year = 4
     }
+
+    /// <summary>Fiyat şablonunun hangi fiyat alanını taşıdığı.</summary>
+    public enum PricingTemplateKind
+    {
+        PricingRule = 1,
+        LicenseOffering = 2,
+        ModulePrice = 3,
+        ProductPrice = 4,
+        PriceListItem = 5
+    }
+
+    /// <summary>Zam/indirim revizyonunun eski fiyatı nasıl dönüştürdüğü.</summary>
+    public enum PriceAdjustmentType
+    {
+        Percent = 1,
+        Amount = 2,
+        SetValue = 3,
+        Multiplier = 4
+    }
+
+    public enum PriceRoundingMode
+    {
+        None = 1,
+        Round = 2,
+        Ceiling = 3,
+        Floor = 4
+    }
+
+    public enum PriceRevisionStatus
+    {
+        Draft = 1,
+        Previewed = 2,
+        PendingApproval = 3,
+        Approved = 4,
+        Applied = 5,
+        RolledBack = 6,
+        Rejected = 7,
+        Cancelled = 8
+    }
+
+    /// <summary>Revizyon kapsamının hangi eksende seçildiği.</summary>
+    public enum PriceRevisionScopeType
+    {
+        Product = 1,
+        Category = 2,
+        PricingTemplate = 3,
+        UnitDefinition = 4,
+        LicenseOffering = 5,
+        PriceList = 6,
+        ProductKind = 7,
+        Region = 8
+    }
+
+    /// <summary>Revizyon satırının güncelleyeceği fiyat alanı.</summary>
+    public enum PriceRevisionTargetType
+    {
+        LicenseOfferingBasePrice = 1,
+        ModuleOfferingPrice = 2,
+        PricingRuleValue = 3,
+        PricingRuleTier = 4,
+        ProductPrice = 5,
+        PriceListItem = 6
+    }
 }

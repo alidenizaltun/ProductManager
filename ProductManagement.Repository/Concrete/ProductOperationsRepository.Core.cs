@@ -215,7 +215,7 @@ LEFT JOIN [Product].[Regions] rg ON rg.Id = p.RegionId AND rg.IsDeleted = 0
 WHERE p.ProductId = @ProductId AND p.IsDeleted = 0;
 
 -- 4b: PricingRules
-SELECT r.Id, r.ProductId, r.Code, r.Name, r.Description, r.PriceAdjustmentJson, r.ConditionsJson,
+SELECT r.Id, r.ProductId, r.Code, r.Name, r.Description, r.PriceAdjustmentJson,
        r.Priority, r.IsActive, r.ValidFrom, r.ValidTo, r.SalesChannel, r.CustomerGroupCode,
        r.ProductVariantId, r.ProductLicenseOfferingId,
        r.CreatedAt, r.UpdatedAt

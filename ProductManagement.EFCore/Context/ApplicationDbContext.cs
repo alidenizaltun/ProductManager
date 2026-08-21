@@ -1,4 +1,4 @@
-﻿using ProductManagement.Domain.Entities;
+using ProductManagement.Domain.Entities;
 using ProductManagement.Domain.Entities.Product;
 using ProductManagement.Domain.Entities.SystemManagement;
 using Microsoft.AspNetCore.Identity;
@@ -43,6 +43,10 @@ namespace ProductManagement.EfCore.Context
         public DbSet<ProductUnitConversion> ProductUnitConversions => Set<ProductUnitConversion>();
         public DbSet<Region> Regions => Set<Region>();
         public DbSet<ProductRegion> ProductRegions => Set<ProductRegion>();
+        public DbSet<PricingTemplate> PricingTemplates => Set<PricingTemplate>();
+        public DbSet<PriceRevision> PriceRevisions => Set<PriceRevision>();
+        public DbSet<PriceRevisionScope> PriceRevisionScopes => Set<PriceRevisionScope>();
+        public DbSet<PriceRevisionLine> PriceRevisionLines => Set<PriceRevisionLine>();
         public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
         public DbSet<Integration> Integrations => Set<Integration>();
 

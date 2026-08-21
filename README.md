@@ -21,6 +21,8 @@ Proje .NET 10 tabanlı bir Web API içerir. API tarafında ürün yönetimi içi
 - Inventory (Stok, hareket, rezervasyon)
 - Price list
 - Product profiles (physical/software/service/subscription)
+- Pricing templates (yeniden kullanılabilir fiyatlandırma şablonları)
+- Price revisions (önizlemeli, onaylı ve geri alınabilir toplu zam)
 
 ## API Erişimi ve Dokümantasyon
 Uygulama çalıştığında:
@@ -155,6 +157,47 @@ Başarılı response (`AuthResponseDto`):
 - `2`: Week
 - `3`: Month
 - `4`: Year
+
+### PricingTemplateKind
+- `1`: PricingRule (şu an desteklenen tek tür)
+- `2`: LicenseOffering
+- `3`: ModulePrice
+- `4`: ProductPrice
+- `5`: PriceListItem
+
+### PriceAdjustmentType (zam türü)
+- `1`: Percent (yüzde)
+- `2`: Amount (sabit tutar ekle)
+- `3`: SetValue (sabit değere çek)
+- `4`: Multiplier (çarpan)
+
+### PriceRoundingMode
+- `1`: None
+- `2`: Round
+- `3`: Ceiling
+- `4`: Floor
+
+### PriceRevisionStatus
+- `1`: Draft
+- `2`: Previewed
+- `3`: PendingApproval
+- `4`: Approved
+- `5`: Applied
+- `6`: RolledBack
+- `7`: Rejected
+- `8`: Cancelled
+
+### PriceRevisionScopeType
+- `1`: Product · `2`: Category · `7`: ProductKind · `8`: Region → **ürün filtresi**
+- `3`: PricingTemplate · `4`: UnitDefinition · `5`: LicenseOffering · `6`: PriceList → **hedef filtresi**
+
+### PriceRevisionTargetType
+- `1`: LicenseOfferingBasePrice
+- `2`: ModuleOfferingPrice
+- `3`: PricingRuleValue
+- `4`: PricingRuleTier
+- `5`: ProductPrice
+- `6`: PriceListItem
 
 ## Endpoint Rehberi
 Aşağıda endpointler modül bazında listelenmiştir.
@@ -322,6 +365,42 @@ Base: `/api/pricelists`
 - `POST /api/pricelists/items`
 - `PUT /api/pricelists/items/{priceListItemId}`
 - `DELETE /api/pricelists/items/{priceListItemId}`
+
+### 9) Pricing Templates (Fiyat Şablonları)
+Base: `/api/pricing-templates`
+
+Ürün bağımsız, yeniden kullanılabilir fiyatlandırma tanımları. Bir üründe kurulmuş kural
+şablona alınır ve başka ürünlere kopyalanarak uygulanır.
+
+- `GET /api/pricing-templates?templateKind=&unitDefinitionId=&includeInactive=`
+- `GET /api/pricing-templates/{pricingTemplateId}`
+- `GET /api/pricing-templates/{pricingTemplateId}/usages`
+- `POST /api/pricing-templates`
+- `PUT /api/pricing-templates/{pricingTemplateId}`
+- `DELETE /api/pricing-templates/{pricingTemplateId}`
+- `POST /api/pricing-templates/{pricingTemplateId}/apply`
+- `POST /api/pricing-templates/{pricingTemplateId}/apply-bulk`
+- `POST /api/products/pricing-rules/{pricingRuleId}/save-as-template`
+
+Ayrıntı: [docs/pricing-templates-api.md](docs/pricing-templates-api.md)
+
+### 10) Price Revisions (Zam Yönetimi)
+Base: `/api/price-revisions`
+
+Toplu fiyat değişikliği bir belgedir: kapsam seçilir, önizlenir, onaylanır, uygulanır ve
+gerekirse geri alınır. Altı fiyat alanının tamamını kapsar.
+
+- `GET /api/price-revisions?status=`
+- `GET · POST · PUT · DELETE /api/price-revisions[/{id}]`
+- `POST · DELETE /api/price-revisions/{id}/scopes[/{scopeId}]`
+- `POST /api/price-revisions/{id}/preview`
+- `GET /api/price-revisions/{id}/lines`
+- `PATCH /api/price-revisions/{id}/lines/{lineId}`
+- `POST /api/price-revisions/{id}/submit`
+- `POST /api/price-revisions/{id}/approve` · `/reject` · `/cancel`
+- `POST /api/price-revisions/{id}/apply` · `/rollback`
+
+Ayrıntı: [docs/price-revisions-api.md](docs/price-revisions-api.md)
 
 ## Temel Model Özetleri (DTO)
 Aşağıda en çok kullanılan modellerin kısa özeti verilmiştir.

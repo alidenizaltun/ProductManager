@@ -35,6 +35,26 @@ namespace ProductManagement.Shared.Infrastructure.Security
             public const string Manage = "Integrations.Manage";
         }
 
+        public static class PricingTemplates
+        {
+            public const string View = "Pricing.Templates.View";
+            public const string Manage = "Pricing.Templates.Manage";
+        }
+
+        public static class PriceRevisions
+        {
+            public const string View = "Pricing.Revisions.View";
+
+            /// <summary>Revizyon oluşturma, kapsam düzenleme, önizleme ve onaya gönderme.</summary>
+            public const string Manage = "Pricing.Revisions.Manage";
+
+            /// <summary>Onaylama/reddetme. Hazırlayan ile onaylayan çoğu kurumda aynı kişi değildir.</summary>
+            public const string Approve = "Pricing.Revisions.Approve";
+
+            /// <summary>Onaylı revizyonu uygulama ve geri alma.</summary>
+            public const string Apply = "Pricing.Revisions.Apply";
+        }
+
         public static IReadOnlyList<PermissionDefinition> All { get; } = new List<PermissionDefinition>
         {
             new(Users.View, "Kullanıcıları Görüntüle", "Kullanıcılar"),
@@ -45,6 +65,12 @@ namespace ProductManagement.Shared.Infrastructure.Security
             new(Settings.Manage, "Sistem Ayarlarını Yönet", "Sistem Ayarları"),
             new(Integrations.View, "Entegrasyonları Görüntüle", "Entegrasyonlar"),
             new(Integrations.Manage, "Entegrasyonları Yönet", "Entegrasyonlar"),
+            new(PricingTemplates.View, "Fiyat Şablonlarını Görüntüle", "Fiyatlandırma"),
+            new(PricingTemplates.Manage, "Fiyat Şablonlarını Yönet", "Fiyatlandırma"),
+            new(PriceRevisions.View, "Zam Revizyonlarını Görüntüle", "Fiyatlandırma"),
+            new(PriceRevisions.Manage, "Zam Revizyonu Hazırla", "Fiyatlandırma"),
+            new(PriceRevisions.Approve, "Zam Revizyonunu Onayla", "Fiyatlandırma"),
+            new(PriceRevisions.Apply, "Zam Revizyonunu Uygula", "Fiyatlandırma"),
         };
 
         public static IReadOnlyList<string> AllKeys { get; } = All.Select(p => p.Key).ToList();

@@ -222,6 +222,22 @@ public sealed class ProductCommerceController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// Var olan bir fiyatlandırma kuralını, başka ürünlerde yeniden kullanılmak üzere
+    /// ürün bağımsız bir fiyat şablonuna dönüştürür.
+    /// </summary>
+    [HttpPost("pricing-rules/{pricingRuleId:guid}/save-as-template")]
+    [ProducesResponseType(typeof(PricingTemplateDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<PricingTemplateDto>> SavePricingRuleAsTemplate(
+        Guid pricingRuleId,
+        [FromBody] SavePricingRuleAsTemplateRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var template = await _service.SavePricingRuleAsTemplateAsync(pricingRuleId, request, cancellationToken);
+        return Created($"/api/pricing-templates/{template.Id}", template);
+    }
+
     [HttpDelete("pricing-rules/{pricingRuleId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

@@ -10,7 +10,6 @@ namespace ProductManagement.Shared.Dtos.ProductOperations
         public string Name { get; init; } = string.Empty;
         public string? Description { get; init; }
         public string PriceAdjustmentJson { get; init; } = string.Empty;
-        public string? ConditionsJson { get; init; }
         public int Priority { get; init; }
         public bool IsActive { get; init; }
         public DateTime? ValidFrom { get; init; }
@@ -21,6 +20,13 @@ namespace ProductManagement.Shared.Dtos.ProductOperations
         public Guid? ProductLicenseOfferingId { get; init; }
         public IReadOnlyList<Guid> ProductUnitIds { get; init; } = [];
         public IReadOnlyList<ProductUnitDto> ProductUnits { get; init; } = [];
+        /// <summary>Kural bir fiyat şablonundan kopyalandıysa kaynağı.</summary>
+        public Guid? SourceTemplateId { get; init; }
+        public string? SourceTemplateCode { get; init; }
+        public string? SourceTemplateName { get; init; }
+        public int? SourceTemplateVersion { get; init; }
+        /// <summary>Şablonun güncel sürümü. SourceTemplateVersion'dan büyükse kural geride kalmıştır.</summary>
+        public int? TemplateCurrentVersion { get; init; }
         public DateTime CreatedAt { get; init; }
         public DateTime? UpdatedAt { get; init; }
     }
@@ -35,7 +41,6 @@ namespace ProductManagement.Shared.Dtos.ProductOperations
         public string? Description { get; init; }
         public string? PriceAdjustmentJson { get; init; }
         public JsonElement? PriceAdjustment { get; init; }
-        public string? ConditionsJson { get; init; }
         public int Priority { get; init; }
         public bool IsActive { get; init; } = true;
         public DateTime? ValidFrom { get; init; }
@@ -45,6 +50,9 @@ namespace ProductManagement.Shared.Dtos.ProductOperations
         public Guid? ProductVariantId { get; init; }
         public Guid? ProductLicenseOfferingId { get; init; }
         public IReadOnlyList<Guid>? ProductUnitIds { get; init; }
+        /// <summary>Kural bir şablondan üretiliyorsa kaynağın izi. İstemci doldurmaz, şablon uygulama akışı doldurur.</summary>
+        public Guid? SourceTemplateId { get; init; }
+        public int? SourceTemplateVersion { get; init; }
     }
 
     public sealed record ReorderProductPricingRulesRequestDto
@@ -59,7 +67,6 @@ namespace ProductManagement.Shared.Dtos.ProductOperations
         public string? Description { get; init; }
         public string? PriceAdjustmentJson { get; init; }
         public JsonElement? PriceAdjustment { get; init; }
-        public string? ConditionsJson { get; init; }
         public int Priority { get; init; }
         public bool IsActive { get; init; } = true;
         public DateTime? ValidFrom { get; init; }

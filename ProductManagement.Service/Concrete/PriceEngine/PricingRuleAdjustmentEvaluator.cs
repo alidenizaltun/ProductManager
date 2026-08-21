@@ -29,7 +29,7 @@ namespace ProductManagement.Service.Concrete.PriceEngine
                 .ThenBy(rule => rule.CreatedAt))
             {
                 var adjustment = ParseAdjustment(rule);
-                if (!ConditionsMatch(product, request, rule.ConditionsJson, adjustment.Conditions))
+                if (!ConditionsMatch(product, request, adjustment.Conditions))
                 {
                     continue;
                 }
@@ -117,16 +117,28 @@ namespace ProductManagement.Service.Concrete.PriceEngine
                 return true;
             }
 
-            if (request.OfferingUnits is null || request.OfferingUnits.Count == 0)
-            {
-                return false;
-            }
-
             var assignedUnitDefinitionIds = assignedUnits
                 .Select(unit => unit.UnitDefinitionId)
                 .ToHashSet();
 
-            return request.OfferingUnits.Any(input => assignedUnitDefinitionIds.Contains(input.UnitDefinitionId));
+            if (request.OfferingUnits is { Count: > 0 })
+            {
+                return request.OfferingUnits.Any(input => assignedUnitDefinitionIds.Contains(input.UnitDefinitionId));
+            }
+
+            // İstek hiç birim değeri taşımıyorsa kural ölü sayılmaz: birim kapsamı
+            // "bu kural, bu birimi içeren satış planlarında geçerlidir" demektir.
+            // pricing-parameters yalnızca seat/usage planları için birim sorduğundan
+            // abonelik ve kalıcı lisans planlarında offeringUnits her zaman boş gelir;
+            // eski davranışta birim atanmış her kural bu planlarda sessizce hiç çalışmazdı.
+            // Kuralın miktarı zaten unit.field üzerinden geldiği için burada yalnızca
+            // kapsam sorulur, değer değil.
+            var offering = product.LicenseOfferings
+                .FirstOrDefault(candidate => candidate.Id == request.LicenseOfferingId);
+
+            return offering is not null
+                && offering.ProductUnits.Any(unit =>
+                    unit.IsActive && assignedUnitDefinitionIds.Contains(unit.UnitDefinitionId));
         }
 
         private static bool TextMatches(string? ruleValue, string? requestValue)
@@ -294,24 +306,22 @@ namespace ProductManagement.Service.Concrete.PriceEngine
             throw new ValidationException("priceAdjustmentJson", $"Fiyat kuralı alanı sayısal değil veya bulunamadı: {field}");
         }
 
+        /// <summary>
+        /// Koşullar yalnızca kural gövdesinin içinde (<c>priceAdjustment.conditions</c>)
+        /// tutulur. Eskiden ayrı bir <c>ConditionsJson</c> kolonu da vardı ve dolu olduğunda
+        /// gövdedeki koşulları sessizce eziyordu; tek kaynak bırakıldı.
+        /// </summary>
         private static bool ConditionsMatch(
             ProductDetailDto product,
             CalculateProductPriceRequestDto request,
-            string? conditionsJson,
-            JsonElement? embeddedConditions)
+            JsonElement? conditions)
         {
-            if (!string.IsNullOrWhiteSpace(conditionsJson))
+            if (conditions is not { ValueKind: not JsonValueKind.Undefined and not JsonValueKind.Null })
             {
-                using var document = JsonDocument.Parse(conditionsJson);
-                return ConditionsMatch(product, request, document.RootElement);
+                return true;
             }
 
-            if (embeddedConditions.HasValue && embeddedConditions.Value.ValueKind is not JsonValueKind.Undefined and not JsonValueKind.Null)
-            {
-                return ConditionsMatch(product, request, embeddedConditions.Value);
-            }
-
-            return true;
+            return ConditionsMatch(product, request, conditions.Value);
         }
 
         private static bool ConditionsMatch(ProductDetailDto product, CalculateProductPriceRequestDto request, JsonElement conditions)
@@ -535,7 +545,14 @@ namespace ProductManagement.Service.Concrete.PriceEngine
         private sealed record PriceAdjustmentUnit
         {
             public string? Field { get; init; }
-            public decimal FreeUnits { get; init; }
+
+            /// <summary>
+            /// Nullable olmak zorunda: kural editörü boş bırakılan ücretsiz birim alanını
+            /// <c>"freeUnits": null</c> olarak yazıyor ve nullable olmayan bir decimal'e
+            /// null okunamadığı için kuralın tamamı ayrıştırılamıyordu — ürünün fiyat
+            /// hesabı komple hata veriyordu. Kullanım yerinde zaten <c>?? 0</c> var.
+            /// </summary>
+            public decimal? FreeUnits { get; init; }
             public string? Rounding { get; init; }
         }
 

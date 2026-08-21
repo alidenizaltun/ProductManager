@@ -174,6 +174,33 @@ namespace ProductManagement.Service.Shared.Abstract
         Task<bool> UpdateRegionAsync(Guid regionId, UpdateRegionRequestDto request, CancellationToken cancellationToken = default);
         Task<bool> DeleteRegionAsync(Guid regionId, CancellationToken cancellationToken = default);
 
+        Task<IReadOnlyList<PricingTemplateDto>> GetPricingTemplatesAsync(int? templateKind = null, Guid? unitDefinitionId = null, bool includeInactive = false, CancellationToken cancellationToken = default);
+        Task<PricingTemplateDto?> GetPricingTemplateByIdAsync(Guid pricingTemplateId, CancellationToken cancellationToken = default);
+        Task<PricingTemplateDto> CreatePricingTemplateAsync(CreatePricingTemplateRequestDto request, CancellationToken cancellationToken = default);
+        Task<bool> UpdatePricingTemplateAsync(Guid pricingTemplateId, UpdatePricingTemplateRequestDto request, CancellationToken cancellationToken = default);
+        Task<bool> DeletePricingTemplateAsync(Guid pricingTemplateId, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<PricingTemplateUsageDto>> GetPricingTemplateUsagesAsync(Guid pricingTemplateId, CancellationToken cancellationToken = default);
+        Task<PricingTemplateDto> SavePricingRuleAsTemplateAsync(Guid pricingRuleId, SavePricingRuleAsTemplateRequestDto request, CancellationToken cancellationToken = default);
+        Task<ApplyPricingTemplateResultDto> ApplyPricingTemplateAsync(Guid pricingTemplateId, ApplyPricingTemplateRequestDto request, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<ApplyPricingTemplateResultDto>> ApplyPricingTemplateBulkAsync(Guid pricingTemplateId, ApplyPricingTemplateBulkRequestDto request, CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<PriceRevisionDto>> GetPriceRevisionsAsync(int? status = null, CancellationToken cancellationToken = default);
+        Task<PriceRevisionDto?> GetPriceRevisionByIdAsync(Guid priceRevisionId, CancellationToken cancellationToken = default);
+        Task<PriceRevisionDto> CreatePriceRevisionAsync(CreatePriceRevisionRequestDto request, CancellationToken cancellationToken = default);
+        Task<bool> UpdatePriceRevisionAsync(Guid priceRevisionId, UpdatePriceRevisionRequestDto request, CancellationToken cancellationToken = default);
+        Task<bool> DeletePriceRevisionAsync(Guid priceRevisionId, CancellationToken cancellationToken = default);
+        Task<PriceRevisionScopeDto> CreatePriceRevisionScopeAsync(Guid priceRevisionId, CreatePriceRevisionScopeRequestDto request, CancellationToken cancellationToken = default);
+        Task<bool> DeletePriceRevisionScopeAsync(Guid priceRevisionId, Guid scopeId, CancellationToken cancellationToken = default);
+        Task<PriceRevisionSummaryDto> PreviewPriceRevisionAsync(Guid priceRevisionId, CancellationToken cancellationToken = default);
+        Task<PriceRevisionLinePageDto> GetPriceRevisionLinesAsync(Guid priceRevisionId, PriceRevisionLineFilterDto filter, CancellationToken cancellationToken = default);
+        Task<bool> UpdatePriceRevisionLineAsync(Guid priceRevisionId, Guid lineId, UpdatePriceRevisionLineRequestDto request, CancellationToken cancellationToken = default);
+        Task<bool> SubmitPriceRevisionAsync(Guid priceRevisionId, Guid? userId, CancellationToken cancellationToken = default);
+        Task<bool> ApprovePriceRevisionAsync(Guid priceRevisionId, Guid? userId, string? note, CancellationToken cancellationToken = default);
+        Task<bool> RejectPriceRevisionAsync(Guid priceRevisionId, Guid? userId, string note, CancellationToken cancellationToken = default);
+        Task<bool> CancelPriceRevisionAsync(Guid priceRevisionId, Guid? userId, CancellationToken cancellationToken = default);
+        Task<PriceRevisionExecutionResultDto> ApplyPriceRevisionAsync(Guid priceRevisionId, Guid? userId, CancellationToken cancellationToken = default);
+        Task<PriceRevisionExecutionResultDto> RollbackPriceRevisionAsync(Guid priceRevisionId, Guid? userId, CancellationToken cancellationToken = default);
+
         Task<IReadOnlyList<ProductRegionDto>> GetProductRegionsAsync(Guid productId, CancellationToken cancellationToken = default);
         Task<ProductRegionDto?> GetProductRegionByIdAsync(Guid productRegionId, CancellationToken cancellationToken = default);
         Task<ProductRegionDto> CreateProductRegionAsync(CreateProductRegionRequestDto request, CancellationToken cancellationToken = default);

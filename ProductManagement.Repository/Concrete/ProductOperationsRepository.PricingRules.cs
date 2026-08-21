@@ -27,15 +27,17 @@ namespace ProductManagement.Repository.Concrete
             const string sql = @"
 INSERT INTO [Product].[ProductPricingRules]
 (
-    Id, ProductId, Code, Name, Description, PriceAdjustmentJson, ConditionsJson,
+    Id, ProductId, Code, Name, Description, PriceAdjustmentJson,
     Priority, IsActive, ValidFrom, ValidTo, SalesChannel, CustomerGroupCode,
-    ProductVariantId, ProductLicenseOfferingId, CreatedAt, IsDeleted
+    ProductVariantId, ProductLicenseOfferingId, SourceTemplateId, SourceTemplateVersion,
+    CreatedAt, IsDeleted
 )
 VALUES
 (
-    @Id, @ProductId, @Code, @Name, @Description, @PriceAdjustmentJson, @ConditionsJson,
+    @Id, @ProductId, @Code, @Name, @Description, @PriceAdjustmentJson,
     @Priority, @IsActive, @ValidFrom, @ValidTo, @SalesChannel, @CustomerGroupCode,
-    @ProductVariantId, @ProductLicenseOfferingId, @Now, 0
+    @ProductVariantId, @ProductLicenseOfferingId, @SourceTemplateId, @SourceTemplateVersion,
+    @Now, 0
 );";
 
             var assignments = new List<(Guid PricingRuleId, IReadOnlyList<Guid> ProductUnitIds)>();
@@ -55,7 +57,6 @@ VALUES
                     rule.Name,
                     rule.Description,
                     PriceAdjustmentJson = ResolvePriceAdjustmentJson(rule.PriceAdjustmentJson, rule.PriceAdjustment),
-                    rule.ConditionsJson,
                     rule.Priority,
                     rule.IsActive,
                     rule.ValidFrom,
@@ -67,6 +68,8 @@ VALUES
                     rule.ProductLicenseOfferingId,
                     rule.LicenseOfferingTempId,
                     licenseOfferingTempIdMap),
+                    rule.SourceTemplateId,
+                    rule.SourceTemplateVersion,
                     Now = now
                 };
             });
@@ -109,11 +112,14 @@ VALUES
             CancellationToken cancellationToken = default)
         {
             const string sql = @"
-SELECT r.Id, r.ProductId, r.Code, r.Name, r.Description, r.PriceAdjustmentJson, r.ConditionsJson,
+SELECT r.Id, r.ProductId, r.Code, r.Name, r.Description, r.PriceAdjustmentJson,
        r.Priority, r.IsActive, r.ValidFrom, r.ValidTo, r.SalesChannel, r.CustomerGroupCode,
        r.ProductVariantId, r.ProductLicenseOfferingId,
+       r.SourceTemplateId, r.SourceTemplateVersion,
+       t.Code AS SourceTemplateCode, t.Name AS SourceTemplateName, t.Version AS TemplateCurrentVersion,
        r.CreatedAt, r.UpdatedAt
 FROM [Product].[ProductPricingRules] r
+LEFT JOIN [Product].[PricingTemplates] t ON t.Id = r.SourceTemplateId AND t.IsDeleted = 0
 WHERE r.ProductId = @ProductId AND r.IsDeleted = 0
 ORDER BY r.Priority, r.CreatedAt;";
 
@@ -130,11 +136,14 @@ ORDER BY r.Priority, r.CreatedAt;";
             CancellationToken cancellationToken = default)
         {
             const string sql = @"
-SELECT r.Id, r.ProductId, r.Code, r.Name, r.Description, r.PriceAdjustmentJson, r.ConditionsJson,
+SELECT r.Id, r.ProductId, r.Code, r.Name, r.Description, r.PriceAdjustmentJson,
        r.Priority, r.IsActive, r.ValidFrom, r.ValidTo, r.SalesChannel, r.CustomerGroupCode,
        r.ProductVariantId, r.ProductLicenseOfferingId,
+       r.SourceTemplateId, r.SourceTemplateVersion,
+       t.Code AS SourceTemplateCode, t.Name AS SourceTemplateName, t.Version AS TemplateCurrentVersion,
        r.CreatedAt, r.UpdatedAt
 FROM [Product].[ProductPricingRules] r
+LEFT JOIN [Product].[PricingTemplates] t ON t.Id = r.SourceTemplateId AND t.IsDeleted = 0
 WHERE r.Id = @PricingRuleId AND r.IsDeleted = 0;";
 
             using var connection = CreateConnection();
@@ -157,15 +166,17 @@ WHERE r.Id = @PricingRuleId AND r.IsDeleted = 0;";
             const string sql = @"
 INSERT INTO [Product].[ProductPricingRules]
 (
-    Id, ProductId, Code, Name, Description, PriceAdjustmentJson, ConditionsJson,
+    Id, ProductId, Code, Name, Description, PriceAdjustmentJson,
     Priority, IsActive, ValidFrom, ValidTo, SalesChannel, CustomerGroupCode,
-    ProductVariantId, ProductLicenseOfferingId, CreatedAt, IsDeleted
+    ProductVariantId, ProductLicenseOfferingId, SourceTemplateId, SourceTemplateVersion,
+    CreatedAt, IsDeleted
 )
 VALUES
 (
-    @Id, @ProductId, @Code, @Name, @Description, @PriceAdjustmentJson, @ConditionsJson,
+    @Id, @ProductId, @Code, @Name, @Description, @PriceAdjustmentJson,
     @Priority, @IsActive, @ValidFrom, @ValidTo, @SalesChannel, @CustomerGroupCode,
-    @ProductVariantId, @ProductLicenseOfferingId, @Now, 0
+    @ProductVariantId, @ProductLicenseOfferingId, @SourceTemplateId, @SourceTemplateVersion,
+    @Now, 0
 );";
 
             var id = Guid.NewGuid();
@@ -188,7 +199,6 @@ VALUES
                     request.Name,
                     request.Description,
                     PriceAdjustmentJson = priceAdjustmentJson,
-                    request.ConditionsJson,
                     request.Priority,
                     request.IsActive,
                     request.ValidFrom,
@@ -197,6 +207,8 @@ VALUES
                     request.CustomerGroupCode,
                     request.ProductVariantId,
                     request.ProductLicenseOfferingId,
+                    request.SourceTemplateId,
+                    request.SourceTemplateVersion,
                     Now = now
                 }, transaction, cancellationToken: cancellationToken));
 
@@ -225,7 +237,6 @@ SET Code = @Code,
     Name = @Name,
     Description = @Description,
     PriceAdjustmentJson = @PriceAdjustmentJson,
-    ConditionsJson = @ConditionsJson,
     Priority = @Priority,
     IsActive = @IsActive,
     ValidFrom = @ValidFrom,
@@ -255,7 +266,6 @@ WHERE Id = @PricingRuleId AND IsDeleted = 0;";
                     request.Name,
                     request.Description,
                     PriceAdjustmentJson = priceAdjustmentJson,
-                    request.ConditionsJson,
                     request.Priority,
                     request.IsActive,
                     request.ValidFrom,
