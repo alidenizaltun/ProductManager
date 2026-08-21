@@ -166,5 +166,18 @@ namespace ProductManagement.Service.Shared.Abstract
         Task<UnitDefinitionDto> CreateUnitDefinitionAsync(CreateUnitDefinitionRequestDto request, CancellationToken cancellationToken = default);
         Task<bool> UpdateUnitDefinitionAsync(Guid unitDefinitionId, UpdateUnitDefinitionRequestDto request, CancellationToken cancellationToken = default);
         Task<bool> DeleteUnitDefinitionAsync(Guid unitDefinitionId, CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<RegionDto>> GetRegionsAsync(bool includeInactive = false, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<LookupItemDto>> GetRegionLookupsAsync(bool includeInactive = false, CancellationToken cancellationToken = default);
+        Task<RegionDto?> GetRegionByIdAsync(Guid regionId, CancellationToken cancellationToken = default);
+        Task<RegionDto> CreateRegionAsync(CreateRegionRequestDto request, CancellationToken cancellationToken = default);
+        Task<bool> UpdateRegionAsync(Guid regionId, UpdateRegionRequestDto request, CancellationToken cancellationToken = default);
+        Task<bool> DeleteRegionAsync(Guid regionId, CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<ProductRegionDto>> GetProductRegionsAsync(Guid productId, CancellationToken cancellationToken = default);
+        Task<ProductRegionDto?> GetProductRegionByIdAsync(Guid productRegionId, CancellationToken cancellationToken = default);
+        Task<ProductRegionDto> CreateProductRegionAsync(CreateProductRegionRequestDto request, CancellationToken cancellationToken = default);
+        Task<bool> UpdateProductRegionAsync(Guid productRegionId, UpdateProductRegionRequestDto request, CancellationToken cancellationToken = default);
+        Task<bool> DeleteProductRegionAsync(Guid productRegionId, CancellationToken cancellationToken = default);
     }
 }

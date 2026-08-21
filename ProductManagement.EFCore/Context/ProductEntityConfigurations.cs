@@ -115,6 +115,59 @@ namespace ProductManagement.EfCore.Context
         }
     }
 
+    public class RegionConfiguration : IEntityTypeConfiguration<Region>
+    {
+        public void Configure(EntityTypeBuilder<Region> builder)
+        {
+            builder.HasIndex(r => r.Code)
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0")
+                .HasDatabaseName("IX_Regions_Code");
+
+            builder.Property(r => r.Code)
+                .HasMaxLength(32);
+
+            builder.Property(r => r.Name)
+                .HasMaxLength(150);
+        }
+    }
+
+    public class ProductRegionConfiguration : IEntityTypeConfiguration<ProductRegion>
+    {
+        public void Configure(EntityTypeBuilder<ProductRegion> builder)
+        {
+            builder.HasOne(pr => pr.Product)
+                .WithMany(p => p.Regions)
+                .HasForeignKey(pr => pr.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(pr => pr.Region)
+                .WithMany(r => r.ProductRegions)
+                .HasForeignKey(pr => pr.RegionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Bir ürün aynı bölgeye yalnızca bir kez bağlanabilir
+            builder.HasIndex(pr => new { pr.ProductId, pr.RegionId })
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0")
+                .HasDatabaseName("IX_ProductRegions_ProductId_RegionId");
+
+            builder.Property(pr => pr.CurrencyCode)
+                .HasMaxLength(3);
+        }
+    }
+
+    public class ProductPriceConfiguration : IEntityTypeConfiguration<ProductPrice>
+    {
+        public void Configure(EntityTypeBuilder<ProductPrice> builder)
+        {
+            builder.HasOne(p => p.Region)
+                .WithMany()
+                .HasForeignKey(p => p.RegionId)
+                .OnDelete(DeleteBehavior.Restrict);
+        }
+    }
+
     public class ProductInventoryConfiguration : IEntityTypeConfiguration<ProductInventory>
     {
         public void Configure(EntityTypeBuilder<ProductInventory> builder)

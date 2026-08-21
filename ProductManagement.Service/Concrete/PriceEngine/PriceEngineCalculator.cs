@@ -77,7 +77,8 @@ namespace ProductManagement.Service.Concrete.PriceEngine
             lines.AddRange(discountLines);
 
             var netBeforeTax = Math.Max(0, subtotalNet - discountAmount);
-            var taxRate = ResolveTaxRate(product, request);
+            var region = ResolveRegion(product, request);
+            var taxRate = ResolveTaxRate(product, request, region);
             var (taxAmount, totalGross, netStored) = ApplyTax(netBeforeTax, taxRate, request.PricesIncludeTax);
             lines.Add(new PriceCalculationLineDto
             {
@@ -98,7 +99,9 @@ namespace ProductManagement.Service.Concrete.PriceEngine
                 ProductCode = product.ProductCode,
                 ProductName = product.Name,
                 ProductKind = product.Kind,
-                CurrencyCode = product.DefaultCurrencyCode,
+                RegionId = region?.RegionId,
+                RegionName = region?.RegionName,
+                CurrencyCode = region?.CurrencyCode ?? product.DefaultCurrencyCode,
                 Quantity = quantity,
                 OfferingUnits = appliedOfferingUnits,
                 LicenseOfferingId = offering?.Id,
@@ -632,6 +635,9 @@ namespace ProductManagement.Service.Concrete.PriceEngine
                     && (request.ProductVariantId is null
                         ? p.ProductVariantId is null
                         : p.ProductVariantId == request.ProductVariantId)
+                    // Bölgesiz fiyatlar tüm bölgelerde geçerlidir; bölgeli fiyat
+                    // yalnızca kendi bölgesinde kullanılır.
+                    && (p.RegionId is null || p.RegionId == request.RegionId)
                     && (string.IsNullOrWhiteSpace(request.SalesChannel)
                         || string.Equals(p.SalesChannel, request.SalesChannel, StringComparison.OrdinalIgnoreCase))
                     && (string.IsNullOrWhiteSpace(request.CustomerGroupCode)
@@ -640,7 +646,8 @@ namespace ProductManagement.Service.Concrete.PriceEngine
                     && (p.ValidTo is null || p.ValidTo >= now)
                     && (p.MinQuantity is null || quantity >= p.MinQuantity)
                     && (p.MaxQuantity is null || quantity <= p.MaxQuantity))
-                .OrderByDescending(p => p.MinQuantity ?? 0)
+                .OrderByDescending(p => p.RegionId is not null)
+                .ThenByDescending(p => p.MinQuantity ?? 0)
                 .ThenByDescending(p => !string.IsNullOrWhiteSpace(p.SalesChannel))
                 .ThenByDescending(p => p.UpdatedAt ?? p.CreatedAt)
                 .FirstOrDefault();
@@ -739,8 +746,29 @@ namespace ProductManagement.Service.Concrete.PriceEngine
             return (discount, lines);
         }
 
-        private static decimal ResolveTaxRate(ProductDetailDto product, CalculateProductPriceRequestDto request)
-            => request.TaxRateOverride ?? product.TaxRate ?? DefaultTaxRatePercent;
+        /// <summary>
+        /// İstekte bölge verilmişse ürünün o bölgeye ait aktif tanımını döner.
+        /// Bölge verilmemişse ürünün varsayılan bölgesi kullanılır.
+        /// </summary>
+        private static ProductRegionDto? ResolveRegion(ProductDetailDto product, CalculateProductPriceRequestDto request)
+        {
+            var activeRegions = product.Regions.Where(r => r.IsActive).ToList();
+
+            if (request.RegionId is { } regionId)
+            {
+                return activeRegions.FirstOrDefault(r => r.RegionId == regionId)
+                    ?? throw new ValidationException("regionId", "Ürün bu bölgede satışa açık değil.");
+            }
+
+            return activeRegions.FirstOrDefault(r => r.IsDefault);
+        }
+
+        /// <summary>KDV oranı sırasıyla: istek override'ı, bölge oranı, ürün oranı, varsayılan.</summary>
+        private static decimal ResolveTaxRate(
+            ProductDetailDto product,
+            CalculateProductPriceRequestDto request,
+            ProductRegionDto? region)
+            => request.TaxRateOverride ?? region?.TaxRate ?? product.TaxRate ?? DefaultTaxRatePercent;
 
         private static (decimal TaxAmount, decimal TotalGross, decimal NetBeforeTax) ApplyTax(
             decimal netBeforeTax,

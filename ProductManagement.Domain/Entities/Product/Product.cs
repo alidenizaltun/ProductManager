@@ -46,6 +46,7 @@ namespace ProductManagement.Domain.Entities.Product
  public ICollection<ProductModule> Modules { get; set; } = new List<ProductModule>();
  public ICollection<ProductLicenseOffering> LicenseOfferings { get; set; } = new List<ProductLicenseOffering>();
  public ICollection<ProductUnit> Units { get; set; } = new List<ProductUnit>();
+ public ICollection<ProductRegion> Regions { get; set; } = new List<ProductRegion>();
  public ICollection<ProductUnitConversion> UnitConversions { get; set; } = new List<ProductUnitConversion>();
 
  public ProductPhysicalProfile? PhysicalProfile { get; set; }

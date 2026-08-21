@@ -29,8 +29,9 @@ namespace ProductManagement.Service.Concrete
             var suppliersTask = _repository.GetSupplierLookupsAsync(includeInactive, cancellationToken);
             var priceListsTask = _repository.GetPriceListLookupsAsync(includeInactive, cancellationToken);
             var unitDefinitionsTask = _repository.GetUnitDefinitionLookupsAsync(includeInactive, cancellationToken);
+            var regionsTask = _repository.GetRegionLookupsAsync(includeInactive, cancellationToken);
 
-            await Task.WhenAll(productsTask, categoriesTask, warehousesTask, suppliersTask, priceListsTask, unitDefinitionsTask);
+            await Task.WhenAll(productsTask, categoriesTask, warehousesTask, suppliersTask, priceListsTask, unitDefinitionsTask, regionsTask);
 
             return new ProductReferenceLookupsDto
             {
@@ -39,7 +40,8 @@ namespace ProductManagement.Service.Concrete
                 Warehouses = await warehousesTask,
                 Suppliers = await suppliersTask,
                 PriceLists = await priceListsTask,
-                UnitDefinitions = await unitDefinitionsTask
+                UnitDefinitions = await unitDefinitionsTask,
+                Regions = await regionsTask
             };
         }
 
@@ -397,6 +399,39 @@ namespace ProductManagement.Service.Concrete
         public Task<bool> DeleteUnitDefinitionAsync(Guid unitDefinitionId, CancellationToken cancellationToken = default)
             => ExecuteWithSqlMapping(() => _repository.DeleteUnitDefinitionAsync(unitDefinitionId, cancellationToken));
 
+        public Task<IReadOnlyList<RegionDto>> GetRegionsAsync(bool includeInactive = false, CancellationToken cancellationToken = default)
+            => _repository.GetRegionsAsync(includeInactive, cancellationToken);
+
+        public Task<IReadOnlyList<LookupItemDto>> GetRegionLookupsAsync(bool includeInactive = false, CancellationToken cancellationToken = default)
+            => _repository.GetRegionLookupsAsync(includeInactive, cancellationToken);
+
+        public Task<RegionDto?> GetRegionByIdAsync(Guid regionId, CancellationToken cancellationToken = default)
+            => _repository.GetRegionByIdAsync(regionId, cancellationToken);
+
+        public Task<RegionDto> CreateRegionAsync(CreateRegionRequestDto request, CancellationToken cancellationToken = default)
+            => ExecuteWithSqlMapping(() => _repository.CreateRegionAsync(request, cancellationToken));
+
+        public Task<bool> UpdateRegionAsync(Guid regionId, UpdateRegionRequestDto request, CancellationToken cancellationToken = default)
+            => ExecuteWithSqlMapping(() => _repository.UpdateRegionAsync(regionId, request, cancellationToken));
+
+        public Task<bool> DeleteRegionAsync(Guid regionId, CancellationToken cancellationToken = default)
+            => ExecuteWithSqlMapping(() => _repository.DeleteRegionAsync(regionId, cancellationToken));
+
+        public Task<IReadOnlyList<ProductRegionDto>> GetProductRegionsAsync(Guid productId, CancellationToken cancellationToken = default)
+            => _repository.GetProductRegionsAsync(productId, cancellationToken);
+
+        public Task<ProductRegionDto?> GetProductRegionByIdAsync(Guid productRegionId, CancellationToken cancellationToken = default)
+            => _repository.GetProductRegionByIdAsync(productRegionId, cancellationToken);
+
+        public Task<ProductRegionDto> CreateProductRegionAsync(CreateProductRegionRequestDto request, CancellationToken cancellationToken = default)
+            => ExecuteWithSqlMapping(() => _repository.CreateProductRegionAsync(request, cancellationToken));
+
+        public Task<bool> UpdateProductRegionAsync(Guid productRegionId, UpdateProductRegionRequestDto request, CancellationToken cancellationToken = default)
+            => ExecuteWithSqlMapping(() => _repository.UpdateProductRegionAsync(productRegionId, request, cancellationToken));
+
+        public Task<bool> DeleteProductRegionAsync(Guid productRegionId, CancellationToken cancellationToken = default)
+            => ExecuteWithSqlMapping(() => _repository.DeleteProductRegionAsync(productRegionId, cancellationToken));
+
         private static async Task<T> ExecuteWithSqlMapping<T>(Func<Task<T>> action)
         {
             try
@@ -426,6 +461,10 @@ namespace ProductManagement.Service.Concrete
                     return new ConflictException("Bu koda sahip birim tanımı zaten mevcut.");
                 if (message.Contains("IX_ProductUnits_ProductId_Code"))
                     return new ConflictException("Bu üründe aynı koda sahip birim zaten mevcut.");
+                if (message.Contains("IX_Regions_Code"))
+                    return new ConflictException("Bu koda sahip bölge zaten mevcut.");
+                if (message.Contains("IX_ProductRegions_ProductId_RegionId"))
+                    return new ConflictException("Bu ürün seçilen bölgeye zaten tanımlı.");
                 if (message.Contains("IX_ProductPriceLists_Code") || message.Contains("PriceList"))
                     return new ConflictException("Bu koda sahip fiyat listesi zaten mevcut.");
                 if (message.Contains("IX_ProductModules_ProductId_ModuleCode"))

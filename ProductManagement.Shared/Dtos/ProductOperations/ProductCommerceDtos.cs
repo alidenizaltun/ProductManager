@@ -45,6 +45,8 @@ namespace ProductManagement.Shared.Dtos.ProductOperations
         public Guid? ProductVariantId { get; init; }
         public string? VariantSku { get; init; }
         public string? VariantName { get; init; }
+        public Guid? RegionId { get; init; }
+        public string? RegionName { get; init; }
         public int PriceType { get; init; }
         public decimal Amount { get; init; }
         public decimal? CompareAtAmount { get; init; }
@@ -63,6 +65,7 @@ namespace ProductManagement.Shared.Dtos.ProductOperations
     {
         public Guid ProductId { get; init; }
         public Guid? ProductVariantId { get; init; }
+        public Guid? RegionId { get; init; }
         public int PriceType { get; init; } = 1;
         public decimal Amount { get; init; }
         public decimal? CompareAtAmount { get; init; }
@@ -78,6 +81,7 @@ namespace ProductManagement.Shared.Dtos.ProductOperations
     public sealed record UpdateProductPriceRequestDto
     {
         public Guid? ProductVariantId { get; init; }
+        public Guid? RegionId { get; init; }
         public int PriceType { get; init; }
         public decimal Amount { get; init; }
         public decimal? CompareAtAmount { get; init; }

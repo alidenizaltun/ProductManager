@@ -358,4 +358,73 @@ public sealed class ProductRelationsController : ControllerBase
 
         return NoContent();
     }
+
+    [HttpGet("{productId:guid}/regions")]
+    [ProducesResponseType(typeof(IReadOnlyList<ProductRegionDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<ProductRegionDto>>> GetProductRegions(
+        Guid productId,
+        CancellationToken cancellationToken)
+    {
+        var regions = await _service.GetProductRegionsAsync(productId, cancellationToken);
+        return Ok(regions);
+    }
+
+    [HttpGet("regions/{productRegionId:guid}")]
+    [ProducesResponseType(typeof(ProductRegionDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ProductRegionDto>> GetProductRegionById(
+        Guid productRegionId,
+        CancellationToken cancellationToken)
+    {
+        var region = await _service.GetProductRegionByIdAsync(productRegionId, cancellationToken);
+        if (region is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(region);
+    }
+
+    [HttpPost("{productId:guid}/regions")]
+    [ProducesResponseType(typeof(ProductRegionDto), StatusCodes.Status201Created)]
+    public async Task<ActionResult<ProductRegionDto>> CreateProductRegion(
+        Guid productId,
+        [FromBody] CreateProductRegionRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var normalizedRequest = request with { ProductId = productId };
+        var created = await _service.CreateProductRegionAsync(normalizedRequest, cancellationToken);
+        return CreatedAtAction(nameof(GetProductRegionById), new { productRegionId = created.Id }, created);
+    }
+
+    [HttpPut("regions/{productRegionId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateProductRegion(
+        Guid productRegionId,
+        [FromBody] UpdateProductRegionRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var updated = await _service.UpdateProductRegionAsync(productRegionId, request, cancellationToken);
+        if (!updated)
+        {
+            return NotFound();
+        }
+
+        return NoContent();
+    }
+
+    [HttpDelete("regions/{productRegionId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteProductRegion(Guid productRegionId, CancellationToken cancellationToken)
+    {
+        var deleted = await _service.DeleteProductRegionAsync(productRegionId, cancellationToken);
+        if (!deleted)
+        {
+            return NotFound();
+        }
+
+        return NoContent();
+    }
 }

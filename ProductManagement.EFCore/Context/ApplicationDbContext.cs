@@ -41,6 +41,8 @@ namespace ProductManagement.EfCore.Context
         public DbSet<ProductUnit> ProductUnits => Set<ProductUnit>();
         public DbSet<ProductPricingRuleUnit> ProductPricingRuleUnits => Set<ProductPricingRuleUnit>();
         public DbSet<ProductUnitConversion> ProductUnitConversions => Set<ProductUnitConversion>();
+        public DbSet<Region> Regions => Set<Region>();
+        public DbSet<ProductRegion> ProductRegions => Set<ProductRegion>();
         public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
         public DbSet<Integration> Integrations => Set<Integration>();
 

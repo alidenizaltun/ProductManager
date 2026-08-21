@@ -28,6 +28,10 @@ namespace ProductManagement.Shared.Dtos.PriceEngine
         public IReadOnlyList<Guid>? SelectedModuleIds { get; init; }
         public IReadOnlyList<Guid>? SelectedBundleItemIds { get; init; }
         public Guid? ProductVariantId { get; init; }
+
+        /// <summary>Fiyatın hesaplanacağı bölge. Bölgenin para birimi ve KDV oranı uygulanır.</summary>
+        public Guid? RegionId { get; init; }
+
         public int? PriceType { get; init; }
         public string? PriceListCode { get; init; }
         public string? SalesChannel { get; init; }
@@ -82,6 +86,8 @@ namespace ProductManagement.Shared.Dtos.PriceEngine
         public string ProductCode { get; init; } = string.Empty;
         public string ProductName { get; init; } = string.Empty;
         public int ProductKind { get; init; }
+        public Guid? RegionId { get; init; }
+        public string? RegionName { get; init; }
         public string CurrencyCode { get; init; } = "TRY";
         public int Quantity { get; init; }
         public Guid? LicenseOfferingId { get; init; }

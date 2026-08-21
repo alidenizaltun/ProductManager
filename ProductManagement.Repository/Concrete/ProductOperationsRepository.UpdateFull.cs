@@ -133,6 +133,12 @@ WHERE Id = @ProductId
                     await InsertSupplierMapsAsync(connection, transaction, productId, now, request.SupplierMaps, cancellationToken);
                 }
 
+                if (request.Regions is not null)
+                {
+                    await HardDeleteByProductIdAsync(connection, transaction, "[Product].[ProductRegions]", productId, cancellationToken);
+                    await InsertProductRegionsAsync(connection, transaction, productId, now, request.Regions, cancellationToken);
+                }
+
                 IReadOnlyDictionary<string, Guid>? productUnitTempIdMap = null;
                 if (request.ProductUnits is not null)
                 {

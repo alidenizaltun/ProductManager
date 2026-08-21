@@ -33,6 +33,10 @@ namespace ProductManagement.Domain.Entities.Product
         public Guid? ProductVariantId { get; set; }
         public ProductVariant? ProductVariant { get; set; }
 
+        /// <summary>Fiyatın geçerli olduğu bölge. Boşsa tüm bölgeler için geçerlidir.</summary>
+        public Guid? RegionId { get; set; }
+        public Region? Region { get; set; }
+
         public PriceType PriceType { get; set; } = PriceType.Sale;
         public decimal Amount { get; set; }
         public decimal? CompareAtAmount { get; set; }

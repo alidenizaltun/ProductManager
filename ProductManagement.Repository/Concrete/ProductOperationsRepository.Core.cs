@@ -205,11 +205,13 @@ WHERE ProductId = @ProductId AND IsDeleted = 0;
 
 -- 4: Prices
 SELECT p.Id, p.ProductId, p.ProductVariantId, v.Sku AS VariantSku, v.Name AS VariantName,
+       p.RegionId, rg.Name AS RegionName,
        p.PriceType, p.Amount, p.CompareAtAmount,
        p.CurrencyCode, p.MinQuantity, p.MaxQuantity, p.ValidFrom, p.ValidTo,
        p.SalesChannel, p.CustomerGroupCode, p.CreatedAt, p.UpdatedAt
 FROM [Product].[ProductPrices] p
 LEFT JOIN [Product].[ProductVariants] v ON v.Id = p.ProductVariantId AND v.IsDeleted = 0
+LEFT JOIN [Product].[Regions] rg ON rg.Id = p.RegionId AND rg.IsDeleted = 0
 WHERE p.ProductId = @ProductId AND p.IsDeleted = 0;
 
 -- 4b: PricingRules
@@ -357,6 +359,16 @@ JOIN [Product].[ProductModules] m ON m.Id = p.ProductModuleId AND m.IsDeleted = 
 JOIN [Product].[ProductLicenseOfferings] o ON o.Id = p.ProductLicenseOfferingId AND o.IsDeleted = 0
 WHERE m.ProductId = @ProductId AND p.IsDeleted = 0
 ORDER BY m.SortOrder, m.Name, o.Name;
+
+-- 20: Regions
+SELECT pr.Id, pr.ProductId, pr.RegionId,
+ rg.Code AS RegionCode, rg.Name AS RegionName,
+ pr.CurrencyCode, pr.TaxRate, pr.IsDefault, pr.IsActive,
+ pr.SortOrder, pr.CreatedAt, pr.UpdatedAt
+FROM [Product].[ProductRegions] pr
+JOIN [Product].[Regions] rg ON rg.Id = pr.RegionId AND rg.IsDeleted = 0
+WHERE pr.ProductId = @ProductId AND pr.IsDeleted = 0
+ORDER BY pr.SortOrder, rg.Name;
 ";
 
             using var connection = CreateConnection();
@@ -389,6 +401,7 @@ ORDER BY m.SortOrder, m.Name, o.Name;
             var inventoryReservations = (await multi.ReadAsync<InventoryReservationDto>()).AsList();
             var priceListItems = (await multi.ReadAsync<ProductPriceListItemDto>()).AsList();
             var moduleOfferingPrices = (await multi.ReadAsync<ProductModuleOfferingPriceDto>()).AsList();
+            var regions = (await multi.ReadAsync<ProductRegionDto>()).AsList();
             var unitsByPricingRuleId = await LoadPricingRuleUnitsAsync(connection, pricingRules.Select(r => r.Id), cancellationToken);
             var unitsByOfferingId = await LoadLicenseOfferingUnitsAsync(connection, licenseOfferings.Select(o => o.Id), cancellationToken);
             var pricingRulesWithUnits = AttachProductUnits(pricingRules, unitsByPricingRuleId);
@@ -433,6 +446,7 @@ ORDER BY m.SortOrder, m.Name, o.Name;
                 Prices = prices,
                 PricingRules = pricingRulesWithUnits,
                 ProductUnits = productUnits,
+                Regions = regions,
                 Inventories = inventories,
                 MediaItems = mediaItems,
                 CategoryMaps = categoryMaps,
@@ -654,6 +668,7 @@ VALUES
                 await InsertInventoryTransactionsAsync(connection, transaction, productId, now, request.InventoryTransactions, cancellationToken);
                 await InsertInventoryReservationsAsync(connection, transaction, productId, now, request.InventoryReservations, cancellationToken);
                 await InsertPriceListItemsAsync(connection, transaction, productId, now, request.PriceListItems, cancellationToken);
+                await InsertProductRegionsAsync(connection, transaction, productId, now, request.Regions, cancellationToken);
                 var productUnitTempIdMap = await InsertProductUnitsAsync(connection, transaction, productId, now, request.ProductUnits, cancellationToken);
                 var moduleCodeMap = await InsertModulesAsync(connection, transaction, productId, now, request.Modules, cancellationToken);
                 var licenseOfferingTempIdMap = await InsertLicenseOfferingsAsync(connection, transaction, productId, now, request.LicenseOfferings, productUnitTempIdMap, cancellationToken);
@@ -812,6 +827,7 @@ INSERT INTO [Product].[ProductPrices]
     Id,
     ProductId,
     ProductVariantId,
+    RegionId,
     PriceType,
     Amount,
     CompareAtAmount,
@@ -830,6 +846,7 @@ VALUES
     @Id,
     @ProductId,
     @ProductVariantId,
+    @RegionId,
     @PriceType,
     @Amount,
     @CompareAtAmount,
@@ -849,6 +866,7 @@ VALUES
                 Id = Guid.NewGuid(),
                 ProductId = productId,
                 price.ProductVariantId,
+                price.RegionId,
                 price.PriceType,
                 price.Amount,
                 price.CompareAtAmount,
@@ -2985,6 +3003,8 @@ SELECT
     p.ProductVariantId,
     v.Sku AS VariantSku,
     v.Name AS VariantName,
+    p.RegionId,
+    rg.Name AS RegionName,
     p.PriceType,
     p.Amount,
     p.CompareAtAmount,
@@ -2999,6 +3019,7 @@ SELECT
     p.UpdatedAt
 FROM [Product].[ProductPrices] p
 LEFT JOIN [Product].[ProductVariants] v ON v.Id = p.ProductVariantId AND v.IsDeleted = 0
+LEFT JOIN [Product].[Regions] rg ON rg.Id = p.RegionId AND rg.IsDeleted = 0
 WHERE p.ProductId = @ProductId
   AND p.IsDeleted = 0
 ORDER BY p.CreatedAt DESC;";
@@ -3019,6 +3040,8 @@ SELECT
     p.ProductVariantId,
     v.Sku AS VariantSku,
     v.Name AS VariantName,
+    p.RegionId,
+    rg.Name AS RegionName,
     p.PriceType,
     p.Amount,
     p.CompareAtAmount,
@@ -3033,6 +3056,7 @@ SELECT
     p.UpdatedAt
 FROM [Product].[ProductPrices] p
 LEFT JOIN [Product].[ProductVariants] v ON v.Id = p.ProductVariantId AND v.IsDeleted = 0
+LEFT JOIN [Product].[Regions] rg ON rg.Id = p.RegionId AND rg.IsDeleted = 0
 WHERE p.Id = @PriceId
   AND p.IsDeleted = 0;";
 
@@ -3049,6 +3073,7 @@ INSERT INTO [Product].[ProductPrices]
     Id,
     ProductId,
     ProductVariantId,
+    RegionId,
     PriceType,
     Amount,
     CompareAtAmount,
@@ -3067,6 +3092,7 @@ VALUES
     @Id,
     @ProductId,
     @ProductVariantId,
+    @RegionId,
     @PriceType,
     @Amount,
     @CompareAtAmount,
@@ -3092,6 +3118,7 @@ VALUES
                         Id = priceId,
                         request.ProductId,
                         request.ProductVariantId,
+                        request.RegionId,
                         request.PriceType,
                         request.Amount,
                         request.CompareAtAmount,
@@ -3116,6 +3143,7 @@ VALUES
 UPDATE [Product].[ProductPrices]
 SET
     ProductVariantId = @ProductVariantId,
+    RegionId = @RegionId,
     PriceType = @PriceType,
     Amount = @Amount,
     CompareAtAmount = @CompareAtAmount,
@@ -3138,6 +3166,7 @@ WHERE Id = @PriceId
                     {
                         PriceId = priceId,
                         request.ProductVariantId,
+                        request.RegionId,
                         request.PriceType,
                         request.Amount,
                         request.CompareAtAmount,

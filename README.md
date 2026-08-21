@@ -15,7 +15,7 @@ Bu doküman, **ProductManagement** API’sindeki endpoint’lerin nasıl kullan�
 Proje .NET 10 tabanlı bir Web API içerir. API tarafında ürün yönetimi için şu alanlar bulunur:
 - Authentication
 - Product CRUD
-- Catalog (Category, Supplier, Warehouse)
+- Catalog (Category, Supplier, Warehouse, Region)
 - Attribute tanımları ve değerleri
 - Commerce (Variant, Price)
 - Inventory (Stok, hareket, rezervasyon)
@@ -201,6 +201,17 @@ Base: `/api/catalog`
 - `PUT /api/catalog/warehouses/{warehouseId}`
 - `DELETE /api/catalog/warehouses/{warehouseId}`
 
+### 3b) Regions (Bölgeler)
+Base: `/api/regions`
+
+- `GET /api/regions?includeInactive=false`
+- `GET /api/regions/{regionId}`
+- `POST /api/regions` (`CreateRegionRequestDto`)
+- `PUT /api/regions/{regionId}` (`UpdateRegionRequestDto`)
+- `DELETE /api/regions/{regionId}`
+
+Lookup: `GET /api/lookups/regions?includeInactive=false`
+
 ### 4) Product Commerce
 Base: `/api/products`
 
@@ -259,6 +270,13 @@ Base: `/api/products`
 - `POST /api/products/{productId}/bundle-items`
 - `PUT /api/products/bundle-items/{bundleItemId}`
 - `DELETE /api/products/bundle-items/{bundleItemId}`
+
+**Regions (ürün-bölge eşlemesi)**
+- `GET /api/products/{productId}/regions`
+- `GET /api/products/regions/{productRegionId}`
+- `POST /api/products/{productId}/regions`
+- `PUT /api/products/regions/{productRegionId}`
+- `DELETE /api/products/regions/{productRegionId}`
 
 **Supplier Maps**
 - `GET /api/products/{productId}/supplier-maps`
@@ -330,8 +348,21 @@ Aşağıda en çok kullanılan modellerin kısa özeti verilmiştir.
 - `id`, `productId`, `sku`, `barcode`, `name`
 - `optionValuesJson`, `additionalPrice`, `additionalCost`, `isActive`
 
+### RegionDto
+- `id`, `code`, `name`, `description`, `isActive`, `sortOrder`, `createdAt`, `updatedAt`
+
+### ProductRegionDto
+- `id`, `productId`, `regionId`, `regionCode`, `regionName`
+- `currencyCode` (bölgenin fiyat birimi), `taxRate` (bölgeye özel KDV %)
+- `isDefault`, `isActive`, `sortOrder`
+
+> Bir ürün birden fazla bölgeye bağlanabilir; her bölge kendi para birimini ve KDV
+> oranını taşır. `taxRate` boş bırakılırsa ürünün `taxRate` değeri kullanılır.
+> Fiyat hesabında `regionId` gönderildiğinde o bölgenin para birimi ve KDV oranı uygulanır.
+
 ### ProductPriceDto
 - `id`, `productId`, `productVariantId`
+- `regionId`, `regionName` (boşsa fiyat tüm bölgelerde geçerlidir)
 - `priceType`, `amount`, `compareAtAmount`, `currencyCode`
 - `minQuantity`, `maxQuantity`, `validFrom`, `validTo`
 
@@ -357,6 +388,7 @@ Aşağıda en çok kullanılan modellerin kısa özeti verilmiştir.
 2. `POST /api/products` ile ürün oluştur.
 3. `POST /api/catalog/categories` ile kategori oluştur.
 4. `POST /api/products/{productId}/category-maps` ile ürünü kategoriye bağla.
+4b. `POST /api/regions` ile bölge tanımla, `POST /api/products/{productId}/regions` ile ürünü bölgeye bağla (para birimi + KDV).
 5. `POST /api/inventory/inventories` ile stok kartı aç.
 6. `POST /api/inventory/transactions` ile stok hareketi oluştur.
 

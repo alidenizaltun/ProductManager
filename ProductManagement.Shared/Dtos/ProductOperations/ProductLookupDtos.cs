@@ -14,6 +14,7 @@ namespace ProductManagement.Shared.Dtos.ProductOperations
         public IReadOnlyList<LookupItemDto> Suppliers { get; init; } = [];
         public IReadOnlyList<LookupItemDto> PriceLists { get; init; } = [];
         public IReadOnlyList<LookupItemDto> UnitDefinitions { get; init; } = [];
+        public IReadOnlyList<LookupItemDto> Regions { get; init; } = [];
     }
 
     public sealed record UnitDefinitionDto
