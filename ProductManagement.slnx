@@ -12,6 +12,10 @@
     <Project Path="ProductManagement.API.Presentation/ProductManagement.API.Presentation.csproj" Id="ce1669f3-4a69-4b40-a0a9-570aea4fd96e" />
     <Project Path="ProductManagement.API/ProductManagement.API.csproj" />
   </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="tests/ProductManagement.UnitTests/ProductManagement.UnitTests.csproj" />
+    <Project Path="tests/ProductManagement.IntegrationTests/ProductManagement.IntegrationTests.csproj" />
+  </Folder>
   <Folder Name="/Shared/">
     <Project Path="ProductManagement.Repository.Shared/ProductManagement.Repository.Shared.csproj" />
     <Project Path="ProductManagement.Service.Shared/ProductManagement.Service.Shared.csproj" />

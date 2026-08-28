@@ -157,3 +157,9 @@ catch (Exception ex)
     using StreamWriter sw = new StreamWriter(fs);
     sw.WriteLine($"Hata: " + ex);
 }
+
+/// <summary>
+/// Top-level statement'ların ürettiği giriş noktası sınıfını test projesine görünür kılar.
+/// WebApplicationFactory&lt;Program&gt; bu bildirim olmadan uygulamayı ayağa kaldıramaz.
+/// </summary>
+public partial class Program { }
