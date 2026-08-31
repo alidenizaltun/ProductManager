@@ -1,7 +1,8 @@
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProductManagement.Service.Shared.Abstract;
 using ProductManagement.Shared.Dtos.ProductOperations;
+using ProductManagement.Shared.Infrastructure.Security;
 
 namespace ProductManagement.Presentation.Controllers;
 
@@ -16,6 +17,7 @@ public sealed class LookupsController : ControllerBase
         _service = service;
     }
 
+    [RequirePermission(Permissions.Catalog.View)]
     [HttpGet]
     [ProducesResponseType(typeof(ProductReferenceLookupsDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<ProductReferenceLookupsDto>> GetReferenceLookups(
@@ -26,6 +28,7 @@ public sealed class LookupsController : ControllerBase
         return Ok(lookups);
     }
 
+    [RequirePermission(Permissions.Catalog.View)]
     [HttpGet("products")]
     [ProducesResponseType(typeof(IReadOnlyList<LookupItemDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<LookupItemDto>>> GetProducts(
@@ -36,6 +39,7 @@ public sealed class LookupsController : ControllerBase
         return Ok(items);
     }
 
+    [RequirePermission(Permissions.Catalog.View)]
     [HttpGet("categories")]
     [ProducesResponseType(typeof(IReadOnlyList<LookupItemDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<LookupItemDto>>> GetCategories(CancellationToken cancellationToken = default)
@@ -44,6 +48,7 @@ public sealed class LookupsController : ControllerBase
         return Ok(items);
     }
 
+    [RequirePermission(Permissions.Catalog.View)]
     [HttpGet("warehouses")]
     [ProducesResponseType(typeof(IReadOnlyList<LookupItemDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<LookupItemDto>>> GetWarehouses(
@@ -54,6 +59,7 @@ public sealed class LookupsController : ControllerBase
         return Ok(items);
     }
 
+    [RequirePermission(Permissions.Catalog.View)]
     [HttpGet("suppliers")]
     [ProducesResponseType(typeof(IReadOnlyList<LookupItemDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<LookupItemDto>>> GetSuppliers(
@@ -64,6 +70,7 @@ public sealed class LookupsController : ControllerBase
         return Ok(items);
     }
 
+    [RequirePermission(Permissions.Catalog.View)]
     [HttpGet("price-lists")]
     [ProducesResponseType(typeof(IReadOnlyList<LookupItemDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<LookupItemDto>>> GetPriceLists(
@@ -74,6 +81,7 @@ public sealed class LookupsController : ControllerBase
         return Ok(items);
     }
 
+    [RequirePermission(Permissions.Catalog.View)]
     [HttpGet("unit-definitions")]
     [ProducesResponseType(typeof(IReadOnlyList<LookupItemDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<LookupItemDto>>> GetUnitDefinitions(
@@ -84,6 +92,7 @@ public sealed class LookupsController : ControllerBase
         return Ok(items);
     }
 
+    [RequirePermission(Permissions.Catalog.View)]
     [HttpGet("regions")]
     [ProducesResponseType(typeof(IReadOnlyList<LookupItemDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<LookupItemDto>>> GetRegions(

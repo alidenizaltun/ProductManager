@@ -1,8 +1,10 @@
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProductManagement.Service.Shared.Abstract;
 using ProductManagement.Shared.Dtos.PriceEngine;
+using ProductManagement.Shared.Infrastructure.Security;
 using ProductManagement.Shared.Dtos.ProductOperations;
+using ProductManagement.Shared.Infrastructure.Security;
 
 namespace ProductManagement.Presentation.Controllers;
 
@@ -21,6 +23,7 @@ public sealed class SoftwareLicenseController : ControllerBase
         _priceEngineService = priceEngineService;
     }
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("license-offerings/{offeringId:guid}/pricing-parameters")]
     [ProducesResponseType(typeof(LicenseOfferingPricingParametersDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -37,6 +40,7 @@ public sealed class SoftwareLicenseController : ControllerBase
 
     // ─── Modules ─────────────────────────────────────────────────────────────────
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("modules")]
     [ProducesResponseType(typeof(IReadOnlyList<ProductModuleDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ProductModuleDto>>> GetModules(Guid productId, CancellationToken cancellationToken)
@@ -45,6 +49,7 @@ public sealed class SoftwareLicenseController : ControllerBase
         return Ok(items);
     }
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("modules/{moduleId:guid}")]
     [ProducesResponseType(typeof(ProductModuleDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -54,6 +59,7 @@ public sealed class SoftwareLicenseController : ControllerBase
         return item is null ? NotFound() : Ok(item);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPost("modules")]
     [ProducesResponseType(typeof(ProductModuleDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<ProductModuleDto>> CreateModule(
@@ -66,6 +72,7 @@ public sealed class SoftwareLicenseController : ControllerBase
         return CreatedAtAction(nameof(GetModuleById), new { productId, moduleId = created.Id }, created);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPut("modules/{moduleId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -78,6 +85,7 @@ public sealed class SoftwareLicenseController : ControllerBase
         return updated ? NoContent() : NotFound();
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpDelete("modules/{moduleId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -89,6 +97,7 @@ public sealed class SoftwareLicenseController : ControllerBase
 
     // ─── Module Offering Prices ───────────────────────────────────────────────────
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("modules/{moduleId:guid}/offering-prices")]
     [ProducesResponseType(typeof(IReadOnlyList<ProductModuleOfferingPriceDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ProductModuleOfferingPriceDto>>> GetModuleOfferingPrices(
@@ -98,6 +107,7 @@ public sealed class SoftwareLicenseController : ControllerBase
         return Ok(items);
     }
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("modules/{moduleId:guid}/offering-prices/{priceId:guid}")]
     [ProducesResponseType(typeof(ProductModuleOfferingPriceDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -108,6 +118,7 @@ public sealed class SoftwareLicenseController : ControllerBase
         return item is null ? NotFound() : Ok(item);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPost("modules/{moduleId:guid}/offering-prices")]
     [ProducesResponseType(typeof(ProductModuleOfferingPriceDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<ProductModuleOfferingPriceDto>> CreateModuleOfferingPrice(
@@ -121,6 +132,7 @@ public sealed class SoftwareLicenseController : ControllerBase
             new { productId, moduleId, priceId = created.Id }, created);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPut("modules/{moduleId:guid}/offering-prices/{priceId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -133,6 +145,7 @@ public sealed class SoftwareLicenseController : ControllerBase
         return updated ? NoContent() : NotFound();
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpDelete("modules/{moduleId:guid}/offering-prices/{priceId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -145,6 +158,7 @@ public sealed class SoftwareLicenseController : ControllerBase
 
     // ─── LicenseOfferings ─────────────────────────────────────────────────────────
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("license-offerings")]
     [ProducesResponseType(typeof(IReadOnlyList<ProductLicenseOfferingDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ProductLicenseOfferingDto>>> GetLicenseOfferings(Guid productId, CancellationToken cancellationToken)
@@ -153,6 +167,7 @@ public sealed class SoftwareLicenseController : ControllerBase
         return Ok(items);
     }
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("license-offerings/{offeringId:guid}")]
     [ProducesResponseType(typeof(ProductLicenseOfferingDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -162,6 +177,7 @@ public sealed class SoftwareLicenseController : ControllerBase
         return item is null ? NotFound() : Ok(item);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPost("license-offerings")]
     [ProducesResponseType(typeof(ProductLicenseOfferingDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<ProductLicenseOfferingDto>> CreateLicenseOffering(
@@ -174,6 +190,7 @@ public sealed class SoftwareLicenseController : ControllerBase
         return CreatedAtAction(nameof(GetLicenseOfferingById), new { productId, offeringId = created.Id }, created);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPut("license-offerings/{offeringId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -186,6 +203,7 @@ public sealed class SoftwareLicenseController : ControllerBase
         return updated ? NoContent() : NotFound();
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpDelete("license-offerings/{offeringId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

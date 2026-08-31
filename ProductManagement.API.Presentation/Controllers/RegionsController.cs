@@ -1,7 +1,8 @@
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProductManagement.Service.Shared.Abstract;
 using ProductManagement.Shared.Dtos.ProductOperations;
+using ProductManagement.Shared.Infrastructure.Security;
 
 namespace ProductManagement.Presentation.Controllers;
 
@@ -16,6 +17,7 @@ public sealed class RegionsController : ControllerBase
         _service = service;
     }
 
+    [RequirePermission(Permissions.Catalog.View)]
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<RegionDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<RegionDto>>> GetAll(
@@ -26,6 +28,7 @@ public sealed class RegionsController : ControllerBase
         return Ok(items);
     }
 
+    [RequirePermission(Permissions.Catalog.View)]
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(RegionDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -35,6 +38,7 @@ public sealed class RegionsController : ControllerBase
         return item is null ? NotFound() : Ok(item);
     }
 
+    [RequirePermission(Permissions.Catalog.Manage)]
     [HttpPost]
     [ProducesResponseType(typeof(RegionDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<RegionDto>> Create(
@@ -45,6 +49,7 @@ public sealed class RegionsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
+    [RequirePermission(Permissions.Catalog.Manage)]
     [HttpPut("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -57,6 +62,7 @@ public sealed class RegionsController : ControllerBase
         return updated ? NoContent() : NotFound();
     }
 
+    [RequirePermission(Permissions.Catalog.Manage)]
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

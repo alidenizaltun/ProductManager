@@ -1,7 +1,8 @@
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProductManagement.Service.Shared.Abstract;
 using ProductManagement.Shared.Dtos.ProductOperations;
+using ProductManagement.Shared.Infrastructure.Security;
 
 namespace ProductManagement.Presentation.Controllers;
 
@@ -16,6 +17,7 @@ public sealed class CatalogController : ControllerBase
         _service = service;
     }
 
+    [RequirePermission(Permissions.Catalog.View)]
     [HttpGet("categories")]
     [ProducesResponseType(typeof(IReadOnlyList<ProductCategoryDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ProductCategoryDto>>> GetCategories(CancellationToken cancellationToken)
@@ -24,6 +26,7 @@ public sealed class CatalogController : ControllerBase
         return Ok(categories);
     }
 
+    [RequirePermission(Permissions.Catalog.View)]
     [HttpGet("categories/{categoryId:guid}")]
     [ProducesResponseType(typeof(ProductCategoryDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -38,6 +41,7 @@ public sealed class CatalogController : ControllerBase
         return Ok(category);
     }
 
+    [RequirePermission(Permissions.Catalog.Manage)]
     [HttpPost("categories")]
     [ProducesResponseType(typeof(ProductCategoryDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<ProductCategoryDto>> CreateCategory(
@@ -48,6 +52,7 @@ public sealed class CatalogController : ControllerBase
         return CreatedAtAction(nameof(GetCategoryById), new { categoryId = createdCategory.Id }, createdCategory);
     }
 
+    [RequirePermission(Permissions.Catalog.Manage)]
     [HttpPut("categories/{categoryId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -65,6 +70,7 @@ public sealed class CatalogController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Catalog.Manage)]
     [HttpDelete("categories/{categoryId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -79,6 +85,7 @@ public sealed class CatalogController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Catalog.View)]
     [HttpGet("suppliers")]
     [ProducesResponseType(typeof(IReadOnlyList<ProductSupplierDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ProductSupplierDto>>> GetSuppliers(
@@ -89,6 +96,7 @@ public sealed class CatalogController : ControllerBase
         return Ok(suppliers);
     }
 
+    [RequirePermission(Permissions.Catalog.View)]
     [HttpGet("suppliers/{supplierId:guid}")]
     [ProducesResponseType(typeof(ProductSupplierDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -103,6 +111,7 @@ public sealed class CatalogController : ControllerBase
         return Ok(supplier);
     }
 
+    [RequirePermission(Permissions.Catalog.Manage)]
     [HttpPost("suppliers")]
     [ProducesResponseType(typeof(ProductSupplierDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<ProductSupplierDto>> CreateSupplier(
@@ -113,6 +122,7 @@ public sealed class CatalogController : ControllerBase
         return CreatedAtAction(nameof(GetSupplierById), new { supplierId = createdSupplier.Id }, createdSupplier);
     }
 
+    [RequirePermission(Permissions.Catalog.Manage)]
     [HttpPut("suppliers/{supplierId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -130,6 +140,7 @@ public sealed class CatalogController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Catalog.Manage)]
     [HttpDelete("suppliers/{supplierId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -144,6 +155,7 @@ public sealed class CatalogController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Catalog.View)]
     [HttpGet("warehouses")]
     [ProducesResponseType(typeof(IReadOnlyList<WarehouseDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<WarehouseDto>>> GetWarehouses(
@@ -154,6 +166,7 @@ public sealed class CatalogController : ControllerBase
         return Ok(warehouses);
     }
 
+    [RequirePermission(Permissions.Catalog.View)]
     [HttpGet("warehouses/{warehouseId:guid}")]
     [ProducesResponseType(typeof(WarehouseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -168,6 +181,7 @@ public sealed class CatalogController : ControllerBase
         return Ok(warehouse);
     }
 
+    [RequirePermission(Permissions.Catalog.Manage)]
     [HttpPost("warehouses")]
     [ProducesResponseType(typeof(WarehouseDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<WarehouseDto>> CreateWarehouse(
@@ -178,6 +192,7 @@ public sealed class CatalogController : ControllerBase
         return CreatedAtAction(nameof(GetWarehouseById), new { warehouseId = createdWarehouse.Id }, createdWarehouse);
     }
 
+    [RequirePermission(Permissions.Catalog.Manage)]
     [HttpPut("warehouses/{warehouseId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -195,6 +210,7 @@ public sealed class CatalogController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Catalog.Manage)]
     [HttpDelete("warehouses/{warehouseId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

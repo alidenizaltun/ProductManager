@@ -1,7 +1,8 @@
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProductManagement.Service.Shared.Abstract;
 using ProductManagement.Shared.Dtos.ProductOperations;
+using ProductManagement.Shared.Infrastructure.Security;
 
 namespace ProductManagement.Presentation.Controllers;
 
@@ -16,6 +17,7 @@ public sealed class ProductsController : ControllerBase
         _service = service;
     }
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<ProductDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ProductDto>>> GetProducts(
@@ -27,6 +29,7 @@ public sealed class ProductsController : ControllerBase
         return Ok(products);
     }
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("{productId:guid}")]
     [ProducesResponseType(typeof(ProductDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -41,6 +44,7 @@ public sealed class ProductsController : ControllerBase
         return Ok(product);
     }
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("{productId:guid}/detail")]
     [ProducesResponseType(typeof(ProductDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -55,6 +59,7 @@ public sealed class ProductsController : ControllerBase
         return Ok(product);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPost]
     [ProducesResponseType(typeof(ProductDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<ProductDto>> CreateProduct(
@@ -65,6 +70,7 @@ public sealed class ProductsController : ControllerBase
         return CreatedAtAction(nameof(GetProductById), new { productId = createdProduct.Id }, createdProduct);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPost("full")]
     [ProducesResponseType(typeof(ProductDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<ProductDto>> CreateProductFull(
@@ -75,6 +81,7 @@ public sealed class ProductsController : ControllerBase
         return CreatedAtAction(nameof(GetProductById), new { productId = createdProduct.Id }, createdProduct);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPut("{productId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -92,6 +99,7 @@ public sealed class ProductsController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPut("{productId:guid}/full")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -109,6 +117,7 @@ public sealed class ProductsController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpDelete("{productId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

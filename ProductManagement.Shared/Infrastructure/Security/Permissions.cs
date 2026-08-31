@@ -55,6 +55,44 @@ namespace ProductManagement.Shared.Infrastructure.Security
             public const string Apply = "Pricing.Revisions.Apply";
         }
 
+        /// <summary>
+        /// Ürün kartı ve ona bağlı yapılar: varyant, birim, profil, medya, ilişkiler,
+        /// lisans teklifleri ve modüller.
+        /// </summary>
+        public static class Products
+        {
+            public const string View = "Products.View";
+            public const string Manage = "Products.Manage";
+        }
+
+        /// <summary>Ürün fiyatları ve fiyatlandırma kuralları.</summary>
+        public static class Prices
+        {
+            public const string View = "Pricing.Prices.View";
+            public const string Manage = "Pricing.Prices.Manage";
+        }
+
+        /// <summary>Fiyat listeleri ve kalemleri.</summary>
+        public static class PriceLists
+        {
+            public const string View = "Pricing.PriceLists.View";
+            public const string Manage = "Pricing.PriceLists.Manage";
+        }
+
+        /// <summary>Kategori, tedarikçi, depo, öznitelik, birim tanımı ve bölge.</summary>
+        public static class Catalog
+        {
+            public const string View = "Catalog.View";
+            public const string Manage = "Catalog.Manage";
+        }
+
+        /// <summary>Stok kayıtları, rezervasyonlar ve hareketler.</summary>
+        public static class Inventory
+        {
+            public const string View = "Inventory.View";
+            public const string Manage = "Inventory.Manage";
+        }
+
         public static IReadOnlyList<PermissionDefinition> All { get; } = new List<PermissionDefinition>
         {
             new(Users.View, "Kullanıcıları Görüntüle", "Kullanıcılar"),
@@ -71,6 +109,16 @@ namespace ProductManagement.Shared.Infrastructure.Security
             new(PriceRevisions.Manage, "Zam Revizyonu Hazırla", "Fiyatlandırma"),
             new(PriceRevisions.Approve, "Zam Revizyonunu Onayla", "Fiyatlandırma"),
             new(PriceRevisions.Apply, "Zam Revizyonunu Uygula", "Fiyatlandırma"),
+            new(Products.View, "Ürünleri Görüntüle", "Ürünler"),
+            new(Products.Manage, "Ürünleri Yönet", "Ürünler"),
+            new(Prices.View, "Ürün Fiyatlarını Görüntüle", "Fiyatlandırma"),
+            new(Prices.Manage, "Ürün Fiyatlarını Yönet", "Fiyatlandırma"),
+            new(PriceLists.View, "Fiyat Listelerini Görüntüle", "Fiyatlandırma"),
+            new(PriceLists.Manage, "Fiyat Listelerini Yönet", "Fiyatlandırma"),
+            new(Catalog.View, "Katalog Tanımlarını Görüntüle", "Katalog"),
+            new(Catalog.Manage, "Katalog Tanımlarını Yönet", "Katalog"),
+            new(Inventory.View, "Stok Bilgilerini Görüntüle", "Stok"),
+            new(Inventory.Manage, "Stok Hareketlerini Yönet", "Stok"),
         };
 
         public static IReadOnlyList<string> AllKeys { get; } = All.Select(p => p.Key).ToList();

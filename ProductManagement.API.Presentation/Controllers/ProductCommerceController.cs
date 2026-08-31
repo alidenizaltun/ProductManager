@@ -1,7 +1,8 @@
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProductManagement.Service.Shared.Abstract;
 using ProductManagement.Shared.Dtos.ProductOperations;
+using ProductManagement.Shared.Infrastructure.Security;
 
 namespace ProductManagement.Presentation.Controllers;
 
@@ -16,6 +17,7 @@ public sealed class ProductCommerceController : ControllerBase
         _service = service;
     }
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("{productId:guid}/variants")]
     [ProducesResponseType(typeof(IReadOnlyList<ProductVariantDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ProductVariantDto>>> GetVariants(
@@ -26,6 +28,7 @@ public sealed class ProductCommerceController : ControllerBase
         return Ok(variants);
     }
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("variants/{variantId:guid}")]
     [ProducesResponseType(typeof(ProductVariantDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -40,6 +43,7 @@ public sealed class ProductCommerceController : ControllerBase
         return Ok(variant);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPost("{productId:guid}/variants")]
     [ProducesResponseType(typeof(ProductVariantDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<ProductVariantDto>> CreateVariant(
@@ -52,6 +56,7 @@ public sealed class ProductCommerceController : ControllerBase
         return CreatedAtAction(nameof(GetVariantById), new { variantId = createdVariant.Id }, createdVariant);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPut("variants/{variantId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -69,6 +74,7 @@ public sealed class ProductCommerceController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpDelete("variants/{variantId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -83,6 +89,7 @@ public sealed class ProductCommerceController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Prices.View)]
     [HttpGet("{productId:guid}/prices")]
     [ProducesResponseType(typeof(IReadOnlyList<ProductPriceDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ProductPriceDto>>> GetPrices(
@@ -93,6 +100,7 @@ public sealed class ProductCommerceController : ControllerBase
         return Ok(prices);
     }
 
+    [RequirePermission(Permissions.Prices.View)]
     [HttpGet("prices/{priceId:guid}")]
     [ProducesResponseType(typeof(ProductPriceDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -107,6 +115,7 @@ public sealed class ProductCommerceController : ControllerBase
         return Ok(price);
     }
 
+    [RequirePermission(Permissions.Prices.Manage)]
     [HttpPost("{productId:guid}/prices")]
     [ProducesResponseType(typeof(ProductPriceDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<ProductPriceDto>> CreatePrice(
@@ -119,6 +128,7 @@ public sealed class ProductCommerceController : ControllerBase
         return CreatedAtAction(nameof(GetPriceById), new { priceId = createdPrice.Id }, createdPrice);
     }
 
+    [RequirePermission(Permissions.Prices.Manage)]
     [HttpPut("prices/{priceId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -136,6 +146,7 @@ public sealed class ProductCommerceController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Prices.Manage)]
     [HttpDelete("prices/{priceId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -150,6 +161,7 @@ public sealed class ProductCommerceController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Prices.View)]
     [HttpGet("{productId:guid}/pricing-rules")]
     [ProducesResponseType(typeof(IReadOnlyList<ProductPricingRuleDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ProductPricingRuleDto>>> GetPricingRules(
@@ -160,6 +172,7 @@ public sealed class ProductCommerceController : ControllerBase
         return Ok(rules);
     }
 
+    [RequirePermission(Permissions.Prices.View)]
     [HttpGet("pricing-rules/{pricingRuleId:guid}")]
     [ProducesResponseType(typeof(ProductPricingRuleDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -176,6 +189,7 @@ public sealed class ProductCommerceController : ControllerBase
         return Ok(rule);
     }
 
+    [RequirePermission(Permissions.Prices.Manage)]
     [HttpPost("{productId:guid}/pricing-rules")]
     [ProducesResponseType(typeof(ProductPricingRuleDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<ProductPricingRuleDto>> CreatePricingRule(
@@ -188,6 +202,7 @@ public sealed class ProductCommerceController : ControllerBase
         return CreatedAtAction(nameof(GetPricingRuleById), new { pricingRuleId = createdRule.Id }, createdRule);
     }
 
+    [RequirePermission(Permissions.Prices.Manage)]
     [HttpPut("pricing-rules/{pricingRuleId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -205,6 +220,7 @@ public sealed class ProductCommerceController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Prices.Manage)]
     [HttpPut("{productId:guid}/pricing-rules/reorder")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -226,6 +242,7 @@ public sealed class ProductCommerceController : ControllerBase
     /// Var olan bir fiyatlandırma kuralını, başka ürünlerde yeniden kullanılmak üzere
     /// ürün bağımsız bir fiyat şablonuna dönüştürür.
     /// </summary>
+    [RequirePermission(Permissions.PricingTemplates.Manage)]
     [HttpPost("pricing-rules/{pricingRuleId:guid}/save-as-template")]
     [ProducesResponseType(typeof(PricingTemplateDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -238,6 +255,7 @@ public sealed class ProductCommerceController : ControllerBase
         return Created($"/api/pricing-templates/{template.Id}", template);
     }
 
+    [RequirePermission(Permissions.Prices.Manage)]
     [HttpDelete("pricing-rules/{pricingRuleId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -254,6 +272,7 @@ public sealed class ProductCommerceController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("{productId:guid}/units")]
     [ProducesResponseType(typeof(IReadOnlyList<ProductUnitDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ProductUnitDto>>> GetProductUnits(
@@ -264,6 +283,7 @@ public sealed class ProductCommerceController : ControllerBase
         return Ok(units);
     }
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("units/{productUnitId:guid}")]
     [ProducesResponseType(typeof(ProductUnitDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -275,6 +295,7 @@ public sealed class ProductCommerceController : ControllerBase
         return unit is null ? NotFound() : Ok(unit);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPost("{productId:guid}/units")]
     [ProducesResponseType(typeof(ProductUnitDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<ProductUnitDto>> CreateProductUnit(
@@ -286,6 +307,7 @@ public sealed class ProductCommerceController : ControllerBase
         return CreatedAtAction(nameof(GetProductUnitById), new { productUnitId = created.Id }, created);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPut("units/{productUnitId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -298,6 +320,7 @@ public sealed class ProductCommerceController : ControllerBase
         return updated ? NoContent() : NotFound();
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpDelete("units/{productUnitId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

@@ -1,7 +1,8 @@
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProductManagement.Service.Shared.Abstract;
 using ProductManagement.Shared.Dtos.ProductOperations;
+using ProductManagement.Shared.Infrastructure.Security;
 
 namespace ProductManagement.Presentation.Controllers;
 
@@ -16,6 +17,7 @@ public sealed class ProductRelationsController : ControllerBase
         _service = service;
     }
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("{productId:guid}/attribute-values")]
     [ProducesResponseType(typeof(IReadOnlyList<ProductAttributeValueDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ProductAttributeValueDto>>> GetAttributeValues(
@@ -26,6 +28,7 @@ public sealed class ProductRelationsController : ControllerBase
         return Ok(values);
     }
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("attribute-values/{attributeValueId:guid}")]
     [ProducesResponseType(typeof(ProductAttributeValueDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -42,6 +45,7 @@ public sealed class ProductRelationsController : ControllerBase
         return Ok(value);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPost("{productId:guid}/attribute-values")]
     [ProducesResponseType(typeof(ProductAttributeValueDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<ProductAttributeValueDto>> CreateAttributeValue(
@@ -54,6 +58,7 @@ public sealed class ProductRelationsController : ControllerBase
         return CreatedAtAction(nameof(GetAttributeValueById), new { attributeValueId = createdValue.Id }, createdValue);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPut("attribute-values/{attributeValueId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -71,6 +76,7 @@ public sealed class ProductRelationsController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpDelete("attribute-values/{attributeValueId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -85,6 +91,7 @@ public sealed class ProductRelationsController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("{productId:guid}/category-maps")]
     [ProducesResponseType(typeof(IReadOnlyList<ProductCategoryMapDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ProductCategoryMapDto>>> GetCategoryMaps(
@@ -95,6 +102,7 @@ public sealed class ProductRelationsController : ControllerBase
         return Ok(maps);
     }
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("category-maps/{categoryMapId:guid}")]
     [ProducesResponseType(typeof(ProductCategoryMapDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -111,6 +119,7 @@ public sealed class ProductRelationsController : ControllerBase
         return Ok(map);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPost("{productId:guid}/category-maps")]
     [ProducesResponseType(typeof(ProductCategoryMapDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<ProductCategoryMapDto>> CreateCategoryMap(
@@ -123,6 +132,7 @@ public sealed class ProductRelationsController : ControllerBase
         return CreatedAtAction(nameof(GetCategoryMapById), new { categoryMapId = createdMap.Id }, createdMap);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPut("category-maps/{categoryMapId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -140,6 +150,7 @@ public sealed class ProductRelationsController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpDelete("category-maps/{categoryMapId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -154,6 +165,7 @@ public sealed class ProductRelationsController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("{productId:guid}/media")]
     [ProducesResponseType(typeof(IReadOnlyList<ProductMediaDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ProductMediaDto>>> GetMedia(
@@ -164,6 +176,7 @@ public sealed class ProductRelationsController : ControllerBase
         return Ok(mediaItems);
     }
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("media/{mediaId:guid}")]
     [ProducesResponseType(typeof(ProductMediaDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -178,6 +191,7 @@ public sealed class ProductRelationsController : ControllerBase
         return Ok(media);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPost("{productId:guid}/media")]
     [ProducesResponseType(typeof(ProductMediaDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<ProductMediaDto>> CreateMedia(
@@ -190,6 +204,7 @@ public sealed class ProductRelationsController : ControllerBase
         return CreatedAtAction(nameof(GetMediaById), new { mediaId = createdMedia.Id }, createdMedia);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPut("media/{mediaId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -207,6 +222,7 @@ public sealed class ProductRelationsController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpDelete("media/{mediaId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -221,6 +237,7 @@ public sealed class ProductRelationsController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("{productId:guid}/bundle-items")]
     [ProducesResponseType(typeof(IReadOnlyList<ProductBundleItemDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ProductBundleItemDto>>> GetBundleItems(
@@ -231,6 +248,7 @@ public sealed class ProductRelationsController : ControllerBase
         return Ok(items);
     }
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("bundle-items/{bundleItemId:guid}")]
     [ProducesResponseType(typeof(ProductBundleItemDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -247,6 +265,7 @@ public sealed class ProductRelationsController : ControllerBase
         return Ok(item);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPost("{productId:guid}/bundle-items")]
     [ProducesResponseType(typeof(ProductBundleItemDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<ProductBundleItemDto>> CreateBundleItem(
@@ -259,6 +278,7 @@ public sealed class ProductRelationsController : ControllerBase
         return CreatedAtAction(nameof(GetBundleItemById), new { bundleItemId = createdItem.Id }, createdItem);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPut("bundle-items/{bundleItemId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -276,6 +296,7 @@ public sealed class ProductRelationsController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpDelete("bundle-items/{bundleItemId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -290,6 +311,7 @@ public sealed class ProductRelationsController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("{productId:guid}/supplier-maps")]
     [ProducesResponseType(typeof(IReadOnlyList<ProductSupplierMapDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ProductSupplierMapDto>>> GetSupplierMaps(
@@ -300,6 +322,7 @@ public sealed class ProductRelationsController : ControllerBase
         return Ok(maps);
     }
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("supplier-maps/{supplierMapId:guid}")]
     [ProducesResponseType(typeof(ProductSupplierMapDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -316,6 +339,7 @@ public sealed class ProductRelationsController : ControllerBase
         return Ok(map);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPost("{productId:guid}/supplier-maps")]
     [ProducesResponseType(typeof(ProductSupplierMapDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<ProductSupplierMapDto>> CreateSupplierMap(
@@ -328,6 +352,7 @@ public sealed class ProductRelationsController : ControllerBase
         return CreatedAtAction(nameof(GetSupplierMapById), new { supplierMapId = createdMap.Id }, createdMap);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPut("supplier-maps/{supplierMapId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -345,6 +370,7 @@ public sealed class ProductRelationsController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpDelete("supplier-maps/{supplierMapId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -359,6 +385,7 @@ public sealed class ProductRelationsController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("{productId:guid}/regions")]
     [ProducesResponseType(typeof(IReadOnlyList<ProductRegionDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ProductRegionDto>>> GetProductRegions(
@@ -369,6 +396,7 @@ public sealed class ProductRelationsController : ControllerBase
         return Ok(regions);
     }
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("regions/{productRegionId:guid}")]
     [ProducesResponseType(typeof(ProductRegionDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -385,6 +413,7 @@ public sealed class ProductRelationsController : ControllerBase
         return Ok(region);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPost("{productId:guid}/regions")]
     [ProducesResponseType(typeof(ProductRegionDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<ProductRegionDto>> CreateProductRegion(
@@ -397,6 +426,7 @@ public sealed class ProductRelationsController : ControllerBase
         return CreatedAtAction(nameof(GetProductRegionById), new { productRegionId = created.Id }, created);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPut("regions/{productRegionId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -414,6 +444,7 @@ public sealed class ProductRelationsController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpDelete("regions/{productRegionId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

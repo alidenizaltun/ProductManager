@@ -81,4 +81,68 @@ public static class TestData
 
         return (await response.Content.ReadFromJsonAsync<UnitDefinitionPayload>())!;
     }
+
+    // ── Öznitelik tanımı ──────────────────────────────────────────────────────
+
+    public sealed record AttributeDefinitionPayload(Guid Id, string Key, string DisplayName, int DataType);
+
+    public static async Task<AttributeDefinitionPayload> OznitelikTanimiOlustur(HttpClient client)
+    {
+        var payload = new
+        {
+            Key = $"test_ozellik_{Guid.NewGuid().ToString("N")[..6]}",
+            DisplayName = "Test Özelliği",
+            DataType = 1,
+            IsRequired = false,
+            IsFilterable = false,
+            IsVariantAxis = false,
+        };
+
+        var response = await client.PostAsJsonAsync("/api/attributes", payload);
+        response.EnsureSuccessStatusCode();
+
+        return (await response.Content.ReadFromJsonAsync<AttributeDefinitionPayload>())!;
+    }
+
+    // ── Kategori ──────────────────────────────────────────────────────────────
+
+    public sealed record CategoryPayload(Guid Id, string Code, string Name);
+
+    public static async Task<CategoryPayload> KategoriOlustur(HttpClient client)
+    {
+        var payload = new { Name = $"Test Kategori {Guid.NewGuid().ToString("N")[..6]}" };
+
+        var response = await client.PostAsJsonAsync("/api/catalog/categories", payload);
+        response.EnsureSuccessStatusCode();
+
+        return (await response.Content.ReadFromJsonAsync<CategoryPayload>())!;
+    }
+
+    // ── Tedarikçi ─────────────────────────────────────────────────────────────
+
+    public sealed record SupplierPayload(Guid Id, string SupplierCode, string Name);
+
+    public static async Task<SupplierPayload> TedarikciOlustur(HttpClient client)
+    {
+        var payload = new { Name = $"Test Tedarikçi {Guid.NewGuid().ToString("N")[..6]}", IsActive = true };
+
+        var response = await client.PostAsJsonAsync("/api/catalog/suppliers", payload);
+        response.EnsureSuccessStatusCode();
+
+        return (await response.Content.ReadFromJsonAsync<SupplierPayload>())!;
+    }
+
+    // ── Bölge ─────────────────────────────────────────────────────────────────
+
+    public sealed record RegionPayload(Guid Id, string Code, string Name);
+
+    public static async Task<RegionPayload> BolgeOlustur(HttpClient client)
+    {
+        var payload = new { Name = $"Test Bölge {Guid.NewGuid().ToString("N")[..6]}" };
+
+        var response = await client.PostAsJsonAsync("/api/regions", payload);
+        response.EnsureSuccessStatusCode();
+
+        return (await response.Content.ReadFromJsonAsync<RegionPayload>())!;
+    }
 }

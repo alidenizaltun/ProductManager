@@ -1,7 +1,8 @@
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProductManagement.Service.Shared.Abstract;
 using ProductManagement.Shared.Dtos.ProductOperations;
+using ProductManagement.Shared.Infrastructure.Security;
 
 namespace ProductManagement.Presentation.Controllers;
 
@@ -16,6 +17,7 @@ public sealed class PriceListsController : ControllerBase
         _service = service;
     }
 
+    [RequirePermission(Permissions.PriceLists.View)]
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<ProductPriceListDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ProductPriceListDto>>> GetPriceLists(
@@ -26,6 +28,7 @@ public sealed class PriceListsController : ControllerBase
         return Ok(priceLists);
     }
 
+    [RequirePermission(Permissions.PriceLists.View)]
     [HttpGet("{priceListId:guid}")]
     [ProducesResponseType(typeof(ProductPriceListDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -40,6 +43,7 @@ public sealed class PriceListsController : ControllerBase
         return Ok(priceList);
     }
 
+    [RequirePermission(Permissions.PriceLists.Manage)]
     [HttpPost]
     [ProducesResponseType(typeof(ProductPriceListDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<ProductPriceListDto>> CreatePriceList(
@@ -50,6 +54,7 @@ public sealed class PriceListsController : ControllerBase
         return CreatedAtAction(nameof(GetPriceListById), new { priceListId = createdPriceList.Id }, createdPriceList);
     }
 
+    [RequirePermission(Permissions.PriceLists.Manage)]
     [HttpPut("{priceListId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -67,6 +72,7 @@ public sealed class PriceListsController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.PriceLists.Manage)]
     [HttpDelete("{priceListId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -81,6 +87,7 @@ public sealed class PriceListsController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.PriceLists.View)]
     [HttpGet("{priceListId:guid}/items")]
     [ProducesResponseType(typeof(IReadOnlyList<ProductPriceListItemDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ProductPriceListItemDto>>> GetPriceListItems(Guid priceListId, CancellationToken cancellationToken)
@@ -89,6 +96,7 @@ public sealed class PriceListsController : ControllerBase
         return Ok(items);
     }
 
+    [RequirePermission(Permissions.PriceLists.View)]
     [HttpGet("items/{priceListItemId:guid}")]
     [ProducesResponseType(typeof(ProductPriceListItemDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -103,6 +111,7 @@ public sealed class PriceListsController : ControllerBase
         return Ok(item);
     }
 
+    [RequirePermission(Permissions.PriceLists.Manage)]
     [HttpPost("items")]
     [ProducesResponseType(typeof(ProductPriceListItemDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<ProductPriceListItemDto>> CreatePriceListItem(
@@ -113,6 +122,7 @@ public sealed class PriceListsController : ControllerBase
         return CreatedAtAction(nameof(GetPriceListItemById), new { priceListItemId = createdItem.Id }, createdItem);
     }
 
+    [RequirePermission(Permissions.PriceLists.Manage)]
     [HttpPut("items/{priceListItemId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -130,6 +140,7 @@ public sealed class PriceListsController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.PriceLists.Manage)]
     [HttpDelete("items/{priceListItemId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

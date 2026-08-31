@@ -1,7 +1,8 @@
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProductManagement.Service.Shared.Abstract;
 using ProductManagement.Shared.Dtos.ProductOperations;
+using ProductManagement.Shared.Infrastructure.Security;
 
 namespace ProductManagement.Presentation.Controllers;
 
@@ -16,6 +17,7 @@ public sealed class InventoryController : ControllerBase
         _service = service;
     }
 
+    [RequirePermission(Permissions.Inventory.View)]
     [HttpGet("inventories")]
     [ProducesResponseType(typeof(IReadOnlyList<ProductInventoryDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ProductInventoryDto>>> GetInventories(
@@ -27,6 +29,7 @@ public sealed class InventoryController : ControllerBase
         return Ok(inventories);
     }
 
+    [RequirePermission(Permissions.Inventory.View)]
     [HttpGet("inventories/{inventoryId:guid}")]
     [ProducesResponseType(typeof(ProductInventoryDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -41,6 +44,7 @@ public sealed class InventoryController : ControllerBase
         return Ok(inventory);
     }
 
+    [RequirePermission(Permissions.Inventory.Manage)]
     [HttpPost("inventories")]
     [ProducesResponseType(typeof(ProductInventoryDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<ProductInventoryDto>> CreateInventory(
@@ -51,6 +55,7 @@ public sealed class InventoryController : ControllerBase
         return CreatedAtAction(nameof(GetInventoryById), new { inventoryId = inventory.Id }, inventory);
     }
 
+    [RequirePermission(Permissions.Inventory.Manage)]
     [HttpPut("inventories/{inventoryId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -68,6 +73,7 @@ public sealed class InventoryController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Inventory.Manage)]
     [HttpDelete("inventories/{inventoryId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -82,6 +88,7 @@ public sealed class InventoryController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Inventory.View)]
     [HttpGet("transactions")]
     [ProducesResponseType(typeof(IReadOnlyList<InventoryTransactionDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<InventoryTransactionDto>>> GetTransactions(
@@ -93,6 +100,7 @@ public sealed class InventoryController : ControllerBase
         return Ok(transactions);
     }
 
+    [RequirePermission(Permissions.Inventory.Manage)]
     [HttpPost("transactions")]
     [ProducesResponseType(typeof(InventoryTransactionDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<InventoryTransactionDto>> CreateTransaction(
@@ -103,6 +111,7 @@ public sealed class InventoryController : ControllerBase
         return CreatedAtAction(nameof(GetTransactionById), new { transactionId = transaction.Id }, transaction);
     }
 
+    [RequirePermission(Permissions.Inventory.View)]
     [HttpGet("transactions/{transactionId:guid}")]
     [ProducesResponseType(typeof(InventoryTransactionDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -117,6 +126,7 @@ public sealed class InventoryController : ControllerBase
         return Ok(transaction);
     }
 
+    [RequirePermission(Permissions.Inventory.View)]
     [HttpGet("reservations")]
     [ProducesResponseType(typeof(IReadOnlyList<InventoryReservationDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<InventoryReservationDto>>> GetReservations(
@@ -128,6 +138,7 @@ public sealed class InventoryController : ControllerBase
         return Ok(reservations);
     }
 
+    [RequirePermission(Permissions.Inventory.Manage)]
     [HttpPost("reservations")]
     [ProducesResponseType(typeof(InventoryReservationDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<InventoryReservationDto>> CreateReservation(
@@ -138,6 +149,7 @@ public sealed class InventoryController : ControllerBase
         return CreatedAtAction(nameof(GetReservationById), new { reservationId = reservation.Id }, reservation);
     }
 
+    [RequirePermission(Permissions.Inventory.View)]
     [HttpGet("reservations/{reservationId:guid}")]
     [ProducesResponseType(typeof(InventoryReservationDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -152,6 +164,7 @@ public sealed class InventoryController : ControllerBase
         return Ok(reservation);
     }
 
+    [RequirePermission(Permissions.Inventory.Manage)]
     [HttpPatch("reservations/{reservationId:guid}/status")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -169,6 +182,7 @@ public sealed class InventoryController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Inventory.Manage)]
     [HttpDelete("reservations/{reservationId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

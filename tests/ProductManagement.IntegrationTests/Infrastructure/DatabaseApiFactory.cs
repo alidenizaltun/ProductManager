@@ -59,8 +59,56 @@ public sealed class DatabaseApiFactory : ApiFactory, IAsyncLifetime
 
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        GuardAgainstNonContainerDatabase(db.Database.GetConnectionString());
+
         await db.Database.MigrateAsync();
     }
+
+    /// <summary>
+    /// Migration çalıştırmadan önce hedefin gerçekten test konteyneri olduğunu doğrular.
+    ///
+    /// Bu koruma bir kez gerçekten gerekti: yapılandırma anahtarı yanlış yazıldığı için
+    /// override sessizce etkisiz kaldı ve testler <c>appsettings.json</c>'daki paylaşımlı
+    /// dev veritabanına yazdı. Bir yazım hatası asla sessizce üretime yakın veriye
+    /// dokunmamalı — bu yüzden yüksek sesle patlıyoruz.
+    /// </summary>
+    private void GuardAgainstNonContainerDatabase(string? actual)
+    {
+        var beklenen = ConnectionString;
+
+        // Ham dize karşılaştırılamaz: SqlClient dizeyi normalize eder
+        // (Server → Data Source, Database → Initial Catalog, Application Name ekler).
+        // Güvenliği belirleyen tek alan sunucu adresidir — onu karşılaştırırız.
+        if (SunucuAdresi(actual) == SunucuAdresi(beklenen)) return;
+
+        throw new InvalidOperationException(
+            "Test veritabanı bağlantısı test konteynerine gitmiyor — migration durduruldu." +
+            Environment.NewLine +
+            $"  Beklenen : {Maskele(beklenen)}" + Environment.NewLine +
+            $"  Gerçekleşen: {Maskele(actual)}" + Environment.NewLine +
+            "Muhtemel sebep: uygulamanın okuduğu yapılandırma anahtarı ile ApiFactory'de " +
+            "yazılan anahtar farklı. Bkz. ConfigurationExtensions.GetActiveConnectionString.");
+    }
+
+    /// <summary>Bağlantı dizesinden sunucu adresini çıkarır; ayrıştırılamazsa boş döner.</summary>
+    private static string SunucuAdresi(string? cs)
+    {
+        if (string.IsNullOrWhiteSpace(cs)) return string.Empty;
+
+        try
+        {
+            return new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(cs)
+                .DataSource.Trim().ToLowerInvariant();
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
+
+    private static string Maskele(string? cs) =>
+        cs is null ? "(yok)" : System.Text.RegularExpressions.Regex.Replace(cs, "Password=[^;]*", "Password=***");
 
     public new async Task DisposeAsync()
     {

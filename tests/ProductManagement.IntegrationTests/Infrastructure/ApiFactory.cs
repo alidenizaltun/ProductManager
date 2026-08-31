@@ -22,13 +22,21 @@ public class ApiFactory : WebApplicationFactory<Program>
     {
         builder.UseEnvironment("Testing");
 
+        // Uygulama Kestrel'i açıkça yapılandırıyor ve sabit bir porta bağlanabiliyor.
+        // Port 0 işletim sisteminden boş port ister; böylece aynı anda koşan iki test
+        // süreci (ör. iki ayrı oturum) "address already in use" ile çakışmaz.
+        builder.UseSetting("urls", "http://127.0.0.1:0");
+
         builder.ConfigureAppConfiguration((_, config) =>
         {
+            // DİKKAT: Uygulama bağlantıyı `ConnectionStrings:Default` anahtarından okur
+            // (bkz. ConfigurationExtensions.GetActiveConnectionString). Başka bir ad
+            // kullanmak override'ı sessizce etkisiz bırakır ve testler appsettings.json'daki
+            // PAYLAŞIMLI DEV VERİTABANINA gider. Bu anahtar adı değiştirilmemeli.
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["ConnectionStrings:ActiveConnection"] = ConnectionString,
-                ["ConnectionStrings:DefaultConnection"] = ConnectionString,
-                ["ConnectionStrings:HangfireConnection"] = ConnectionString,
+                ["ConnectionStrings:Default"] = ConnectionString,
+                ["ConnectionStrings:Hangfire"] = ConnectionString,
                 ["Hangfire:Enabled"] = "false",
             });
         });

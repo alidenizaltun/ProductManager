@@ -1,7 +1,8 @@
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProductManagement.Service.Shared.Abstract;
 using ProductManagement.Shared.Dtos.ProductOperations;
+using ProductManagement.Shared.Infrastructure.Security;
 
 namespace ProductManagement.Presentation.Controllers;
 
@@ -16,6 +17,7 @@ public sealed class ProductProfilesController : ControllerBase
         _service = service;
     }
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("physical")]
     [ProducesResponseType(typeof(ProductPhysicalProfileDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -30,6 +32,7 @@ public sealed class ProductProfilesController : ControllerBase
         return Ok(profile);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPut("physical")]
     [ProducesResponseType(typeof(ProductPhysicalProfileDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<ProductPhysicalProfileDto>> UpsertPhysicalProfile(
@@ -41,6 +44,7 @@ public sealed class ProductProfilesController : ControllerBase
         return Ok(profile);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpDelete("physical")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -55,6 +59,7 @@ public sealed class ProductProfilesController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("software")]
     [ProducesResponseType(typeof(ProductSoftwareProfileDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -69,6 +74,7 @@ public sealed class ProductProfilesController : ControllerBase
         return Ok(profile);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPut("software")]
     [ProducesResponseType(typeof(ProductSoftwareProfileDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<ProductSoftwareProfileDto>> UpsertSoftwareProfile(
@@ -80,6 +86,7 @@ public sealed class ProductProfilesController : ControllerBase
         return Ok(profile);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpDelete("software")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -94,6 +101,7 @@ public sealed class ProductProfilesController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("service")]
     [ProducesResponseType(typeof(ProductServiceProfileDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -108,6 +116,7 @@ public sealed class ProductProfilesController : ControllerBase
         return Ok(profile);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPut("service")]
     [ProducesResponseType(typeof(ProductServiceProfileDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<ProductServiceProfileDto>> UpsertServiceProfile(
@@ -119,6 +128,7 @@ public sealed class ProductProfilesController : ControllerBase
         return Ok(profile);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpDelete("service")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -133,6 +143,7 @@ public sealed class ProductProfilesController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Products.View)]
     [HttpGet("subscription")]
     [ProducesResponseType(typeof(ProductSubscriptionProfileDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -147,6 +158,7 @@ public sealed class ProductProfilesController : ControllerBase
         return Ok(profile);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPut("subscription")]
     [ProducesResponseType(typeof(ProductSubscriptionProfileDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<ProductSubscriptionProfileDto>> UpsertSubscriptionProfile(
@@ -158,6 +170,7 @@ public sealed class ProductProfilesController : ControllerBase
         return Ok(profile);
     }
 
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpDelete("subscription")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

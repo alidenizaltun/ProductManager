@@ -1,7 +1,8 @@
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProductManagement.Service.Shared.Abstract;
 using ProductManagement.Shared.Dtos.ProductOperations;
+using ProductManagement.Shared.Infrastructure.Security;
 
 namespace ProductManagement.Presentation.Controllers;
 
@@ -16,6 +17,7 @@ public sealed class AttributesController : ControllerBase
         _service = service;
     }
 
+    [RequirePermission(Permissions.Catalog.View)]
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<ProductAttributeDefinitionDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ProductAttributeDefinitionDto>>> GetAttributeDefinitions(CancellationToken cancellationToken)
@@ -24,6 +26,7 @@ public sealed class AttributesController : ControllerBase
         return Ok(attributes);
     }
 
+    [RequirePermission(Permissions.Catalog.View)]
     [HttpGet("{attributeDefinitionId:guid}")]
     [ProducesResponseType(typeof(ProductAttributeDefinitionDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -38,6 +41,7 @@ public sealed class AttributesController : ControllerBase
         return Ok(attribute);
     }
 
+    [RequirePermission(Permissions.Catalog.Manage)]
     [HttpPost]
     [ProducesResponseType(typeof(ProductAttributeDefinitionDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<ProductAttributeDefinitionDto>> CreateAttributeDefinition(
@@ -48,6 +52,7 @@ public sealed class AttributesController : ControllerBase
         return CreatedAtAction(nameof(GetAttributeDefinitionById), new { attributeDefinitionId = createdAttribute.Id }, createdAttribute);
     }
 
+    [RequirePermission(Permissions.Catalog.Manage)]
     [HttpPut("{attributeDefinitionId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -65,6 +70,7 @@ public sealed class AttributesController : ControllerBase
         return NoContent();
     }
 
+    [RequirePermission(Permissions.Catalog.Manage)]
     [HttpDelete("{attributeDefinitionId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

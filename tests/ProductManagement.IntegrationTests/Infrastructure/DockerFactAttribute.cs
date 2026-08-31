@@ -17,6 +17,18 @@ public sealed class DockerFactAttribute : FactAttribute
     }
 }
 
+/// <summary>Theory karşılığı: Docker çalışmıyorsa tüm InlineData vakaları atlanır.</summary>
+public sealed class DockerTheoryAttribute : TheoryAttribute
+{
+    public DockerTheoryAttribute()
+    {
+        if (!DockerEnvironment.IsAvailable)
+        {
+            Skip = "Docker çalışmıyor — veri testleri atlandı. Docker Desktop'ı başlatıp tekrar koşun.";
+        }
+    }
+}
+
 /// <summary>Docker daemon'ının erişilebilir olup olmadığını ucuza kontrol eder.</summary>
 public static class DockerEnvironment
 {
