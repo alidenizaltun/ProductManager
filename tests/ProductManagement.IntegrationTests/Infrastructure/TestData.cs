@@ -132,6 +132,26 @@ public static class TestData
         return (await response.Content.ReadFromJsonAsync<SupplierPayload>())!;
     }
 
+    // ── Ürün fiyatı ───────────────────────────────────────────────────────────
+
+    public sealed record ProductPricePayload(Guid Id, Guid ProductId, int PriceType, decimal Amount, string CurrencyCode);
+
+    public static async Task<ProductPricePayload> UrunFiyatiOlustur(HttpClient client, Guid productId, decimal tutar = 100m)
+    {
+        var payload = new
+        {
+            ProductId = productId,
+            PriceType = 1,
+            Amount = tutar,
+            CurrencyCode = "TRY",
+        };
+
+        var response = await client.PostAsJsonAsync($"/api/products/{productId}/prices", payload);
+        response.EnsureSuccessStatusCode();
+
+        return (await response.Content.ReadFromJsonAsync<ProductPricePayload>())!;
+    }
+
     // ── Bölge ─────────────────────────────────────────────────────────────────
 
     public sealed record RegionPayload(Guid Id, string Code, string Name);
