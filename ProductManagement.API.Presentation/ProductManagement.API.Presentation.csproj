@@ -12,7 +12,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ProductManagement.Repository\ProductManagement.Repository.csproj" />
     <ProjectReference Include="..\ProductManagement.Service\ProductManagement.Service.csproj" />
     <ProjectReference Include="..\ProductManagement.Shared\ProductManagement.Shared.csproj" />
   </ItemGroup>
