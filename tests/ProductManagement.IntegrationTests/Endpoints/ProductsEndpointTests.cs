@@ -172,6 +172,36 @@ public class ProductsEndpointTests
     }
 
     [DockerFact]
+    public async Task Tam_olusturma_gecersiz_ic_ice_modulle_400_doner()
+    {
+        // Faz 3: CreateProductFullRequestDto ve iç içe DTO'ları (Modules dahil) önceden
+        // hiç doğrulanmıyordu. Boş ModuleCode/Name artık CreateProductModuleRequestDtoValidator
+        // tarafından reddedilmeli.
+        var payload = new
+        {
+            product = new
+            {
+                name = $"Tam Ürün {Guid.NewGuid().ToString("N")[..6]}",
+                kind = 2,
+                status = 1,
+                isActive = true,
+                isSellable = true,
+                isPurchasable = true,
+                trackInventory = false,
+                defaultCurrencyCode = "TRY"
+            },
+            modules = new[]
+            {
+                new { moduleCode = "", name = "" }
+            }
+        };
+
+        var response = await Client.PostAsJsonAsync($"{BasePath}/full", payload);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [DockerFact]
     public async Task Take_parametresi_sonuc_sayisini_sinirlar()
     {
         await TestData.UrunOlustur(Client);

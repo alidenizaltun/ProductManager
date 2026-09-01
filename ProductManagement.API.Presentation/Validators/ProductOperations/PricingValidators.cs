@@ -148,6 +148,83 @@ namespace ProductManagement.Presentation.Validators.ProductOperations
         }
     }
 
+    public sealed class CreateProductPricingRuleRequestDtoValidator : AbstractValidator<CreateProductPricingRuleRequestDto>
+    {
+        public CreateProductPricingRuleRequestDtoValidator()
+        {
+            RuleFor(x => x.Code)
+                .NotEmpty().WithMessage("Kural kodu zorunludur.")
+                .MaximumLength(64).WithMessage("Kural kodu en fazla 64 karakter olabilir.");
+
+            RuleFor(x => x.Name)
+                .NotEmpty().WithMessage("Kural adı zorunludur.")
+                .MaximumLength(200).WithMessage("Kural adı en fazla 200 karakter olabilir.");
+
+            RuleFor(x => x.Priority)
+                .GreaterThanOrEqualTo(0).WithMessage("Öncelik negatif olamaz.");
+
+            RuleFor(x => x.ValidTo)
+                .GreaterThan(x => x.ValidFrom!.Value)
+                .When(x => x.ValidFrom.HasValue && x.ValidTo.HasValue)
+                .WithMessage("Bitiş tarihi başlangıç tarihinden sonra olmalıdır.");
+        }
+    }
+
+    public sealed class UpdateProductPricingRuleRequestDtoValidator : AbstractValidator<UpdateProductPricingRuleRequestDto>
+    {
+        public UpdateProductPricingRuleRequestDtoValidator()
+        {
+            RuleFor(x => x.Code)
+                .NotEmpty().WithMessage("Kural kodu zorunludur.")
+                .MaximumLength(64).WithMessage("Kural kodu en fazla 64 karakter olabilir.");
+
+            RuleFor(x => x.Name)
+                .NotEmpty().WithMessage("Kural adı zorunludur.")
+                .MaximumLength(200).WithMessage("Kural adı en fazla 200 karakter olabilir.");
+
+            RuleFor(x => x.Priority)
+                .GreaterThanOrEqualTo(0).WithMessage("Öncelik negatif olamaz.");
+
+            RuleFor(x => x.ValidTo)
+                .GreaterThan(x => x.ValidFrom!.Value)
+                .When(x => x.ValidFrom.HasValue && x.ValidTo.HasValue)
+                .WithMessage("Bitiş tarihi başlangıç tarihinden sonra olmalıdır.");
+        }
+    }
+
+    public sealed class ReorderProductPricingRulesRequestDtoValidator : AbstractValidator<ReorderProductPricingRulesRequestDto>
+    {
+        public ReorderProductPricingRulesRequestDtoValidator()
+        {
+            RuleFor(x => x.OrderedPricingRuleIds)
+                .NotEmpty().WithMessage("En az bir kural sıralanmalıdır.");
+        }
+    }
+
+    public sealed class SavePricingRuleAsTemplateRequestDtoValidator : AbstractValidator<SavePricingRuleAsTemplateRequestDto>
+    {
+        public SavePricingRuleAsTemplateRequestDtoValidator()
+        {
+            RuleFor(x => x.Name)
+                .MaximumLength(200).WithMessage("Şablon adı en fazla 200 karakter olabilir.")
+                .When(x => !string.IsNullOrWhiteSpace(x.Name));
+
+            RuleFor(x => x.Code)
+                .MaximumLength(64).WithMessage("Şablon kodu en fazla 64 karakter olabilir.")
+                .When(x => !string.IsNullOrWhiteSpace(x.Code));
+        }
+    }
+
+    public sealed class UpdatePriceRevisionLineRequestDtoValidator : AbstractValidator<UpdatePriceRevisionLineRequestDto>
+    {
+        public UpdatePriceRevisionLineRequestDtoValidator()
+        {
+            RuleFor(x => x.NewValue)
+                .GreaterThanOrEqualTo(0).When(x => x.NewValue.HasValue)
+                .WithMessage("Yeni değer negatif olamaz.");
+        }
+    }
+
     /// <summary>
     /// Oran, yuvarlama ve para birimi kuralları iki istek tipinde de aynı olduğu için
     /// tek yerde tutulur.

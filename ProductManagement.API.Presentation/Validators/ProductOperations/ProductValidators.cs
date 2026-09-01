@@ -214,4 +214,64 @@ namespace ProductManagement.Presentation.Validators.ProductOperations
                 .WithMessage("Invalid inventory policy.");
         }
     }
+
+    public sealed class CreateProductFullRequestDtoValidator : AbstractValidator<CreateProductFullRequestDto>
+    {
+        public CreateProductFullRequestDtoValidator()
+        {
+            RuleFor(x => x.Product).SetValidator(new CreateProductRequestDtoValidator());
+
+            RuleForEach(x => x.AttributeValues).SetValidator(new CreateProductAttributeValueRequestDtoValidator());
+            RuleForEach(x => x.Variants).SetValidator(new CreateProductVariantRequestDtoValidator());
+            RuleForEach(x => x.Prices).SetValidator(new CreateProductPriceRequestDtoValidator());
+            RuleForEach(x => x.PricingRules).SetValidator(new CreateProductPricingRuleRequestDtoValidator());
+            RuleForEach(x => x.ProductUnits).SetValidator(new CreateProductUnitRequestDtoValidator());
+            RuleForEach(x => x.Regions).SetValidator(new CreateProductRegionRequestDtoValidator());
+            RuleForEach(x => x.Inventories).SetValidator(new CreateProductInventoryRequestDtoValidator());
+            RuleForEach(x => x.MediaItems).SetValidator(new CreateProductMediaRequestDtoValidator());
+            RuleForEach(x => x.CategoryMaps).SetValidator(new CreateProductCategoryMapRequestDtoValidator());
+            RuleForEach(x => x.BundleItems).SetValidator(new CreateProductBundleItemRequestDtoValidator());
+            RuleForEach(x => x.SupplierMaps).SetValidator(new CreateProductSupplierMapRequestDtoValidator());
+            RuleForEach(x => x.InventoryTransactions).SetValidator(new CreateInventoryTransactionRequestDtoValidator());
+            RuleForEach(x => x.InventoryReservations).SetValidator(new CreateInventoryReservationRequestDtoValidator());
+            RuleForEach(x => x.PriceListItems).SetValidator(new CreateProductPriceListItemRequestDtoValidator());
+            RuleForEach(x => x.Modules).SetValidator(new CreateProductModuleRequestDtoValidator());
+            RuleForEach(x => x.LicenseOfferings).SetValidator(new CreateProductLicenseOfferingRequestDtoValidator());
+
+            RuleFor(x => x.PhysicalProfile).SetValidator(new UpsertProductPhysicalProfileRequestDtoValidator());
+            RuleFor(x => x.SoftwareProfile).SetValidator(new UpsertProductSoftwareProfileRequestDtoValidator());
+            RuleFor(x => x.ServiceProfile).SetValidator(new UpsertProductServiceProfileRequestDtoValidator());
+            RuleFor(x => x.SubscriptionProfile).SetValidator(new UpsertProductSubscriptionProfileRequestDtoValidator());
+        }
+    }
+
+    public sealed class UpdateProductFullRequestDtoValidator : AbstractValidator<UpdateProductFullRequestDto>
+    {
+        public UpdateProductFullRequestDtoValidator()
+        {
+            RuleFor(x => x.Product).SetValidator(new UpdateProductRequestDtoValidator());
+
+            RuleForEach(x => x.AttributeValues).SetValidator(new CreateProductAttributeValueRequestDtoValidator());
+            RuleForEach(x => x.Variants).SetValidator(new CreateProductVariantRequestDtoValidator());
+            RuleForEach(x => x.Prices).SetValidator(new CreateProductPriceRequestDtoValidator());
+            RuleForEach(x => x.PricingRules).SetValidator(new CreateProductPricingRuleRequestDtoValidator());
+            RuleForEach(x => x.ProductUnits).SetValidator(new CreateProductUnitRequestDtoValidator());
+            RuleForEach(x => x.Regions).SetValidator(new CreateProductRegionRequestDtoValidator());
+            RuleForEach(x => x.Inventories).SetValidator(new CreateProductInventoryRequestDtoValidator());
+            RuleForEach(x => x.MediaItems).SetValidator(new CreateProductMediaRequestDtoValidator());
+            RuleForEach(x => x.CategoryMaps).SetValidator(new CreateProductCategoryMapRequestDtoValidator());
+            RuleForEach(x => x.BundleItems).SetValidator(new CreateProductBundleItemRequestDtoValidator());
+            RuleForEach(x => x.SupplierMaps).SetValidator(new CreateProductSupplierMapRequestDtoValidator());
+            RuleForEach(x => x.InventoryTransactions).SetValidator(new CreateInventoryTransactionRequestDtoValidator());
+            RuleForEach(x => x.InventoryReservations).SetValidator(new CreateInventoryReservationRequestDtoValidator());
+            RuleForEach(x => x.PriceListItems).SetValidator(new CreateProductPriceListItemRequestDtoValidator());
+            RuleForEach(x => x.Modules).SetValidator(new CreateProductModuleRequestDtoValidator());
+            RuleForEach(x => x.LicenseOfferings).SetValidator(new CreateProductLicenseOfferingRequestDtoValidator());
+
+            RuleFor(x => x.PhysicalProfile).SetValidator(new UpsertProductPhysicalProfileRequestDtoValidator());
+            RuleFor(x => x.SoftwareProfile).SetValidator(new UpsertProductSoftwareProfileRequestDtoValidator());
+            RuleFor(x => x.ServiceProfile).SetValidator(new UpsertProductServiceProfileRequestDtoValidator());
+            RuleFor(x => x.SubscriptionProfile).SetValidator(new UpsertProductSubscriptionProfileRequestDtoValidator());
+        }
+    }
 }
