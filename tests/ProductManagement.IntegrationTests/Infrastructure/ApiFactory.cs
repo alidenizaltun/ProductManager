@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using ProductManagement.Service.Shared.Abstract;
 
 namespace ProductManagement.IntegrationTests.Infrastructure;
 
@@ -39,6 +42,13 @@ public class ApiFactory : WebApplicationFactory<Program>
                 ["ConnectionStrings:Hangfire"] = ConnectionString,
                 ["Hangfire:Enabled"] = "false",
             });
+        });
+
+        // Gerçek DevaGateway kimlik bilgileri Testing ortamı için geçersiz kılınmamış;
+        // e-posta gönderen her akış gerçek sağlayıcı kotasını tüketmesin diye sahtesiyle değiştirilir.
+        builder.ConfigureTestServices(services =>
+        {
+            services.AddScoped<IEmailService, NoOpEmailService>();
         });
     }
 
