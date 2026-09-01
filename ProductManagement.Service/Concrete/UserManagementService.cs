@@ -52,14 +52,24 @@ namespace ProductManagement.Service.Concrete
 
             var users = await query.OrderBy(u => u.Email).ToListAsync(cancellationToken);
 
-            var result = new List<AdminUserDto>(users.Count);
-            foreach (var user in users)
+            // Kullanıcı başına GetRolesAsync çağırmak yerine (N+1), rol sayısı kullanıcı
+            // sayısından çok daha küçük olduğundan rolleri gezip ters bir harita kurulur.
+            var userRoles = new Dictionary<Guid, List<string>>();
+            var roleNames = await _roleManager.Roles.Select(r => r.Name!).ToListAsync(cancellationToken);
+            foreach (var roleName in roleNames)
             {
-                var roles = await _userManager.GetRolesAsync(user);
-                result.Add(MapToDto(user, roles));
+                foreach (var user in await _userManager.GetUsersInRoleAsync(roleName))
+                {
+                    if (!userRoles.TryGetValue(user.Id, out var list))
+                        userRoles[user.Id] = list = [];
+
+                    list.Add(roleName);
+                }
             }
 
-            return result;
+            return users
+                .Select(user => MapToDto(user, userRoles.TryGetValue(user.Id, out var roles) ? roles : []))
+                .ToList();
         }
 
         public async Task<AdminUserDto?> GetUserByIdAsync(Guid userId, CancellationToken cancellationToken = default)
