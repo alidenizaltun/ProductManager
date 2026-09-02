@@ -147,6 +147,23 @@ catch (Exception ex)
 {
     Console.WriteLine("ERROR WEB API!! -> " + ex);
 
+    // Önceden bu dosya yazımı app.Run()'dan SONRA duruyordu; app.Run() kapanana kadar
+    // bloklandığı için bu kod hiçbir zaman çalışmıyordu (dead code). Başlangıç hatasının
+    // gerçekten diske yazılması için app.Run()'dan önceye taşındı.
+    try
+    {
+        var directory = Path.Combine(AppContext.BaseDirectory, "Logs");
+        if (!Directory.Exists(directory)) Directory.CreateDirectory(directory);
+
+        var fileName = Path.Combine(directory, $"startup-error_{DateTimeOffset.Now.ToUnixTimeMilliseconds()}.log");
+        File.WriteAllText(fileName, "Hata: " + ex);
+    }
+    catch
+    {
+        // Dosyaya yazamıyorsak (izin/disk sorunu) sessizce geç - uygulamanın
+        // düşürülmüş modda ayağa kalkmasını engellememeli.
+    }
+
     var builder = WebApplication.CreateBuilder(args);
 
     builder.Services.AddControllers();
@@ -161,14 +178,6 @@ catch (Exception ex)
     app.MapGet("/", () => "Guess what happened? Yes, you know :) ");
 
     app.Run();
-
-    var directory = Path.Combine(Directory.GetCurrentDirectory(), "Logs");
-    if (!Directory.Exists(directory)) Directory.CreateDirectory(directory);
-
-    var fileName = Path.Combine(Directory.GetCurrentDirectory(), "Logs", $"error_{DateTimeOffset.Now.ToUnixTimeMilliseconds()}.log");
-    using FileStream fs = File.Open(fileName, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Write);
-    using StreamWriter sw = new StreamWriter(fs);
-    sw.WriteLine($"Hata: " + ex);
 }
 
 /// <summary>
