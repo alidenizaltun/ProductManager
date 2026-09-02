@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Add private NuGet source (godeva)
+        run: >
+          dotnet nuget add source
+          https://git.godeva.com.tr/api/v4/projects/20/packages/nuget/index.json
+          --name godeva
+          --username ali.altun
+          --password ${{ secrets.GODEVA_NUGET_TOKEN }}
+          --store-password-in-clear-text
+
+      - name: Restore
+        run: dotnet restore ProductManagement.slnx
+
+      - name: Build
+        run: dotnet build ProductManagement.slnx --no-restore --configuration Release
+
+      # Testcontainers bir SQL Server konteyneri kendi başlatır (izole, tek kullanımlık);
+      # ubuntu-latest runner'ında Docker hazır geliyor, ekstra kurulum gerekmiyor.
+      - name: Test
+        run: dotnet test ProductManagement.slnx --no-build --configuration Release
