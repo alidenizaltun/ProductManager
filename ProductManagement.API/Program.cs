@@ -1,3 +1,4 @@
+using AspNetCoreRateLimit;
 using ProductManagement.API.Infrastructures.Extensions;
 using Deva.Extensions.G2way.Infrastructures.Extensions;
 using FluentValidation;
@@ -99,25 +100,26 @@ try
         }
     }
 
+    // Exception handler pipeline'ın EN BAŞINDA olmalı; aksi hâlde
+    // önceki middleware'lerdeki hatalar raw 500 olarak dönüyor.
+    app.GlobalExceptionHandler();
+
+    app.UseHsts();
+    app.UseHttpsRedirection();
+    app.UseStaticFiles();
     app.ConfigureHangfire();
     app.ConfigureLocalization();
     app.UseHttpLogging();
     app.UseRouting();
+    app.UseIpRateLimiting();
     app.UseCors();
     app.UseResponseCaching();
-    app.UseStaticFiles();
-    app.UseHttpsRedirection();
-    app.UseHsts();
     app.AppMiddleare();
-    app.GlobalExceptionHandler();
     app.ConfigureCustomMiddlewares();
     app.UseAuthentication();
     app.UseAuthorization();
 
     app.MapOpenApi();
-
-    app.UseHttpsRedirection();
-    app.UseAuthorization();
 
     app.MapScalarApiReference(options =>
     {
