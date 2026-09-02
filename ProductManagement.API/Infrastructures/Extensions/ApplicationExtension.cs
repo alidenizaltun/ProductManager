@@ -57,7 +57,19 @@ namespace ProductManagement.API.Infrastructures.Extensions
                             ErrorCode = errorCode,
                         };
 
-                        errorModel.Message = GetErrorMessage(contextFeature.Error);
+                        // Geçici tanı kapısı: dosya/loga erişim olmadan canlıda gerçek hatayı görmek
+                        // için. DIAGNOSTICS_DEBUG_KEY ortam değişkeni tanımlıysa ve istek aynı değeri
+                        // X-Debug-Key header'ında taşıyorsa tam exception döner. Ortam değişkeni
+                        // tanımlı değilse bu yol tamamen kapalıdır - kaynak koduna yazılmıyor,
+                        // appsettings'e commit'lenmiyor. Sorun teşhis edildikten sonra Plesk'ten
+                        // ortam değişkeni silinmeli.
+                        var debugKey = Environment.GetEnvironmentVariable("DIAGNOSTICS_DEBUG_KEY");
+                        bool isDebugRequest = !string.IsNullOrEmpty(debugKey) &&
+                            context.Request.Headers["X-Debug-Key"] == debugKey;
+
+                        errorModel.Message = isDebugRequest
+                            ? contextFeature.Error.ToString()
+                            : GetErrorMessage(contextFeature.Error);
                         errorModel.AdditionalData = GetAdditionalData(contextFeature.Error);
 
                         context.Response.StatusCode = statusCode;
