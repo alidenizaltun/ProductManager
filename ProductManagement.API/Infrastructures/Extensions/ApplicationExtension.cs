@@ -25,6 +25,32 @@ namespace ProductManagement.API.Infrastructures.Extensions
 
                         string errorCode = string.Concat("GEM_", Guid.NewGuid().ToString("N").AsSpan(0, 8));
 
+                        // Öncesinde bu handler hatayı hiç loglamıyordu: 500'ler istemciye rastgele
+                        // bir kodla dönüp sunucu tarafında hiçbir iz bırakmadan kayboluyordu.
+                        // ErrorCode ile korelasyon kurulabilsin diye logluyoruz.
+                        var logger = context.RequestServices.GetRequiredService<ILoggerFactory>()
+                            .CreateLogger("GlobalExceptionHandler");
+                        logger.LogError(contextFeature.Error,
+                            "İşlenmeyen hata [{ErrorCode}] {Method} {Path} -> {StatusCode}",
+                            errorCode, context.Request.Method, context.Request.Path, statusCode);
+
+                        // Konsol logu Plesk/IIS tarafında yakalanmıyor olabilir (stdout log
+                        // ayarına bağlı); dosyaya da yazarak garanti altına alıyoruz - Program.cs'deki
+                        // en dış catch bloğunun kullandığı aynı "Logs/" kalıbı.
+                        try
+                        {
+                            var logDir = Path.Combine(AppContext.BaseDirectory, "Logs");
+                            if (!Directory.Exists(logDir)) Directory.CreateDirectory(logDir);
+
+                            var logFile = Path.Combine(logDir, $"errors_{DateTime.UtcNow:yyyy-MM-dd}.log");
+                            var logLine = $"{DateTimeOffset.UtcNow:O} [{errorCode}] {context.Request.Method} {context.Request.Path} -> {statusCode}{Environment.NewLine}{contextFeature.Error}{Environment.NewLine}{new string('-', 80)}{Environment.NewLine}";
+                            await File.AppendAllTextAsync(logFile, logLine);
+                        }
+                        catch
+                        {
+                            // Dosyaya yazamıyorsak (izin/disk sorunu) sessizce geç - yanıtı engellememeli.
+                        }
+
                         var errorModel = new SystemModel.ErrorDetails
                         {
                             StatusCode = statusCode,
