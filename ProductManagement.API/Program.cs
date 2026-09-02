@@ -111,6 +111,17 @@ try
     app.ConfigureLocalization();
     app.UseHttpLogging();
     app.UseRouting();
+
+    // AspNetCoreRateLimit, RealIpHeader ("X-Real-IP") yoksa Connection.RemoteIpAddress'e
+    // düşüyor; o da null ise IpAddressUtil.ParseIp içinde NullReferenceException fırlatıp
+    // isteği raw 500'e çeviriyor. WebApplicationFactory/TestServer soket açmadığı için
+    // RemoteIpAddress hep null geliyor — gerçek trafikte de header eksikse aynı risk var.
+    app.Use(async (context, next) =>
+    {
+        context.Connection.RemoteIpAddress ??= System.Net.IPAddress.Loopback;
+        await next();
+    });
+
     app.UseIpRateLimiting();
     app.UseCors();
     app.UseResponseCaching();
