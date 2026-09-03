@@ -81,8 +81,11 @@ jobs:
           done
           echo "SQL Server 1433 üzerinde açılmadı" && exit 1
 
+      # --ignore-failed-sources: godeva kaynağı bu job'un önceki adımında eklendi ve
+      # dotnet-ef gibi public paketler için sorgulandığında 401 dönüyor (orada yok);
+      # olmasa da nuget.org'dan zaten bulunuyor, bu yüzden hata yerine uyarı olarak geç.
       - name: Install dotnet-ef
-        run: dotnet tool install --global dotnet-ef --version 10.*
+        run: dotnet tool install --global dotnet-ef --version 10.* --ignore-failed-sources
 
       - name: Apply migrations to isolated DB
         run: >
