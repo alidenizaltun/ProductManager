@@ -101,9 +101,13 @@ jobs:
         env:
           PRODUCT_MANAGER_CONNECTION_STRING: ${{ env.E2E_CONNECTION_STRING }}
 
+      # Ham DLL çalıştırma (dotnet ProductManagement.API.dll) rastgele/kararsız bir
+      # şekilde IAuthenticationService'i çözemiyordu (Scrutor'ın taradığı assembly
+      # zaten build'e dahildi, sebep netleşmedi) - dotnet run, xunit'in kanıtlanmış
+      # WebApplicationFactory yoluna daha yakın, --no-build ile yeniden derlemiyor.
       - name: Start API against isolated DB
         run: |
-          nohup dotnet ProductManagement.API/bin/Release/net10.0/ProductManagement.API.dll > api.log 2>&1 &
+          nohup dotnet run --project ProductManagement.API --no-build --configuration Release > api.log 2>&1 &
           echo $! > api.pid
         env:
           ASPNETCORE_URLS: "http://localhost:5080"
