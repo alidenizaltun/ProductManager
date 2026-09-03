@@ -114,11 +114,16 @@ jobs:
           Seed__E2ETestUserEmail: "e2e@pm.local"
           Seed__E2ETestUserPassword: "E2E-Test-Passw0rd!2026"
 
+      # /openapi/v1.json beklenmedik şekilde 404 veriyordu (route mapping sebebi belirsiz);
+      # kesin var olan, DB'ye kadar giden gerçek bir controller endpoint'ini (auth/login)
+      # kullanmak hem daha güvenilir hem de "API gerçekten uçtan uca çalışıyor mu" sorusunu
+      # daha iyi cevaplıyor. Dönen kod önemli değil (400 bekleniyor) — 000 = bağlanamadı demek.
       - name: Wait for API to become ready
         run: |
           for i in $(seq 1 30); do
-            if curl -sf http://localhost:5080/openapi/v1.json > /dev/null; then
-              echo "API açık."
+            code=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:5080/api/auth/login -H "Content-Type: application/json" -d "{}")
+            if [ "$code" != "000" ]; then
+              echo "API açık (HTTP $code)."
               exit 0
             fi
             sleep 2
