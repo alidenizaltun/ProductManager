@@ -105,9 +105,12 @@ jobs:
       # şekilde IAuthenticationService'i çözemiyordu (Scrutor'ın taradığı assembly
       # zaten build'e dahildi, sebep netleşmedi) - dotnet run, xunit'in kanıtlanmış
       # WebApplicationFactory yoluna daha yakın, --no-build ile yeniden derlemiyor.
+      # --no-launch-profile: launchSettings.json'daki applicationUrl (rastgele bir
+      # geliştirme portu, ör. 5033) ASPNETCORE_URLS'i ezip 5080 yerine oraya
+      # dinlemeye başlıyordu - bu bayrak profili devre dışı bırakıp env var'ı geçerli kılıyor.
       - name: Start API against isolated DB
         run: |
-          nohup dotnet run --project ProductManagement.API --no-build --configuration Release > api.log 2>&1 &
+          nohup dotnet run --project ProductManagement.API --no-build --no-launch-profile --configuration Release > api.log 2>&1 &
           echo $! > api.pid
         env:
           ASPNETCORE_URLS: "http://localhost:5080"
