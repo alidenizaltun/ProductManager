@@ -88,6 +88,9 @@ jobs:
       - name: Install dotnet-ef
         run: dotnet tool install --global dotnet-ef --version 10.* --source https://api.nuget.org/v3/index.json
 
+      # dotnet ef, ASP.NET'in ConnectionStrings__Default konvansiyonunu değil,
+      # ApplicationDbContextFactory'nin (design-time) okuduğu PRODUCT_MANAGER_CONNECTION_STRING
+      # değişkenini kullanıyor — o da yoksa LocalDB'ye düşüyor (Linux'ta desteklenmiyor).
       - name: Apply migrations to isolated DB
         run: >
           dotnet ef database update
@@ -95,7 +98,7 @@ jobs:
           --startup-project ProductManagement.API
           --configuration Release
         env:
-          ConnectionStrings__Default: ${{ env.E2E_CONNECTION_STRING }}
+          PRODUCT_MANAGER_CONNECTION_STRING: ${{ env.E2E_CONNECTION_STRING }}
 
       - name: Start API against isolated DB
         run: |
