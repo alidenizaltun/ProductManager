@@ -37,8 +37,9 @@ jobs:
         run: dotnet test ProductManagement.slnx --no-build --configuration Release
 
   # Faz 7: gerçek API'yi izole (tek kullanımlık) bir SQL Server'a karşı ayağa kaldırıp
-  # sağlıklı açıldığını doğrular. Henüz Playwright'ı tetiklemiyor — bu, e2e altyapısının
-  # ilk kilometre taşı (bkz. plan: smooth-swinging-duckling.md).
+  # üzerinde frontend'in Playwright kritik akış testlerini koşturur (bkz. plan:
+  # smooth-swinging-duckling.md). PM_FRONTEND_CHECKOUT_TOKEN, product-management
+  # reposunu checkout edebilmek için gereken fine-grained PAT (Contents: Read-only).
   e2e-smoke:
     runs-on: ubuntu-latest
     services:
@@ -131,6 +132,57 @@ jobs:
           echo "API zamanında ayağa kalkmadı, log:"
           cat api.log
           exit 1
+
+      # Categories detay testi listede en az bir kayıt bekliyor; paylaşımlı dev DB'de
+      # zaten var, izole/taze DB'de yok — API üzerinden tek bir kategori seed'leniyor.
+      - name: Seed one category via API
+        run: |
+          TOKEN=$(curl -s -X POST http://localhost:5080/api/auth/login \
+            -H "Content-Type: application/json" \
+            -d '{"email":"e2e@pm.local","password":"E2E-Test-Passw0rd!2026"}' \
+            | jq -r ".token.accessToken")
+          curl -sf -X POST http://localhost:5080/api/catalog/categories \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $TOKEN" \
+            -d '{"name":"E2E Test Kategorisi"}' > /dev/null
+
+      - name: Checkout PM frontend
+        uses: actions/checkout@v4
+        with:
+          repository: alidenizaltun/product-management
+          token: ${{ secrets.PM_FRONTEND_CHECKOUT_TOKEN }}
+          path: frontend
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend deps
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright against isolated API
+        working-directory: frontend
+        run: npx playwright test
+        env:
+          E2E_API_BASE_URL: "http://localhost:5080"
+          E2E_SKIP_VISUAL: "1"
+          E2E_TEST_EMAIL: "e2e@pm.local"
+          E2E_TEST_PASSWORD: "E2E-Test-Passw0rd!2026"
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7
 
       - name: Stop API
         if: always()
