@@ -137,14 +137,23 @@ jobs:
       # zaten var, izole/taze DB'de yok — API üzerinden tek bir kategori seed'leniyor.
       - name: Seed one category via API
         run: |
-          TOKEN=$(curl -s -X POST http://localhost:5080/api/auth/login \
+          LOGIN_RESPONSE=$(curl -s -X POST http://localhost:5080/api/auth/login \
             -H "Content-Type: application/json" \
-            -d '{"email":"e2e@pm.local","password":"E2E-Test-Passw0rd!2026"}' \
-            | jq -r ".token.accessToken")
-          curl -sf -X POST http://localhost:5080/api/catalog/categories \
+            -d '{"email":"e2e@pm.local","password":"E2E-Test-Passw0rd!2026"}' || echo "")
+          echo "Login response: $LOGIN_RESPONSE"
+          TOKEN=$(echo "$LOGIN_RESPONSE" | jq -r ".token.accessToken" || echo "")
+          if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+            echo "Token alınamadı, çıkılıyor."
+            exit 1
+          fi
+          CODE=$(curl -s -o /tmp/category-response.json -w "%{http_code}" -X POST http://localhost:5080/api/catalog/categories \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer $TOKEN" \
-            -d '{"name":"E2E Test Kategorisi"}' > /dev/null
+            -d '{"name":"E2E Test Kategorisi"}' || echo "000")
+          echo "Category create response ($CODE): $(cat /tmp/category-response.json 2>/dev/null)"
+          if [ "$CODE" != "200" ] && [ "$CODE" != "201" ]; then
+            exit 1
+          fi
 
       - name: Checkout PM frontend
         uses: actions/checkout@v4
