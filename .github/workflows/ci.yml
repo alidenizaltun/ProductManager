@@ -35,3 +35,91 @@ jobs:
       # ubuntu-latest runner'ında Docker hazır geliyor, ekstra kurulum gerekmiyor.
       - name: Test
         run: dotnet test ProductManagement.slnx --no-build --configuration Release
+
+  # Faz 7: gerçek API'yi izole (tek kullanımlık) bir SQL Server'a karşı ayağa kaldırıp
+  # sağlıklı açıldığını doğrular. Henüz Playwright'ı tetiklemiyor — bu, e2e altyapısının
+  # ilk kilometre taşı (bkz. plan: smooth-swinging-duckling.md).
+  e2e-smoke:
+    runs-on: ubuntu-latest
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_SA_PASSWORD: "Test!Passw0rd.2026"
+        ports:
+          - 1433:1433
+    env:
+      E2E_CONNECTION_STRING: "Server=localhost,1433;Database=PM_E2E;User Id=sa;Password=Test!Passw0rd.2026;TrustServerCertificate=True"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Add private NuGet source (godeva)
+        run: >
+          dotnet nuget add source
+          https://git.godeva.com.tr/api/v4/projects/20/packages/nuget/index.json
+          --name godeva
+          --username ali.altun
+          --password ${{ secrets.GODEVA_NUGET_TOKEN }}
+          --store-password-in-clear-text
+
+      - name: Restore
+        run: dotnet restore ProductManagement.slnx
+
+      - name: Build
+        run: dotnet build ProductManagement.slnx --no-restore --configuration Release
+
+      - name: Wait for SQL Server
+        run: |
+          for i in $(seq 1 30); do
+            (echo > /dev/tcp/localhost/1433) >/dev/null 2>&1 && exit 0
+            sleep 2
+          done
+          echo "SQL Server 1433 üzerinde açılmadı" && exit 1
+
+      - name: Install dotnet-ef
+        run: dotnet tool install --global dotnet-ef --version 10.*
+
+      - name: Apply migrations to isolated DB
+        run: >
+          dotnet ef database update
+          --project ProductManagement.EFCore
+          --startup-project ProductManagement.API
+          --configuration Release
+        env:
+          ConnectionStrings__Default: ${{ env.E2E_CONNECTION_STRING }}
+
+      - name: Start API against isolated DB
+        run: |
+          nohup dotnet ProductManagement.API/bin/Release/net10.0/ProductManagement.API.dll > api.log 2>&1 &
+          echo $! > api.pid
+        env:
+          ASPNETCORE_URLS: "http://localhost:5080"
+          ASPNETCORE_ENVIRONMENT: "Testing"
+          ConnectionStrings__Default: ${{ env.E2E_CONNECTION_STRING }}
+          ConnectionStrings__Hangfire: ${{ env.E2E_CONNECTION_STRING }}
+          Hangfire__Enabled: "false"
+          Seed__CreateE2ETestUser: "true"
+          Seed__E2ETestUserEmail: "e2e@pm.local"
+          Seed__E2ETestUserPassword: "E2E-Test-Passw0rd!2026"
+
+      - name: Wait for API to become ready
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:5080/openapi/v1.json > /dev/null; then
+              echo "API açık."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "API zamanında ayağa kalkmadı, log:"
+          cat api.log
+          exit 1
+
+      - name: Stop API
+        if: always()
+        run: kill "$(cat api.pid)" 2>/dev/null || true
