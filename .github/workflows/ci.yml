@@ -9,21 +9,18 @@ on:
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    # Kimlik bilgileri artık repo köküne commit edilmiş nuget.config'teki
+    # %GITLAB_USER%/%GITLAB_TOKEN% placeholder'larından geliyor (dotnet nuget
+    # add source yerine) - NuGet bunları restore sırasında otomatik genişletir.
+    env:
+      GITLAB_USER: ali.altun
+      GITLAB_TOKEN: ${{ secrets.GODEVA_NUGET_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
-
-      - name: Add private NuGet source (godeva)
-        run: >
-          dotnet nuget add source
-          https://git.godeva.com.tr/api/v4/projects/20/packages/nuget/index.json
-          --name godeva
-          --username ali.altun
-          --password ${{ secrets.GODEVA_NUGET_TOKEN }}
-          --store-password-in-clear-text
 
       - name: Restore
         run: dotnet restore ProductManagement.slnx
@@ -52,21 +49,14 @@ jobs:
           - 1433:1433
     env:
       E2E_CONNECTION_STRING: "Server=localhost,1433;Database=PM_E2E;User Id=sa;Password=Test!Passw0rd.2026;TrustServerCertificate=True"
+      GITLAB_USER: ali.altun
+      GITLAB_TOKEN: ${{ secrets.GODEVA_NUGET_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
-
-      - name: Add private NuGet source (godeva)
-        run: >
-          dotnet nuget add source
-          https://git.godeva.com.tr/api/v4/projects/20/packages/nuget/index.json
-          --name godeva
-          --username ali.altun
-          --password ${{ secrets.GODEVA_NUGET_TOKEN }}
-          --store-password-in-clear-text
 
       - name: Restore
         run: dotnet restore ProductManagement.slnx
