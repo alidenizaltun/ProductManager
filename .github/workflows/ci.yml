@@ -135,20 +135,27 @@ jobs:
 
       # Categories detay testi listede en az bir kayıt bekliyor; paylaşımlı dev DB'de
       # zaten var, izole/taze DB'de yok — API üzerinden tek bir kategori seed'leniyor.
+      # Bir önceki adım (Wait for API to become ready) bağlantıyı doğruladıktan hemen
+      # sonra bile ara sıra "connection refused" görülebiliyor (kök sebep netleşene
+      # kadar geçici kabul ediliyor) - login isteği de aynı retry desenini kullanıyor.
       - name: Seed one category via API
         run: |
-          echo "--- api.log (son 50 satır) ---"
-          tail -n 50 api.log || true
-          echo "--- process kontrolü ---"
-          ps -p "$(cat api.pid)" || echo "API süreci artık çalışmıyor!"
-          echo "--- login isteği (verbose) ---"
-          LOGIN_RESPONSE=$(curl -sv -X POST http://localhost:5080/api/auth/login \
-            -H "Content-Type: application/json" \
-            -d '{"email":"e2e@pm.local","password":"E2E-Test-Passw0rd!2026"}' 2>&1)
-          echo "Login response (full): $LOGIN_RESPONSE"
-          TOKEN=$(echo "$LOGIN_RESPONSE" | jq -r ".token.accessToken" || echo "")
+          TOKEN=""
+          for i in $(seq 1 15); do
+            LOGIN_RESPONSE=$(curl -s -X POST http://localhost:5080/api/auth/login \
+              -H "Content-Type: application/json" \
+              -d '{"email":"e2e@pm.local","password":"E2E-Test-Passw0rd!2026"}' || echo "")
+            TOKEN=$(echo "$LOGIN_RESPONSE" | jq -r ".token.accessToken" 2>/dev/null || echo "")
+            if [ -n "$TOKEN" ] && [ "$TOKEN" != "null" ]; then
+              break
+            fi
+            echo "Deneme $i: token alınamadı (yanıt: $LOGIN_RESPONSE), 2sn sonra tekrar..."
+            sleep 2
+          done
           if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
-            echo "Token alınamadı, çıkılıyor."
+            echo "Token 15 denemede alınamadı. Tam api.log:"
+            cat api.log || true
+            ps aux | grep -i dotnet || true
             exit 1
           fi
           CODE=$(curl -s -o /tmp/category-response.json -w "%{http_code}" -X POST http://localhost:5080/api/catalog/categories \
