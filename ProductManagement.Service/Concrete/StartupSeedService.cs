@@ -6,6 +6,7 @@ using ProductManagement.Domain.Entities;
 using ProductManagement.Repository.Shared.Abstract;
 using ProductManagement.Service.Shared.Abstract;
 using ProductManagement.Shared.Infrastructure.Security;
+using System.Linq;
 using System.Security.Claims;
 using System.Text.Json;
 
@@ -20,6 +21,7 @@ namespace ProductManagement.Service.Concrete
     public sealed class StartupSeedService : IStartupSeedService
     {
         private readonly RoleManager<ApplicationRole> _roleManager;
+        private readonly UserManager<ApplicationUser> _userManager;
         private readonly ISystemManagementRepository _repository;
         private readonly IDataProtectionProvider _dataProtectionProvider;
         private readonly IConfiguration _configuration;
@@ -27,12 +29,14 @@ namespace ProductManagement.Service.Concrete
 
         public StartupSeedService(
             RoleManager<ApplicationRole> roleManager,
+            UserManager<ApplicationUser> userManager,
             ISystemManagementRepository repository,
             IDataProtectionProvider dataProtectionProvider,
             IConfiguration configuration,
             ILogger<StartupSeedService> logger)
         {
             _roleManager = roleManager;
+            _userManager = userManager;
             _repository = repository;
             _dataProtectionProvider = dataProtectionProvider;
             _configuration = configuration;
@@ -47,6 +51,59 @@ namespace ProductManagement.Service.Concrete
             }
 
             await SeedMailjetIntegrationAsync(cancellationToken);
+            await SeedE2ETestUserAsync();
+        }
+
+        /// <summary>
+        /// CI'da izole bir Testcontainers veritabanına karşı Playwright koşabilmesi için
+        /// tam yetkili, sabit bir hesap oluşturur. Sadece <c>Seed:CreateE2ETestUser</c>
+        /// açıkça true verildiğinde çalışır (appsettings.json'da yok — yalnızca e2e CI
+        /// job'unun ortam değişkeninde açılır), production'a asla sızmaz.
+        /// </summary>
+        private async Task SeedE2ETestUserAsync()
+        {
+            if (!_configuration.GetValue<bool>("Seed:CreateE2ETestUser"))
+            {
+                return;
+            }
+
+            var email = _configuration["Seed:E2ETestUserEmail"];
+            var password = _configuration["Seed:E2ETestUserPassword"];
+
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+            {
+                _logger.LogWarning(
+                    "Seed:CreateE2ETestUser açık ama Seed:E2ETestUserEmail/E2ETestUserPassword eksik; e2e kullanıcısı oluşturulmadı.");
+                return;
+            }
+
+            if (await _userManager.FindByEmailAsync(email) != null)
+            {
+                return;
+            }
+
+            var user = new ApplicationUser
+            {
+                UserName = email,
+                Email = email,
+                FirstName = "E2E",
+                LastName = "Test",
+                IsActive = true,
+                CreatedAt = DateTime.Now,
+                EmailConfirmed = true
+            };
+
+            var result = await _userManager.CreateAsync(user, password);
+            if (!result.Succeeded)
+            {
+                _logger.LogWarning(
+                    "E2E test kullanıcısı oluşturulamadı: {Errors}",
+                    string.Join(", ", result.Errors.Select(e => e.Description)));
+                return;
+            }
+
+            await _userManager.AddToRoleAsync(user, "Admin");
+            _logger.LogInformation("E2E test kullanıcısı seed edildi: {Email}", email);
         }
 
         private async Task SeedBypassRolePermissionsAsync(string roleName)
