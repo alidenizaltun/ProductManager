@@ -27,6 +27,7 @@ build-test:
 # PAT değil CI_JOB_TOKEN kullanır (ek bir secret gerekmiyor).
 e2e-smoke:
   stage: e2e
+  needs: []
   image: mcr.microsoft.com/dotnet/sdk:10.0
   services:
     - name: mcr.microsoft.com/mssql/server:2022-latest
