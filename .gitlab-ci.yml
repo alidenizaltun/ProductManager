@@ -69,14 +69,22 @@ e2e-smoke:
       echo $! > api.pid
 
     - |
-      for i in $(seq 1 30); do
+      READY=0
+      for i in $(seq 1 60); do
         code=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:5080/api/auth/login -H "Content-Type: application/json" -d "{}" || echo "000")
+        code="${code:0:3}"
         if [ "$code" != "000" ]; then
           echo "API açık (HTTP $code)."
+          READY=1
           break
         fi
         sleep 2
       done
+      if [ "$READY" != "1" ]; then
+        echo "API zamanında ayağa kalkmadı, log:"
+        cat api.log || true
+        exit 1
+      fi
 
     - |
       TOKEN=""
@@ -93,6 +101,7 @@ e2e-smoke:
         exit 1
       fi
       CODE=$(curl -s -o /tmp/category-response.json -w "%{http_code}" -X POST http://localhost:5080/api/catalog/categories -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" -d '{"name":"E2E Test Kategorisi"}' || echo "000")
+      CODE="${CODE:0:3}"
       echo "Category create response ($CODE): $(cat /tmp/category-response.json 2>/dev/null)"
       if [ "$CODE" != "200" ] && [ "$CODE" != "201" ]; then exit 1; fi
 
