@@ -1,0 +1,20 @@
+stages:
+  - build
+
+# GITLAB_USER/GITLAB_TOKEN grup seviyesinde CI/CD değişkeni olarak tanımlı
+# (b2b-product-management grubu, Settings > CI/CD > Variables) - nuget.config
+# bunları %GITLAB_USER%/%GITLAB_TOKEN% ile otomatik genişletir.
+build-test:
+  stage: build
+  image: mcr.microsoft.com/dotnet/sdk:10.0
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+  script:
+    - dotnet restore ProductManagement.slnx
+    - dotnet build ProductManagement.slnx --no-restore --configuration Release
+    - dotnet test ProductManagement.slnx --no-build --configuration Release
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event"
