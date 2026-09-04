@@ -1,5 +1,6 @@
 stages:
   - build
+  - e2e
 
 # GITLAB_USER/GITLAB_TOKEN grup seviyesinde CI/CD değişkeni olarak tanımlı
 # (b2b-product-management grubu, Settings > CI/CD > Variables) - nuget.config
@@ -16,5 +17,104 @@ build-test:
     - dotnet restore ProductManagement.slnx
     - dotnet build ProductManagement.slnx --no-restore --configuration Release
     - dotnet test ProductManagement.slnx --no-build --configuration Release
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event"
+
+# Faz 7: gerçek API'yi izole (tek kullanımlık) bir SQL Server'a karşı ayağa kaldırıp
+# üzerinde frontend'in Playwright kritik akış testlerini koşturur. GitHub Actions'taki
+# aynı işin GitLab CI karşılığı - services burada "localhost" değil servis adıyla
+# (mssql) erişilir; frontend checkout artık aynı GitLab instance'ında olduğu için
+# PAT değil CI_JOB_TOKEN kullanır (ek bir secret gerekmiyor).
+e2e-smoke:
+  stage: e2e
+  image: mcr.microsoft.com/dotnet/sdk:10.0
+  services:
+    - name: mcr.microsoft.com/mssql/server:2022-latest
+      alias: mssql
+      variables:
+        ACCEPT_EULA: "Y"
+        MSSQL_SA_PASSWORD: "Test!Passw0rd.2026"
+  variables:
+    E2E_CONNECTION_STRING: "Server=mssql,1433;Database=PM_E2E;User Id=sa;Password=Test!Passw0rd.2026;TrustServerCertificate=True"
+  script:
+    - apt-get update -qq && apt-get install -y -qq curl >/dev/null
+    - export PATH="$PATH:$HOME/.dotnet/tools"
+    - dotnet restore ProductManagement.slnx
+    - dotnet build ProductManagement.slnx --no-restore --configuration Release
+
+    - |
+      for i in $(seq 1 30); do
+        (echo > /dev/tcp/mssql/1433) >/dev/null 2>&1 && break
+        sleep 2
+      done
+
+    - dotnet tool install --global dotnet-ef --version 10.* --source https://api.nuget.org/v3/index.json
+
+    # dotnet ef, ASP.NET'in ConnectionStrings__Default konvansiyonunu değil,
+    # ApplicationDbContextFactory'nin (design-time) okuduğu PRODUCT_MANAGER_CONNECTION_STRING
+    # değişkenini kullanıyor - o da yoksa LocalDB'ye düşüyor.
+    - PRODUCT_MANAGER_CONNECTION_STRING="$E2E_CONNECTION_STRING" dotnet ef database update --project ProductManagement.EFCore --startup-project ProductManagement.API --configuration Release
+
+    - |
+      export ASPNETCORE_URLS="http://localhost:5080"
+      export ASPNETCORE_ENVIRONMENT="Testing"
+      export ConnectionStrings__Default="$E2E_CONNECTION_STRING"
+      export ConnectionStrings__Hangfire="$E2E_CONNECTION_STRING"
+      export Hangfire__Enabled="false"
+      export Seed__CreateE2ETestUser="true"
+      export Seed__E2ETestUserEmail="e2e@pm.local"
+      export Seed__E2ETestUserPassword="E2E-Test-Passw0rd!2026"
+      nohup dotnet run --project ProductManagement.API --no-build --no-launch-profile --configuration Release > api.log 2>&1 &
+      echo $! > api.pid
+
+    - |
+      for i in $(seq 1 30); do
+        code=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:5080/api/auth/login -H "Content-Type: application/json" -d "{}" || echo "000")
+        if [ "$code" != "000" ]; then
+          echo "API açık (HTTP $code)."
+          break
+        fi
+        sleep 2
+      done
+
+    - |
+      TOKEN=""
+      for i in $(seq 1 15); do
+        LOGIN_RESPONSE=$(curl -s -X POST http://localhost:5080/api/auth/login -H "Content-Type: application/json" -d '{"email":"e2e@pm.local","password":"E2E-Test-Passw0rd!2026"}' || echo "")
+        TOKEN=$(echo "$LOGIN_RESPONSE" | grep -o '"accessToken":"[^"]*"' | head -1 | cut -d'"' -f4)
+        if [ -n "$TOKEN" ]; then break; fi
+        echo "Deneme $i: token alınamadı (yanıt: $LOGIN_RESPONSE), 2sn sonra tekrar..."
+        sleep 2
+      done
+      if [ -z "$TOKEN" ]; then
+        echo "Token 15 denemede alınamadı. Tam api.log:"
+        cat api.log || true
+        exit 1
+      fi
+      CODE=$(curl -s -o /tmp/category-response.json -w "%{http_code}" -X POST http://localhost:5080/api/catalog/categories -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" -d '{"name":"E2E Test Kategorisi"}' || echo "000")
+      echo "Category create response ($CODE): $(cat /tmp/category-response.json 2>/dev/null)"
+      if [ "$CODE" != "200" ] && [ "$CODE" != "201" ]; then exit 1; fi
+
+    - git clone --depth 1 --branch master "https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/b2b-product-management/product-management.git" frontend
+    - |
+      curl -fsSL https://deb.nodesource.com/setup_22.x | bash - >/dev/null 2>&1
+      apt-get install -y -qq nodejs >/dev/null
+
+    - cd frontend && npm ci
+    - npx playwright install --with-deps chromium
+    - |
+      E2E_API_BASE_URL="http://localhost:5080" \
+      E2E_SKIP_VISUAL="1" \
+      E2E_TEST_EMAIL="e2e@pm.local" \
+      E2E_TEST_PASSWORD="E2E-Test-Passw0rd!2026" \
+      npx playwright test
+  artifacts:
+    when: on_failure
+    paths:
+      - frontend/playwright-report/
+      - api.log
+    expire_in: 7 days
+  after_script:
+    - kill "$(cat api.pid)" 2>/dev/null || true
   rules:
     - if: $CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event"
