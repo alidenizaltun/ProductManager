@@ -1,6 +1,6 @@
 using AspNetCoreRateLimit;
 using ProductManagement.API.Infrastructures.Extensions;
-using Deva.Extensions.G2way.Infrastructures.Extensions;
+using Deva.Extensions.Gateway.Infrastructures.Extensions;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Mapster;

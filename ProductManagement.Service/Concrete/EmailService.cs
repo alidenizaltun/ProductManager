@@ -1,5 +1,5 @@
 using ProductManagement.Service.Shared.Abstract;
-using Deva.Extensions.G2way.Abstracts;
+using Deva.Extensions.Gateway.Abstracts;
 using Microsoft.Extensions.Logging;
 
 namespace ProductManagement.Service.Concrete
