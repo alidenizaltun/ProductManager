@@ -326,7 +326,7 @@ namespace ProductManagement.Service.Concrete
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
             var frontendBaseUrl = _configuration["Frontend:BaseUrl"]
                 ?? _configuration.GetSection("Cors:Client").Get<string[]>()?.FirstOrDefault(x => x.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-                ?? "https://bayiportal.godeva.com.tr";
+                ?? "https://bayiportal.deva.net.tr";
 
             var encodedEmail = Uri.EscapeDataString(user.Email!);
             var encodedToken = Uri.EscapeDataString(token);

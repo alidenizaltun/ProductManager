@@ -48,7 +48,7 @@ namespace ProductManagement.Service.Concrete
                     </ul>
                     
                     <p>Portal adresinize giriş yapmak için:</p>
-                    <a href='https://bayiportal.godeva.com.tr' style='display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;'>
+                    <a href='https://bayiportal.deva.net.tr' style='display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;'>
                         Portala Giriş Yap
                     </a>
                     
