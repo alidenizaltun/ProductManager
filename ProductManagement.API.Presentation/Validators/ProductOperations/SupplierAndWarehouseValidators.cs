@@ -44,8 +44,8 @@ namespace ProductManagement.Presentation.Validators.ProductOperations
     {
         public CreateProductSupplierMapRequestDtoValidator()
         {
-            RuleFor(x => x.ProductId)
-                .NotEmpty().WithMessage("Product id is required.");
+            // ProductId bilerek dogrulanmiyor; bkz. CreateProductRegionRequestDtoValidator.
+            // Deger her iki yolda da rotadan geliyor, govdeden okunmuyor.
 
             RuleFor(x => x.ProductSupplierId)
                 .NotEmpty().WithMessage("Product supplier id is required.");

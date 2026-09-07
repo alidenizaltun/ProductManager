@@ -36,8 +36,11 @@ namespace ProductManagement.Presentation.Validators.ProductOperations
     {
         public CreateProductRegionRequestDtoValidator()
         {
-            RuleFor(x => x.ProductId)
-                .NotEmpty().WithMessage("Product id is required.");
+            // ProductId bilerek dogrulanmiyor: tekil uc (POST products/{productId}/regions)
+            // gelen govdeyi "request with { ProductId = productId }" ile eziyor, tam urun
+            // kaydinda ise bolgeler alt nesne olarak gidip rotadaki productId ile yaziliyor.
+            // Yani deger istemciden hic okunmuyor; zorunlu tutmak bolge atamasini
+            // gereksiz yere 400 ile reddediyordu.
 
             RuleFor(x => x.RegionId)
                 .NotEmpty().WithMessage("Region id is required.");
