@@ -7,6 +7,23 @@ namespace ProductManagement.Repository.Concrete
 {
     public sealed partial class ProductOperationsRepository
     {
+        /// <summary>
+        /// Kullanici aramalarinda kullanilan; buyuk/kucuk harf ve aksan farkini yok sayan
+        /// harmanlama. Turkce metinlerde s/s-cedilli, c/c-cedilli, g/g-breve, i/noktasiz-i,
+        /// o/o-umlaut ve u/u-umlaut ciftlerini esitler.
+        /// </summary>
+        internal const string SearchCollation = "Latin1_General_CI_AI";
+
+        /// <summary>
+        /// LIKE deseninde ozel anlam tasiyan karakterleri kacisla isaretler; aksi halde
+        /// icinde "%" gecen bir arama terimi tum kayitlari dondurur.
+        /// </summary>
+        internal static string EscapeLikePattern(string value)
+            => value
+                .Replace("[", "[[]")
+                .Replace("%", "[%]")
+                .Replace("_", "[_]");
+
         public async Task<IReadOnlyList<ProductDto>> GetProductsAsync(ProductFilterDto filter, CancellationToken cancellationToken = default)
         {
             var take = NormalizeTake(filter.Take);
@@ -49,8 +66,14 @@ WHERE p.IsDeleted = 0");
 
             if (search is not null)
             {
-                sqlBuilder.Append("\n  AND (p.ProductCode LIKE @SearchPattern OR p.Name LIKE @SearchPattern)");
-                parameters.Add("SearchPattern", $"%{search}%");
+                // Veritabani harmanlamasi Turkish_CI_AS oldugundan aksanli harfler ayri birer
+                // karakter sayilir: "%sirket%" terimi "Sirket" (S-cedilli) kaydini bulamaz ve
+                // ASCII "I" ile yazilan arama, noktali "I" ile baslayan kayitlari kacirir.
+                // Aksana duyarsiz (AI) harmanlamaya cevirerek kullanici Turkce karakter
+                // yazmadan da arayabilir: urun, cozum, sirket gibi yazimlarin hepsi eslesir.
+                sqlBuilder.Append($"\n  AND (p.ProductCode COLLATE {SearchCollation} LIKE @SearchPattern"
+                    + $" OR p.Name COLLATE {SearchCollation} LIKE @SearchPattern)");
+                parameters.Add("SearchPattern", $"%{EscapeLikePattern(search)}%");
             }
 
             if (filter.Kind.HasValue)

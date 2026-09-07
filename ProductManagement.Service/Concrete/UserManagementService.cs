@@ -12,6 +12,11 @@ namespace ProductManagement.Service.Concrete
 {
     public sealed class UserManagementService : IUserManagementService
     {
+        /// <summary>
+        /// Kullanici aramalarinda buyuk/kucuk harf ve aksan farkini yok sayan harmanlama.
+        /// </summary>
+        private const string SearchCollation = "Latin1_General_CI_AI";
+
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<ApplicationRole> _roleManager;
         private readonly IEmailService _emailService;
@@ -44,10 +49,14 @@ namespace ProductManagement.Service.Concrete
             if (!string.IsNullOrWhiteSpace(search))
             {
                 var term = search.Trim();
+
+                // Veritabani harmanlamasi Turkish_CI_AS; varsayilan Contains cevirisi
+                // "sahin" terimiyle "Sahin" (S-cedilli) kaydini bulamaz. Aksana duyarsiz
+                // harmanlama, kullanicinin Turkce karakter yazmadan aramasina izin verir.
                 query = query.Where(u =>
-                    u.Email!.Contains(term) ||
-                    (u.FirstName != null && u.FirstName.Contains(term)) ||
-                    (u.LastName != null && u.LastName.Contains(term)));
+                    EF.Functions.Collate(u.Email!, SearchCollation).Contains(term) ||
+                    (u.FirstName != null && EF.Functions.Collate(u.FirstName, SearchCollation).Contains(term)) ||
+                    (u.LastName != null && EF.Functions.Collate(u.LastName, SearchCollation).Contains(term)));
             }
 
             var users = await query.OrderBy(u => u.Email).ToListAsync(cancellationToken);
