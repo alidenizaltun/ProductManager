@@ -205,6 +205,35 @@ public sealed class ProductRelationsController : ControllerBase
     }
 
     [RequirePermission(Permissions.Products.Manage)]
+    [HttpPost("{productId:guid}/media/upload")]
+    [Consumes("multipart/form-data")]
+    [RequestFormLimits(MultipartBodyLengthLimit = 200L * 1024 * 1024)]
+    [RequestSizeLimit(200L * 1024 * 1024)]
+    [ProducesResponseType(typeof(IReadOnlyList<ProductMediaDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyList<ProductMediaDto>>> UploadMedia(
+        Guid productId,
+        [FromForm(Name = "files")] IFormFileCollection files,
+        CancellationToken cancellationToken)
+    {
+        IFormFileCollection incomingFiles = files is { Count: > 0 } ? files : Request.Form.Files;
+        var uploads = incomingFiles
+            .Where(file => file.Length > 0)
+            .Select(file => new ProductMediaUploadFile
+            {
+                Content = file.OpenReadStream(),
+                FileName = file.FileName,
+                ContentType = file.ContentType,
+                Length = file.Length
+            })
+            .ToList();
+
+        var createdMedia = await _service.UploadProductImagesAsync(productId, uploads, cancellationToken);
+        return StatusCode(StatusCodes.Status201Created, createdMedia);
+    }
+
+    [RequirePermission(Permissions.Products.Manage)]
     [HttpPut("media/{mediaId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

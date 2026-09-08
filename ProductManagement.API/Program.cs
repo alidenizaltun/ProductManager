@@ -19,6 +19,7 @@ try
     builder.WebHost.UseKestrel(c =>
     {
         c.AddServerHeader = false;
+        c.Limits.MaxRequestBodySize = 200L * 1024 * 1024;
     });
 
     builder.Services.ConfigureHangfire(builder);
@@ -69,6 +70,7 @@ try
         .AddValidatorsFromAssembly(typeof(ProductManagement.Presentation.AssemblyReference).Assembly);
     builder.Services.AddHelperIOC();
     builder.Services.AddLocalizationIOC(builder.Configuration);
+    builder.Services.ConfigureProductMediaStorage(builder);
     builder.Services.AddAllManagerIOC();
     builder.Services.ConfigureRateLimit(builder);
     builder.Services.ConfigureCors(builder);
@@ -107,6 +109,7 @@ try
     app.UseHsts();
     app.UseHttpsRedirection();
     app.UseStaticFiles();
+    app.UseProductMediaStaticFiles();
     app.ConfigureHangfire();
     app.ConfigureLocalization();
     app.UseHttpLogging();

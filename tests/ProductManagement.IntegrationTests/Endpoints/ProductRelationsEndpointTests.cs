@@ -156,6 +156,42 @@ public class ProductRelationsEndpointTests
         Assert.Equal(HttpStatusCode.NotFound, okuma.StatusCode);
     }
 
+    [DockerFact]
+    public async Task Medya_dosya_yukleme_201_doner_ve_sunucuda_tutulur()
+    {
+        var urun = await TestData.UrunOlustur(Client);
+        using var content = new MultipartFormDataContent();
+        content.Add(CreatePngContent(), "files", "kapak.png");
+        content.Add(CreatePngContent(), "files", "galeri.png");
+
+        var response = await Client.PostAsync($"/api/products/{urun.Id}/media/upload", content);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        var created = await response.Content.ReadFromJsonAsync<List<MediaPayload>>();
+        Assert.Equal(2, created!.Count);
+        Assert.All(created, item => Assert.StartsWith("/uploads/products/", item.Url));
+        Assert.True(created[0].IsPrimary);
+        Assert.False(created[1].IsPrimary);
+
+        var fileResponse = await Client.GetAsync(created[0].Url);
+        Assert.Equal(HttpStatusCode.OK, fileResponse.StatusCode);
+        Assert.Equal("image/png", fileResponse.Content.Headers.ContentType?.MediaType);
+    }
+
+    [DockerFact]
+    public async Task Medya_dosya_yukleme_desteklenmeyen_turu_400_doner()
+    {
+        var urun = await TestData.UrunOlustur(Client);
+        using var content = new MultipartFormDataContent();
+        content.Add(new ByteArrayContent("not-an-image"u8.ToArray())
+        {
+            Headers = { ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/plain") }
+        }, "files", "notlar.txt");
+
+        var response = await Client.PostAsync($"/api/products/{urun.Id}/media/upload", content);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     // ── Bundle kalemleri ─────────────────────────────────────────────────────
 
     [DockerFact]
@@ -264,9 +300,18 @@ public class ProductRelationsEndpointTests
         Assert.Equal(HttpStatusCode.NotFound, okuma.StatusCode);
     }
 
+    private static ByteArrayContent CreatePngContent()
+    {
+        var png = Convert.FromBase64String(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=");
+        var part = new ByteArrayContent(png);
+        part.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
+        return part;
+    }
+
     private sealed record AttributeValuePayload(Guid Id, Guid ProductId, Guid AttributeDefinitionId, string? ValueText);
     private sealed record CategoryMapPayload(Guid Id, Guid ProductId, Guid ProductCategoryId, bool IsPrimary);
-    private sealed record MediaPayload(Guid Id, Guid ProductId, string Url);
+    private sealed record MediaPayload(Guid Id, Guid ProductId, string Url, bool IsPrimary);
     private sealed record BundleItemPayload(Guid Id, Guid BundleProductId, Guid ChildProductId, decimal Quantity);
     private sealed record SupplierMapPayload(Guid Id, Guid ProductId, Guid ProductSupplierId, bool IsPreferred);
     private sealed record ProductRegionPayload(Guid Id, Guid ProductId, Guid RegionId, string CurrencyCode);

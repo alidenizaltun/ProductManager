@@ -43,6 +43,7 @@ namespace ProductManagement.Service.Shared.Abstract
         Task<IReadOnlyList<ProductMediaDto>> GetProductMediaAsync(Guid productId, CancellationToken cancellationToken = default);
         Task<ProductMediaDto?> GetMediaByIdAsync(Guid mediaId, CancellationToken cancellationToken = default);
         Task<ProductMediaDto> CreateMediaAsync(CreateProductMediaRequestDto request, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<ProductMediaDto>> UploadProductImagesAsync(Guid productId, IReadOnlyList<ProductMediaUploadFile> files, CancellationToken cancellationToken = default);
         Task<bool> UpdateMediaAsync(Guid mediaId, UpdateProductMediaRequestDto request, CancellationToken cancellationToken = default);
         Task<bool> DeleteMediaAsync(Guid mediaId, CancellationToken cancellationToken = default);
 

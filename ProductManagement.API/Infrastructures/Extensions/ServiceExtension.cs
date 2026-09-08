@@ -17,6 +17,8 @@ using Dapper;
 using Hangfire;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
@@ -34,6 +36,41 @@ namespace ProductManagement.API.Infrastructures.Extensions
     public static class ServiceExtension
     {
         public static void AddHelperIOC(this IServiceCollection service) { }
+
+        public static void ConfigureProductMediaStorage(this IServiceCollection services, IHostApplicationBuilder builder)
+        {
+            services.Configure<ProductMediaStorageOptions>(
+                builder.Configuration.GetSection(ProductMediaStorageOptions.SectionName));
+
+            const long maxUploadBytes = 200L * 1024 * 1024;
+            services.Configure<FormOptions>(options =>
+            {
+                options.MultipartBodyLengthLimit = maxUploadBytes;
+                options.ValueLengthLimit = int.MaxValue;
+            });
+            services.Configure<IISServerOptions>(options =>
+            {
+                options.MaxRequestBodySize = maxUploadBytes;
+            });
+        }
+
+        public static void UseProductMediaStaticFiles(this WebApplication app)
+        {
+            var storage = app.Services.GetRequiredService<IProductMediaStorage>();
+            Directory.CreateDirectory(storage.RootPath);
+
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(storage.RootPath),
+                RequestPath = storage.RequestPath,
+                OnPrepareResponse = context =>
+                {
+                    context.Context.Response.Headers.CacheControl = "public,max-age=31536000,immutable";
+                    context.Context.Response.Headers["Cross-Origin-Resource-Policy"] = "cross-origin";
+                    context.Context.Response.Headers["Access-Control-Allow-Origin"] = "*";
+                }
+            });
+        }
 
         public static void AddLocalizationIOC(this IServiceCollection service, IConfiguration configuration)
         {
@@ -301,6 +338,7 @@ namespace ProductManagement.API.Infrastructures.Extensions
             service.AddScoped<IProductOperationsRepository, ProductOperationsRepository>();
             service.AddScoped<ISystemManagementRepository, SystemManagementRepository>();
             service.AddScoped<IServiceManager, ServiceManager>();
+            service.AddSingleton<IProductMediaStorage, ProductMediaStorage>();
 
             service.Scan(selector => selector
                 .FromAssemblies(

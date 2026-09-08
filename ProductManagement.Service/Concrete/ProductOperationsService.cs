@@ -1,6 +1,8 @@
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Options;
 using ProductManagement.Repository.Shared.Abstract;
 using ProductManagement.Service.Shared.Abstract;
+using ProductManagement.Service.Shared.Configuration;
 using ProductManagement.Shared.Dtos.ProductOperations;
 using ProductManagement.Shared.Infrastructure.Exceptions;
 
@@ -9,10 +11,17 @@ namespace ProductManagement.Service.Concrete
     public sealed partial class ProductOperationsService : IProductOperationsService
     {
         private readonly IProductOperationsRepository _repository;
+        private readonly IProductMediaStorage _mediaStorage;
+        private readonly ProductMediaStorageOptions _mediaStorageOptions;
 
-        public ProductOperationsService(IProductOperationsRepository repository)
+        public ProductOperationsService(
+            IProductOperationsRepository repository,
+            IProductMediaStorage mediaStorage,
+            IOptions<ProductMediaStorageOptions> mediaStorageOptions)
         {
             _repository = repository;
+            _mediaStorage = mediaStorage;
+            _mediaStorageOptions = mediaStorageOptions.Value;
         }
 
         public Task<IReadOnlyList<ProductDto>> GetProductsAsync(ProductFilterDto filter, CancellationToken cancellationToken = default)
@@ -137,6 +146,70 @@ namespace ProductManagement.Service.Concrete
 
         public Task<ProductMediaDto> CreateMediaAsync(CreateProductMediaRequestDto request, CancellationToken cancellationToken = default)
             => ExecuteWithSqlMapping(() => _repository.CreateMediaAsync(request, cancellationToken));
+
+        public async Task<IReadOnlyList<ProductMediaDto>> UploadProductImagesAsync(
+            Guid productId,
+            IReadOnlyList<ProductMediaUploadFile> files,
+            CancellationToken cancellationToken = default)
+        {
+            if (files is null || files.Count == 0)
+            {
+                throw new BadRequestException("Yüklenecek görsel seçilmedi.");
+            }
+
+            var maxFiles = Math.Max(1, _mediaStorageOptions.MaxFilesPerRequest);
+            if (files.Count > maxFiles)
+            {
+                throw new BadRequestException($"Bir seferde en fazla {maxFiles} görsel yüklenebilir.");
+            }
+
+            var product = await _repository.GetProductByIdAsync(productId, cancellationToken);
+            if (product is null)
+            {
+                throw new NotFoundException("Ürün", productId);
+            }
+
+            var existingMedia = await _repository.GetProductMediaAsync(productId, cancellationToken);
+            var nextSortOrder = existingMedia.Count == 0
+                ? 1
+                : existingMedia.Max(item => item.SortOrder) + 1;
+            var hasPrimary = existingMedia.Any(item => item.IsPrimary);
+
+            var createdItems = new List<ProductMediaDto>(files.Count);
+            foreach (var file in files)
+            {
+                ProductMediaUploadRules.EnsureImage(
+                    file.FileName,
+                    file.ContentType,
+                    file.Length,
+                    _mediaStorageOptions.MaxFileSizeBytes);
+
+                var stored = await _mediaStorage.SaveProductImageAsync(
+                    productId,
+                    file.Content,
+                    file.FileName,
+                    ProductMediaUploadRules.GuessContentType(file.FileName, file.ContentType),
+                    cancellationToken);
+
+                var created = await ExecuteWithSqlMapping(() => _repository.CreateMediaAsync(
+                    new CreateProductMediaRequestDto
+                    {
+                        ProductId = productId,
+                        MediaType = 1,
+                        Url = stored.Url,
+                        ThumbnailUrl = stored.Url,
+                        MimeType = stored.ContentType,
+                        AltText = ProductMediaUploadRules.BuildAltText(file.FileName),
+                        IsPrimary = !hasPrimary && createdItems.Count == 0,
+                        SortOrder = nextSortOrder++
+                    },
+                    cancellationToken));
+
+                createdItems.Add(created);
+            }
+
+            return createdItems;
+        }
 
         public Task<bool> UpdateMediaAsync(Guid mediaId, UpdateProductMediaRequestDto request, CancellationToken cancellationToken = default)
             => ExecuteWithSqlMapping(() => _repository.UpdateMediaAsync(mediaId, request, cancellationToken));
