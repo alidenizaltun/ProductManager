@@ -46,6 +46,8 @@ SET
  IsPurchasable = @IsPurchasable,
  TrackInventory = @TrackInventory,
  DefaultCurrencyCode = @DefaultCurrencyCode,
+ TaxRate = @TaxRate,
+ TaxCode = @TaxCode,
  Tags = @Tags,
  MetadataJson = @MetadataJson,
  UpdatedAt = @Now
@@ -72,6 +74,8 @@ WHERE Id = @ProductId
      request.Product.IsPurchasable,
      request.Product.TrackInventory,
      request.Product.DefaultCurrencyCode,
+     request.Product.TaxRate,
+     request.Product.TaxCode,
      request.Product.Tags,
      request.Product.MetadataJson,
      Now = now
